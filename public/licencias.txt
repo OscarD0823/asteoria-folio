@@ -1,0 +1,20 @@
+Prisma PDF 2.0 — Copyright (C) 2026 Prisma PDF contributors.
+Software libre bajo GNU Affero General Public License, version 3 o posterior.
+Sin garantia. Licencia completa: ./LICENSE.txt
+Codigo fuente de esta version: ./prisma-pdf-source.tar.gz
+
+MuPDF.js 1.28.1 — Copyright Artifex Software, Inc.
+Licencia: AGPL-3.0-or-later.
+Distribucion JavaScript/WASM original sin modificaciones.
+Fuente y compilacion del motor:
+https://github.com/ArtifexSoftware/mupdf.js/tree/1.28.1
+https://git.ghostscript.com/?p=mupdf.git
+https://mupdf.readthedocs.io/en/latest/reference/javascript/index.html
+Instalacion reproducible: pnpm install --frozen-lockfile; pnpm build.
+
+pdf-lib — MIT — https://github.com/Hopding/pdf-lib
+PDF.js — Apache-2.0 — https://github.com/mozilla/pdf.js
+React — MIT — https://github.com/facebook/react
+Lucide — ISC — https://github.com/lucide-icons/lucide
+Dependencias y versiones exactas en el archivo pnpm-lock.yaml del codigo fuente.
+Licencias completas de las dependencias: ./third-party/<nombre>-LICENSE.txt

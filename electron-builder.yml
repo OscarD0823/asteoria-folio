@@ -1,0 +1,23 @@
+appId: com.oscard.prismapdf
+productName: Prisma PDF
+directories:
+  output: release
+files:
+  - dist/**/*
+  - desktop/**/*
+  - package.json
+  - '!node_modules/**/*'
+asar: true
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: public/icons/prisma.ico
+  signExecutable: false
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: Prisma-PDF-${version}-Windows-Setup.exe

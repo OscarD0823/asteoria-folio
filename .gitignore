@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.openai/
+public/pdfjs/
+public/engine/
+qa/
+*.log
+release/
+.gradle/
+*.p12
+*.jks
+*.dpapi
