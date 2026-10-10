@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-writer/
+dist-sheets/
 dist-site/
 .openai/
 public/pdfjs/
@@ -9,6 +10,7 @@ qa/
 *.log
 release/
 release-writer/
+release-sheets/
 .gradle/
 *.p12
 *.jks

@@ -1,9 +1,11 @@
 {
-  "version": "6.0.0",
-  "releaseUrl": "https://github.com/OscarD0823/prisma-pdf/releases/tag/v6.0.0",
-  "androidUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.0.0/Prisma-PDF-6.0.0-Android.apk",
-  "windowsUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.0.0/Prisma-PDF-6.0.0-Windows-Setup.exe",
+  "version": "6.1.0",
+  "releaseUrl": "https://github.com/OscarD0823/prisma-pdf/releases/tag/v6.1.0",
+  "androidUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.1.0/Prisma-PDF-6.1.0-Android.apk",
+  "windowsUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.1.0/Prisma-PDF-6.1.0-Windows-Setup.exe",
   "features": [
+    "Informe de compatibilidad al importar documentos Word",
+    "Índices de tablas y figuras actualizables en Word",
     "Biblioteca de fuentes con favoritas, texto de muestra y vistas de lista o tarjetas",
     "Galería de estilos, índices con relleno y numeración alineada",
     "Revisor ortográfico de español e inspector Unicode locales",

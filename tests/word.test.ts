@@ -19,6 +19,8 @@ import { watermarkArtifacts, blankWithWatermarks } from "../src/watermarks";
 import { textStatistics, correctWord } from "../src/document-tools";
 import { academicPlainText } from "../src/academic";
 import { insertBlankPage } from "../src/page-insertion";
+import { markContent, textContentKey } from "../src/pdf-text";
+import type { Mark } from "../src/pdf";
 import { projectBytes, readProject, validateLayout } from "../src/projects";
 import {
   emptyWorkspace,
@@ -62,9 +64,131 @@ test("prepare every text line once, retaining images and watermarks across all p
       ["Linea primera " + i, "Linea segunda " + i],
     );
     const after = await inspect(result.bytes, i);
-    assert.ok(!after.objects.some((o) => o.text?.startsWith("Linea")));
+    assert.ok(after.objects.some((o) => o.text?.startsWith("Linea")));
     assert.ok(after.objects.some((o) => o.text === "BORRADOR"));
     assert.equal(after.objects.filter((o) => o.kind === "image").length, 1);
+  }
+});
+test("editing prepared PDF text retains untouched index fragments and fonts, removes deleted text and survives project reopening", async () => {
+  const doc = await PDFDocument.create(),
+    font = await doc.embedFont(StandardFonts.TimesRoman),
+    bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const p = doc.addPage([500, 600]);
+  p.drawText("Titulo original", { x: 40, y: 540, size: 18, font: bold });
+  p.drawText("Tablas", { x: 40, y: 500, size: 12, font });
+  p.drawText("........................................", {
+    x: 120,
+    y: 500,
+    size: 12,
+    font,
+  });
+  p.drawText("3", { x: 420, y: 500, size: 12, font });
+  p.drawText("Eliminar esta linea", { x: 40, y: 460, size: 12, font });
+  const bytes = await doc.save(),
+    prepared = (await nativeOperation({
+      action: "editAll",
+      bytes,
+      index: 0,
+    })) as TextPreparation;
+  assert.deepEqual(prepared.bytes, bytes);
+  const workspace = await appendPdf(emptyWorkspace(), bytes, "Índice.pdf");
+  const marks: Mark[] = prepared.pages[0].objects.map((o, i) => ({
+    id: "line-" + i,
+    type: "text",
+    text: o.text,
+    x: o.x,
+    y: (o.baseline ?? o.y + o.size) - o.size,
+    width: o.width + 4,
+    height: o.size * 1.25,
+    size: o.size,
+    font: o.font === "Times-Roman" ? "PrismaSerif" : "PrismaSans",
+    bold: o.bold,
+    italic: o.italic,
+    color: o.color,
+    viewRotation: 0,
+  }));
+  workspace.pages[0].textReady = true;
+  workspace.pages[0].originalText = prepared.pages[0].objects.map((o, i) => ({
+    mark: marks[i],
+    rect: [
+      o.x + 0.01,
+      (o.baseline ?? o.y + o.size) - o.size * 0.65,
+      o.x + o.width - 0.01,
+      (o.baseline ?? o.y + o.size) - o.size * 0.15,
+    ],
+  }));
+  workspace.pages[0].marks = marks
+    .filter((m) => !m.text?.startsWith("Eliminar"))
+    .map((m) =>
+      m.text === "Titulo original"
+        ? {
+            ...m,
+            text: "Titulo editado",
+            richText: {
+              type: "doc",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [
+                    {
+                      type: "text",
+                      text: "Titulo editado",
+                      marks: [
+                        { type: "bold" },
+                        {
+                          type: "textStyle",
+                          attrs: { fontSize: "18pt", fontFamily: "PrismaSans" },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          }
+        : m,
+    );
+  const untouched = markContent(marks[1]);
+  assert.equal(
+    textContentKey(untouched),
+    textContentKey({
+      ...untouched,
+      content: untouched.content?.map((n) => ({
+        ...n,
+        attrs: {
+          id: "editor",
+          pdfBox: { x: 40, y: 88 },
+          indexLevel: 1,
+          indexLeader: "dots",
+          firstLineIndent: 0,
+          textAlign: "left",
+          lineHeight: 1.25,
+        },
+      })),
+    }),
+  );
+  const reopened = await readProject(projectBytes(workspace)),
+    out = await buildPdf(reopened),
+    after = await inspect(out),
+    before = await inspect(bytes);
+  assert.ok(after.objects.some((o) => o.text === "Titulo editado"));
+  assert.ok(
+    !after.objects.some(
+      (o) => o.text?.includes("original") || o.text?.startsWith("Eliminar"),
+    ),
+  );
+  for (const label of [
+    "Tablas",
+    "........................................",
+    "3",
+  ]) {
+    const a = after.objects.find((o) => o.text === label)!,
+      b = before.objects.find((o) => o.text === label)!;
+    assert.ok(a, label + " remained one line");
+    assert.deepEqual(
+      [a.x, a.y, a.width, a.size, a.font],
+      [b.x, b.y, b.width, b.size, b.font],
+    );
   }
 });
 test("APA export positions captions, notes and page numbers, links citations to bibliography and paginates indices", async () => {

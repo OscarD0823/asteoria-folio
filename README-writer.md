@@ -17,7 +17,9 @@ Los documentos, las palabras revisadas, los proyectos y las fuentes personales p
 
 ## Desarrollo
 
-`pnpm dev` abre Prisma PDF. En PowerShell, `$env:VITE_PRODUCT='writer'; pnpm dev` abre Writer. `pnpm build:products` genera `dist` (PDF), `dist-writer` (Writer) y `dist-site` (ambas webs). Publicar `dist-site` en GitHub Pages. El perfil Writer usa la versión 1.0.0; PDF usa la versión del paquete.
+`pnpm dev` abre Prisma PDF. En PowerShell, `$env:VITE_PRODUCT='writer'; pnpm dev` abre Writer. `pnpm build:products` genera `dist` (PDF), `dist-writer` (Writer) y `dist-site` (ambas webs). Publicar `dist-site` en GitHub Pages. El perfil Writer usa la versión 1.1.0; PDF usa la versión del paquete.
+
+En Revisar → Compatibilidad con Office puedes consultar el resumen de importación: normas declaradas, fuentes sustituidas, objetos, apéndices, índices y secciones. Los documentos con varios estilos conservan el formato por sección y permanecen en Libre. No se infiere una norma únicamente por la tipografía o los márgenes. Los títulos SEQ de Word se vinculan a las tablas y figuras, y las listas de figuras/tablas se exportan como campos TOC actualizables.
 
 Referencias de diseño: [tablas de contenido](https://support.microsoft.com/es-es/word/format-or-customize-a-table-of-contents-in-word), [revisión ortográfica](https://support.microsoft.com/es-es/word/how-to-check-grammar-in-word) y [espacios entre páginas](https://support.microsoft.com/es-es/word/word-options-display) de Microsoft. La interfaz utiliza identidad propia de Prisma.
 

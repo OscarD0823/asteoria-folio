@@ -6,6 +6,10 @@ export default defineConfig({
     {
       name: "prisma-product",
       transformIndexHtml(html) {
+        if (process.env.VITE_PRODUCT === "sheets")
+          return html
+            .replaceAll("Prisma PDF", "Prisma Sheets")
+            .replace("De documento a posibilidad", "Da forma a tus números");
         return process.env.VITE_PRODUCT === "writer"
           ? html
               .replaceAll("Prisma PDF", "Prisma Writer")

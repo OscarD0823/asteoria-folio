@@ -27,6 +27,7 @@ import {
   TableOfContents,
   TabStopType,
   LeaderType,
+  SimpleField,
   type ParagraphChild,
   type ISectionOptions,
 } from "docx";
@@ -34,6 +35,8 @@ import {
   academicPlainText,
   captionBlocks,
   normalizeAcademicDocument,
+  roman,
+  academicPresets,
 } from "./academic";
 import { documentSections } from "./sections";
 import { fontFamilies, fontFile, readFontFile } from "./fonts";
@@ -131,6 +134,25 @@ function withCaptions(parent: RichNode, flow: FlowDocument): RichNode[] {
       blocks = cap
         ? captionBlocks(cap, flow.academicStyle ?? "free")
         : { before: [], after: [] };
+    const labels = [...blocks.before, ...blocks.after];
+    if (cap && labels.length) {
+      const label =
+        flow.academicStyle === "ieee" && cap.attrs?.kind === "figure"
+          ? blocks.after[0]
+          : blocks.before[0];
+      if (label)
+        label.attrs = {
+          ...label.attrs,
+          spaceAfter:
+            blocks.before[1]?.attrs?.spaceAfter ?? label.attrs?.spaceAfter,
+          wordCaption: cap.attrs,
+        };
+      if (blocks.before[1])
+        blocks.before[1].attrs = {
+          ...blocks.before[1].attrs,
+          wordCaptionContinuation: true,
+        };
+    }
     result.push(...blocks.before, n, ...blocks.after);
   }
   return result;
@@ -256,6 +278,35 @@ export async function exportDocx(
       center: AlignmentType.CENTER,
       justify: AlignmentType.JUSTIFIED,
     })[String(value)] ?? AlignmentType.LEFT;
+  const academicNames = new Map<
+    string,
+    { id: string; name: string; basedOn: string }
+  >();
+  const paragraphName = (node: RichNode) => {
+    const a = node.attrs ?? {};
+    if (a.wordCaption) return "Caption";
+    const base =
+      a.paragraphStyle === "title"
+        ? "Title"
+        : a.paragraphStyle === "subtitle"
+          ? "Subtitle"
+          : "Normal";
+    if (node.type === "heading") return undefined;
+    if (
+      typeof a.academicStyle === "string" &&
+      a.academicStyle !== "free" &&
+      Object.hasOwn(academicPresets, a.academicStyle)
+    ) {
+      const id = String(a.academicStyle).toUpperCase() + base;
+      academicNames.set(id, {
+        id,
+        name: String(a.academicStyle).toUpperCase() + " " + base,
+        basedOn: base,
+      });
+      return id;
+    }
+    return base;
+  };
   const blocks = async (
     parent: RichNode,
     layout: PageLayout,
@@ -265,13 +316,51 @@ export async function exportDocx(
     const children: (Paragraph | Table | TableOfContents)[] = [];
     for (const node of withCaptions(parent, normalized)) {
       const a = node.attrs ?? {};
+      if (a.wordCaptionContinuation) continue;
       if (
         ["paragraph", "heading", "codeBlock", "appendix"].includes(
           node.type ?? "",
         )
       ) {
-        const content =
-          node.type === "appendix"
+        const caption = a.wordCaption as Record<string, unknown> | undefined;
+        const capKind = caption?.kind === "table" ? "Tabla" : "Figura";
+        const content = caption
+          ? [
+              new TextRun({
+                text:
+                  (normalized.academicStyle === "ieee"
+                    ? caption.kind === "table"
+                      ? "TABLA "
+                      : "Fig. "
+                    : capKind + " ") + String(caption.appendixLetter || ""),
+                bold: true,
+              }),
+              new SimpleField(
+                "SEQ " +
+                  capKind +
+                  (caption.appendixLetter && Number(caption.number) === 1
+                    ? " \\r 1"
+                    : "") +
+                  " \\* " +
+                  (normalized.academicStyle === "ieee" &&
+                  caption.kind === "table"
+                    ? "ROMAN"
+                    : "ARABIC"),
+                normalized.academicStyle === "ieee" && caption.kind === "table"
+                  ? roman(Number(caption.number))
+                  : String(caption.number),
+              ),
+              ...(caption.title
+                ? [
+                    new TextRun({
+                      text: String(caption.title),
+                      break: 1,
+                      italics: normalized.academicStyle === "apa",
+                    }),
+                  ]
+                : []),
+            ]
+          : node.type === "appendix"
             ? [new TextRun([a.label, a.title].filter(Boolean).join(": "))]
             : inline(node, a);
         if (listPrefix) content.unshift(new TextRun(listPrefix + " "));
@@ -286,6 +375,8 @@ export async function exportDocx(
               ? [new Bookmark({ id: bookmark(a.id), children: content })]
               : content,
             alignment: alignment(a.textAlign),
+            style: paragraphName(node),
+            keepNext: !!caption,
             heading:
               node.type === "heading"
                 ? [
@@ -358,6 +449,19 @@ export async function exportDocx(
                   : [new Paragraph("")],
                 columnSpan: Number(cell.attrs?.colspan) || 1,
                 rowSpan: Number(cell.attrs?.rowspan) || 1,
+                ...(Array.isArray(cell.attrs?.colwidth)
+                  ? {
+                      width: {
+                        size:
+                          (cell.attrs.colwidth as number[]).reduce(
+                            (sum, w) => sum + Number(w || 0),
+                            0,
+                          ) * 15,
+                        type: "dxa" as const,
+                      },
+                    }
+                  : {}),
+                margins: { top: 90, bottom: 90, left: 90, right: 90 },
                 borders: academic
                   ? { left: none, right: none, top: edge, bottom: edge }
                   : undefined,
@@ -373,7 +477,20 @@ export async function exportDocx(
             }),
           );
         }
-        children.push(new Table({ rows, width: { size: 100, type: "pct" } }));
+        const columnWidths = (node.content?.[0]?.content ?? []).flatMap((c) =>
+          Array.isArray(c.attrs?.colwidth)
+            ? (c.attrs.colwidth as number[]).map((w) =>
+                Math.round(Number(w) * 15),
+              )
+            : [],
+        );
+        children.push(
+          new Table({
+            rows,
+            width: { size: 100, type: "pct" },
+            ...(columnWidths.length ? { columnWidths } : {}),
+          }),
+        );
       } else if (
         ["image", "equation", "chart", "shape", "video"].includes(
           node.type ?? "",
@@ -446,12 +563,19 @@ export async function exportDocx(
                 : AlignmentType.LEFT,
           }),
         );
-        if (a.kind === "contents")
+        if (["contents", "tables", "figures"].includes(String(a.kind)))
           children.push(
             new TableOfContents(String(a.title || "Tabla de contenido"), {
               hyperlink: true,
-              headingStyleRange:
-                "1-" + Math.max(1, Math.min(6, Number(a.levels) || 3)),
+              ...(a.kind === "contents"
+                ? {
+                    headingStyleRange:
+                      "1-" + Math.max(1, Math.min(6, Number(a.levels) || 3)),
+                  }
+                : {
+                    captionLabelIncludingNumbers:
+                      a.kind === "tables" ? "Tabla" : "Figura",
+                  }),
               beginDirty: true,
               cachedEntries: (
                 (a.entries as {
@@ -626,36 +750,43 @@ export async function exportDocx(
   }
   const document = new Document({
     title,
-    creator: "Prisma PDF",
+    creator: "Prisma",
+    customProperties: [
+      { name: "PrismaAcademicStyle", value: flow.academicStyle ?? "free" },
+    ],
     sections,
     comments: { children: comments },
     evenAndOddHeaderAndFooters: infos.some((s) => s.layout.oddEven),
     features: { updateFields: true },
     styles: {
-      paragraphStyles: Array.from({ length: 6 }, (_, i) => ({
-        id: "TOC" + (i + 1),
-        name: "toc " + (i + 1),
-        basedOn: "Normal",
-        paragraph: {
-          indent: { left: i * 360 },
-          spacing: {
-            before: 0,
-            after: 0,
-            line: normalized.academicStyle === "apa" ? 480 : 280,
-          },
-          tabStops: [
-            {
-              type: TabStopType.RIGHT,
-              position: Math.round(
-                (pageSize(flow.layout)[0] -
-                  mm(flow.layout.left + flow.layout.right)) *
-                  20,
-              ),
-              leader: LeaderType.DOT,
+      paragraphStyles: [
+        ...academicNames.values(),
+        { id: "Caption", name: "Caption", basedOn: "Normal" },
+        ...Array.from({ length: 6 }, (_, i) => ({
+          id: "TOC" + (i + 1),
+          name: "toc " + (i + 1),
+          basedOn: "Normal",
+          paragraph: {
+            indent: { left: i * 360 },
+            spacing: {
+              before: 0,
+              after: 0,
+              line: normalized.academicStyle === "apa" ? 480 : 280,
             },
-          ],
-        },
-      })),
+            tabStops: [
+              {
+                type: TabStopType.RIGHT,
+                position: Math.round(
+                  (pageSize(flow.layout)[0] -
+                    mm(flow.layout.left + flow.layout.right)) *
+                    20,
+                ),
+                leader: LeaderType.DOT,
+              },
+            ],
+          },
+        })),
+      ],
       default: {
         document: {
           run: {

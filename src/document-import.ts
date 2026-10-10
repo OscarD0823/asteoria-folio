@@ -8,7 +8,16 @@ import {
 } from "./flow";
 import { fontFamilies } from "./fonts";
 import { encodeFont } from "./local-fonts";
-import { normalizeAcademicDocument } from "./academic";
+import {
+  normalizeAcademicDocument,
+  academicPresets,
+  collectDocumentEntries,
+  type AcademicStyle,
+} from "./academic";
+import {
+  declaredAcademicStyle,
+  type OfficeImportReport,
+} from "./office-compatibility";
 const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
   R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 const children = (el?: Element | null) =>
@@ -84,7 +93,7 @@ export function importDocx(bytes: Uint8Array): {
       expanded += file.originalSize;
       if (expanded > 160 * 1024 * 1024)
         throw new Error("El DOCX descomprimido supera los 160 MB.");
-      return /^(word\/(?:document|styles|numbering|comments|footnotes|endnotes|header\d+|footer\d+)\.xml|word\/_rels\/document\.xml\.rels|word\/media\/.+)$/.test(
+      return /^(docProps\/custom\.xml|word\/(?:document|styles|numbering|comments|footnotes|endnotes|header\d+|footer\d+)\.xml|word\/_rels\/document\.xml\.rels|word\/media\/.+)$/.test(
         file.name,
       );
     },
@@ -98,6 +107,14 @@ export function importDocx(bytes: Uint8Array): {
   if (!body) throw new Error("No se encontró el contenido del DOCX.");
   const warnings = new Set<string>(),
     substitutions = new Set<string>();
+  const detected = new Map<
+    AcademicStyle,
+    { paragraphs: number; evidence: Set<string> }
+  >();
+  const sourceParagraphs = new WeakMap<
+    RichNode,
+    { caption: boolean; field: string }
+  >();
   const relationships = new Map<
     string,
     { target: string; external: boolean }
@@ -291,6 +308,13 @@ export function importDocx(bytes: Uint8Array): {
         pageBreak ||= result.pageBreak;
         continue;
       }
+      if (child.localName === "fldSimple") {
+        const result = inline(child, inherited, activeComments);
+        content.push(...result.content);
+        images.push(...result.images);
+        pageBreak ||= result.pageBreak;
+        continue;
+      }
       if (child.localName !== "r") continue;
       const props = direct(child, "rPr"),
         style = val(direct(props, "rStyle"));
@@ -430,6 +454,31 @@ export function importDocx(bytes: Uint8Array): {
           if (info) list = { key, level: depth, ...info };
         }
       }
+    const declaration =
+      declaredAcademicStyle(val(direct(styles.get(styleId), "name"))) ??
+      declaredAcademicStyle(styleId);
+    if (declaration) {
+      attrs.academicStyle = declaration;
+      const hit = detected.get(declaration) ?? {
+        paragraphs: 0,
+        evidence: new Set<string>(),
+      };
+      hit.paragraphs++;
+      hit.evidence.add(val(direct(styles.get(styleId), "name")) || styleId);
+      detected.set(declaration, hit);
+    }
+    let semantic = styleId;
+    for (let i = 0; i < 20 && semantic; i++) {
+      if (/^(?:title|titulo)$/i.test(semantic)) {
+        attrs.paragraphStyle = "title";
+        break;
+      }
+      if (/^(?:subtitle|subtitulo)$/i.test(semantic)) {
+        attrs.paragraphStyle = "subtitle";
+        break;
+      }
+      semantic = val(direct(styles.get(semantic), "basedOn"));
+    }
     const inherited = runFormat(runs),
       textStyle = inherited.find((m) => m.type === "textStyle")?.attrs;
     if (textStyle?.fontFamily) attrs.fontFamily = textStyle.fontFamily;
@@ -442,8 +491,31 @@ export function importDocx(bytes: Uint8Array): {
         content: result.content,
       };
     if (list) lists.set(node, list);
+    sourceParagraphs.set(node, {
+      caption:
+        /(?:caption|epigrafe|leyenda)/i.test(styleId) ||
+        /\bSEQ\b/i.test(
+          all(el, "instrText")
+            .map((n) => n.textContent)
+            .join(" ") +
+            all(el, "fldSimple")
+              .map((n) => val(n, "instr"))
+              .join(" "),
+        ),
+      field:
+        all(el, "instrText")
+          .map((n) => n.textContent)
+          .join(" ") +
+        all(el, "fldSimple")
+          .map((n) => val(n, "instr"))
+          .join(" "),
+    });
+    // A drawing-only paragraph is a container in Word, not an extra visible blank line.
+    const visible = result.content.some((n) => n.type !== "text" || !!n.text);
     return [
-      node,
+      ...(visible || (!result.images.length && !result.pageBreak)
+        ? [node]
+        : []),
       ...result.images,
       ...(result.pageBreak ? [{ type: "pageBreak" }] : []),
     ];
@@ -502,13 +574,19 @@ export function importDocx(bytes: Uint8Array): {
         const instruction = all(child, "instrText")
           .map((n) => n.textContent)
           .join("");
-        if (/\bTOC\b/.test(instruction))
+        if (/\bTOC\b/i.test(instruction)) {
+          const caption = instruction.match(/\\c\s+"([^"]+)"/i)?.[1] ?? "";
+          const kind = /^(?:tabla|table)/i.test(caption)
+            ? "tables"
+            : /^(?:figura|figure|ilustraci[oó]n)/i.test(caption)
+              ? "figures"
+              : "contents";
           nodes = [
             {
               type: "generatedIndex",
               attrs: {
                 id: crypto.randomUUID(),
-                kind: "contents",
+                kind,
                 levels: Number(instruction.match(/\\o\s+"1-(\d)"/)?.[1]) || 3,
                 leader: "dots",
                 pageNumbers: true,
@@ -516,7 +594,7 @@ export function importDocx(bytes: Uint8Array): {
               content: [],
             },
           ];
-        else {
+        } else {
           const content = direct(child, "sdtContent");
           if (content) nodes = blocks(content);
         }
@@ -582,6 +660,10 @@ export function importDocx(bytes: Uint8Array): {
       1,
       Math.min(3, Number(val(direct(el, "cols"), "num")) || 1),
     );
+    const columnSpace = val(direct(el, "cols"), "space");
+    if (columnSpace) layout.columnGap = (Number(columnSpace) * 25.4) / 1440;
+    const start = Number(val(direct(el, "pgNumType"), "start"));
+    if (start > 0) layout.pageNumberStart = start;
     layout.differentFirst = !!direct(el, "titlePg");
     for (const ref of children(el).filter(
       (n) =>
@@ -592,13 +674,24 @@ export function importDocx(bytes: Uint8Array): {
           rel && !rel.external
             ? xml(partPath("word/document.xml", rel.target))
             : null;
-      const text = part
-          ? all(part, "t")
-              .map((t) => t.textContent)
-              .join(" ")
-          : "",
+      const text = part ? headerText(part.documentElement) : "",
         kind = ref.localName === "headerReference" ? "header" : "footer",
         type = val(ref, "type");
+      if (
+        part &&
+        /\bPAGE\b/.test(
+          all(part, "instrText")
+            .map((n) => n.textContent)
+            .join(" ") +
+            all(part, "fldSimple")
+              .map((n) => val(n, "instr"))
+              .join(" "),
+        )
+      ) {
+        layout.numbering = true;
+        layout.pageNumberPosition =
+          kind === "header" ? "header-right" : "footer-right";
+      }
       if (type === "first")
         layout[kind === "header" ? "headerFirst" : "footerFirst"] = text;
       else if (type === "even") {
@@ -607,6 +700,32 @@ export function importDocx(bytes: Uint8Array): {
       } else layout[kind] = text;
     }
     return layout;
+  }
+  function headerText(root: Element): string {
+    const fields: { code: string; result: boolean }[] = [];
+    const text: string[] = [];
+    function visit(el: Element) {
+      if (
+        el.localName === "fldSimple" &&
+        /^\s*PAGE(?:\s|$)/i.test(val(el, "instr"))
+      )
+        return;
+      if (el.localName === "fldChar") {
+        const kind = val(el, "fldCharType");
+        if (kind === "begin") fields.push({ code: "", result: false });
+        if (kind === "separate" && fields.at(-1)) fields.at(-1)!.result = true;
+        if (kind === "end") fields.pop();
+      } else if (el.localName === "instrText" && fields.at(-1))
+        fields.at(-1)!.code += el.textContent;
+      else if (
+        el.localName === "t" &&
+        !fields.some((f) => f.result && /^\s*PAGE(?:\s|$)/i.test(f.code))
+      )
+        text.push(el.textContent ?? "");
+      for (const child of children(el)) visit(child);
+    }
+    visit(root);
+    return text.join(" ");
   }
   const sections = children(body).flatMap((el) =>
       el.localName === "p"
@@ -626,7 +745,7 @@ export function importDocx(bytes: Uint8Array): {
     if (
       converted[0]?.type === "generatedIndex" &&
       previous?.type === "paragraph" &&
-      /^(tabla de contenido|table of contents|contenido|contents|índice)$/i.test(
+      /^(tabla de contenido|table of contents|contenido|contents|índice|(?:lista|tabla|índice) de (?:tablas|figuras|ilustraciones)|list of (?:tables|figures))$/i.test(
         plainText(previous).trim(),
       )
     ) {
@@ -668,6 +787,69 @@ export function importDocx(bytes: Uint8Array): {
       prior.content!.push(...node.content!);
     else merged.push(node);
   }
+  // Link Word Caption/SEQ paragraphs to their adjacent objects. Never infer captions from body prose alone.
+  for (let i = 0; i < merged.length; i++) {
+    const labelNode = merged[i];
+    if (!sourceParagraphs.get(labelNode)?.caption) continue;
+    const match = plainText(labelNode)
+      .trim()
+      .match(
+        /^(Tabla|Table|Figura|Figure|Fig\.|Ilustraci[oó]n)\s+([A-Z]?\d+|[IVXLCDM]+)[.\s:–—-]*([\s\S]*)$/i,
+      );
+    if (!match) continue;
+    const kind = /^(tabla|table)$/i.test(match[1]) ? "table" : "figure";
+    const objectType = kind === "table" ? "table" : "image";
+    let objectIndex = i + 1,
+      title = match[3].trim();
+    let titleNode: RichNode | undefined;
+    if (
+      !title &&
+      merged[objectIndex]?.type === "paragraph" &&
+      plainText(merged[objectIndex]).trim() &&
+      merged[objectIndex + 1]?.type === objectType
+    ) {
+      titleNode = merged[objectIndex++];
+      title = plainText(titleNode).trim();
+    }
+    while (
+      merged[objectIndex]?.type === "paragraph" &&
+      !plainText(merged[objectIndex]).trim()
+    )
+      objectIndex++;
+    const after = merged[objectIndex]?.type === objectType;
+    if (!after && merged[i - 1]?.type !== objectType) continue;
+    const object = merged[after ? objectIndex : i - 1];
+    const noteIndex = after ? objectIndex + 1 : i + 1;
+    const noteNode = merged[noteIndex];
+    const note =
+      noteNode?.type === "paragraph" &&
+      /^Nota\.\s|^Note\.\s/i.test(plainText(noteNode))
+        ? plainText(noteNode).replace(/^(?:Nota|Note)\.\s*/i, "")
+        : "";
+    const caption: RichNode = {
+      type: "caption",
+      attrs: {
+        id: crypto.randomUUID(),
+        kind,
+        targetId: object.attrs?.id,
+        title,
+        note,
+        label: match[1] + " " + match[2],
+        appendixNumbered: /^[A-Z]\d+/i.test(match[2]),
+      },
+    };
+    const remove = new Set([
+      labelNode,
+      ...(titleNode && after ? [titleNode] : []),
+      ...(note ? [noteNode] : []),
+    ]);
+    if (after)
+      for (let k = i + 1; k < objectIndex; k++)
+        if (!plainText(merged[k]).trim()) remove.add(merged[k]);
+    merged.splice(i, 1, caption);
+    for (let k = merged.length - 1; k >= 0; k--)
+      if (remove.has(merged[k])) merged.splice(k, 1);
+  }
   if (substitutions.size)
     warnings.add(
       "Fuentes sustituidas por alternativas locales: " +
@@ -685,9 +867,34 @@ export function importDocx(bytes: Uint8Array): {
     warnings.add(
       "Se importó la versión visible del texto con cambios aceptados; el historial de cambios de Word no se conserva.",
     );
+  const custom = xml("docProps/custom.xml");
+  const declared =
+    custom &&
+    all(custom, "property").find(
+      (p) => p.getAttribute("name") === "PrismaAcademicStyle",
+    )?.textContent;
+  const ownStyle =
+    declared && Object.hasOwn(academicPresets, declared)
+      ? (declared as AcademicStyle)
+      : undefined;
+  if (ownStyle && ownStyle !== "free" && !detected.size)
+    detected.set(ownStyle, {
+      paragraphs: 0,
+      evidence: new Set(["Propiedad PrismaAcademicStyle"]),
+    });
+  const style: AcademicStyle =
+    detected.size === 1 ? [...detected.keys()][0] : "free";
+  if (detected.size > 1)
+    warnings.add(
+      "Se detectaron varios estilos declarados. Se conserva el formato de cada sección; el estilo general permanece Libre.",
+    );
+  if (!detected.size)
+    warnings.add(
+      "Word no declara una norma académica reconocida. No se deduce APA, IEEE u otra norma solo por la fuente o los márgenes.",
+    );
   const flow: FlowDocument = {
     layout: layouts[0] ?? defaultLayout(),
-    academicStyle: "free",
+    academicStyle: style,
     references: [],
     content: normalizeAcademicDocument(
       {
@@ -695,8 +902,34 @@ export function importDocx(bytes: Uint8Array): {
         content: merged.length ? merged : [{ type: "paragraph" }],
       },
       [],
-      "free",
+      style,
     ),
   };
+  const entries = collectDocumentEntries(flow.content);
+  const count = (type: string, n: RichNode = flow.content): number =>
+    Number(n.type === type) +
+    (n.content ?? []).reduce((sum, c) => sum + count(type, c), 0);
+  const report: OfficeImportReport = {
+    academicStyles: [...detected].map(([style, hit]) => ({
+      style,
+      label: academicPresets[style].label,
+      paragraphs: hit.paragraphs,
+      evidence: [...hit.evidence],
+    })),
+    fontSubstitutions: [...substitutions].map((original) => ({
+      original,
+      replacement:
+        fontFamilies.find((f) => f.value === fontValue(original))?.label ??
+        "Liberation Sans",
+    })),
+    tables: count("table"),
+    images: count("image"),
+    captions: count("caption"),
+    appendices: entries.appendices.length,
+    indices: count("generatedIndex"),
+    sections: layouts.length || 1,
+    warnings: [...warnings],
+  };
+  flow.importReport = report;
   return { flow, warnings: [...warnings] };
 }

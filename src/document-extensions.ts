@@ -86,6 +86,7 @@ export const Caption = Node.create({
       label: "",
       academicStyle: "free",
       appendixLetter: "",
+      appendixNumbered: false,
     }),
   parseHTML: () => [{ tag: "div[data-caption]" }],
   renderHTML: ({ HTMLAttributes }) => [
@@ -456,10 +457,14 @@ export const DocumentAttributes = Extension.create({
                 x: number;
                 y: number;
                 width: number;
+                sourceLine?: boolean;
+                keepOriginal?: boolean;
               } | null;
               return b
                 ? {
                     "data-pdf-box": "true",
+                    "data-pdf-original": b.keepOriginal ? "true" : undefined,
+                    "data-pdf-source-line": b.sourceLine ? "true" : undefined,
                     style: `position:absolute;left:${b.x}pt;top:${b.y}pt;width:${b.width}pt;margin:0;min-height:1em`,
                   }
                 : {};

@@ -14,6 +14,7 @@ import {
   finalizeFontStreams,
 } from "./fonts";
 import type { LocalFont } from "./local-fonts";
+import type { OfficeImportReport } from "./office-compatibility";
 import { inheritedSectionLayout, type SectionInfo } from "./sections";
 import {
   normalizeAcademicDocument,
@@ -63,6 +64,7 @@ export type Watermark = {
   image?: string;
 };
 export type FlowDocument = {
+  importReport?: OfficeImportReport;
   fonts?: LocalFont[];
   content: RichNode;
   layout: PageLayout;
@@ -154,6 +156,7 @@ type Style = {
   comment?: { id: string; text: string; author: string };
 };
 export type TextDefaults = {
+  noWrap?: boolean;
   font?: string;
   size?: number;
   bold?: boolean;
@@ -439,7 +442,7 @@ export async function drawRichBox(
   for (const paragraph of node.content ?? [node]) {
     const lines = await linesFor(
       paragraph,
-      Math.max(10, width),
+      defaults.noWrap ? 1000000 : Math.max(10, width),
       getFont,
       defaults,
     );

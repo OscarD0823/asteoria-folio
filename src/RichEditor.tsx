@@ -139,7 +139,7 @@ export function RichEditor({
       }),
     ],
     content,
-    autofocus: autoFocus ? "end" : false,
+    autofocus: autoFocus ? (inline ? "end" : "start") : false,
     onCreate: ({ editor }) => {
       if (autoFocus && !editor.isDestroyed) onFocus(editor);
     },

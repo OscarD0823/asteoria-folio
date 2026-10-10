@@ -116,9 +116,9 @@ export function InstallApp() {
             <div className="help-links">
               <a
                 href={
-                  product.writer
-                    ? "https://github.com/OscarD0823/prisma-pdf/releases/tag/writer-v1.0.0"
-                    : "https://github.com/OscarD0823/prisma-pdf/releases/latest"
+                  "https://github.com/OscarD0823/prisma-pdf/releases/tag/" +
+                  product.tagPrefix +
+                  product.version
                 }
                 target="_blank"
                 rel="noreferrer"

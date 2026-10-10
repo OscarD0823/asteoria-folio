@@ -1,4 +1,4 @@
-Prisma PDF 6.0 / Prisma Writer 1.0 — Copyright (C) 2026 Prisma contributors.
+Prisma PDF 6.1 / Prisma Writer 1.1 — Copyright (C) 2026 Prisma contributors.
 Software libre bajo GNU Affero General Public License, version 3 o posterior.
 Sin garantia. Licencia completa: ./LICENSE.txt
 Codigo fuente de esta version: ./prisma-pdf-source.tar.gz
@@ -103,3 +103,9 @@ dictionary-es 4.0.0 — diccionario español Hunspell, GPL/LGPL/MPL;
   licencia íntegra: ./spelling/LICENSE.txt; https://github.com/wooorm/dictionaries.
 UnicodeData 18.0.0 — Unicode License V3; ./unicode/LICENSE.txt y SOURCE.json.
   https://www.unicode.org/Public/18.0.0/ucd/UnicodeData.txt
+
+Prisma Sheets 0.1 — hojas de cálculo locales:
+ExcelJS 4.4.0 — MIT; ./third-party/exceljs-LICENSE.txt.
+HyperFormula 3.5.0 — GPL-3.0; ./third-party/hyperformula-LICENSE.txt.
+Fuentes de estas dependencias: https://github.com/exceljs/exceljs y https://github.com/handsontable/hyperformula.
+El código fuente completo de Prisma se distribuye con la aplicación bajo AGPL-3.0-or-later.

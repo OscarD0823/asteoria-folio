@@ -766,7 +766,7 @@ export function captionBlocks(
     ? [
         {
           type: "paragraph",
-          attrs: base,
+          attrs: { ...base, spaceAfter: style === "apa" ? 0 : 8 },
           content: [
             { type: "text", text: "Nota. ", marks: [{ type: "italic" }] },
             { type: "text", text: note.replace(/^Nota\.\s*/i, "") },
@@ -789,7 +789,7 @@ export function captionBlocks(
         ? [
             paragraph(
               titleText,
-              base,
+              { ...base, spaceAfter: style === "apa" ? 0 : 6 },
               style === "apa" ? [{ type: "italic" }] : undefined,
             ),
           ]
@@ -1001,18 +1001,23 @@ export function normalizeAcademicDocument(
     ) {
       const kind: "table" | "figure" =
         node.type === "table" ? "table" : "figure";
-      const number =
-        style === "apa" && appendixLetter
-          ? kind === "table"
-            ? ++appendixTables
-            : ++appendixFigures
-          : kind === "table"
-            ? ++tables
-            : ++figures;
+      const inAppendix =
+        !!appendixLetter &&
+        (style === "apa" ||
+          (style === "free" &&
+            captions.get(clean(node.attrs?.id))?.attrs?.appendixNumbered ===
+              true));
+      const number = inAppendix
+        ? kind === "table"
+          ? ++appendixTables
+          : ++appendixFigures
+        : kind === "table"
+          ? ++tables
+          : ++figures;
       const item = {
         kind,
         number,
-        ...(style === "apa" && appendixLetter ? { appendixLetter } : {}),
+        ...(inAppendix ? { appendixLetter } : {}),
       };
       objects.set(clean(node.attrs?.id), item);
       node.attrs = {

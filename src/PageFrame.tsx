@@ -3,6 +3,7 @@ import { PageCanvas, MarkView } from "./components";
 import { RichEditor, type RichEditorInstance } from "./LazyRichEditor";
 import { getPdf, pdfjs } from "./renderer";
 import { runNative, type Inspection, type NativeObject } from "./native";
+import { markContent, textContentKey, preparedTextChanged } from "./pdf-text";
 import { fontCss } from "./fonts";
 import { plainText, type RichNode } from "./flow";
 import type { Watermark, PageLayout } from "./flow";
@@ -89,37 +90,6 @@ function RichView({ node }: { node: RichNode }) {
     </div>
   );
 }
-function markContent(m: Mark): RichNode {
-  if (m.richText) return m.richText;
-  return {
-    type: "doc",
-    content: (m.text ?? "").split("\n").map((text) => ({
-      type: "paragraph",
-      content: text
-        ? [
-            {
-              type: "text",
-              text,
-              marks: [
-                ...(m.bold ? [{ type: "bold" }] : []),
-                ...(m.italic ? [{ type: "italic" }] : []),
-                ...(m.underline ? [{ type: "underline" }] : []),
-                ...(m.strike ? [{ type: "strike" }] : []),
-                {
-                  type: "textStyle",
-                  attrs: {
-                    fontFamily: m.font ?? "PrismaSans",
-                    fontSize: m.size + "pt",
-                    color: m.color,
-                  },
-                },
-              ],
-            },
-          ]
-        : [],
-    })),
-  };
-}
 export function PageFrame(props: FrameProps) {
   const { page, source, number, width, tool, selected, editing, readonly } =
     props;
@@ -149,7 +119,17 @@ export function PageFrame(props: FrameProps) {
             fontFamily: m.font,
             fontSize: m.size,
             lineHeight: m.lineHeight ?? 1.25,
-            pdfBox: { x: m.x, y: m.y, width: m.width },
+            pdfBox: {
+              x: m.x,
+              y: m.y,
+              width: m.width,
+              sourceLine:
+                page.originalText?.some((o) => o.mark.id === m.id) ?? false,
+              keepOriginal:
+                page.originalText?.some(
+                  (o) => o.mark.id === m.id && !preparedTextChanged(o.mark, m),
+                ) ?? false,
+            },
           },
         }));
       }),
@@ -479,6 +459,34 @@ export function PageFrame(props: FrameProps) {
             {props.watermark.text}
           </div>
         )}
+        {page.originalText
+          ?.filter((o) =>
+            preparedTextChanged(
+              o.mark,
+              page.marks.find((m) => m.id === o.mark.id),
+            ),
+          )
+          .map((o) => {
+            const delta = rotation(page.rotation),
+              [bw, bh] = delta % 180 ? [h, w] : [w, h];
+            const [x, y] = turnPoint(o.mark.x, o.mark.y, bw, bh, delta);
+            return (
+              <div
+                key={"original-" + o.mark.id}
+                style={{
+                  position: "absolute",
+                  left: x * scale,
+                  top: y * scale,
+                  width: (o.rect[2] - o.rect[0] + 2) * scale,
+                  height: o.mark.height * scale,
+                  background: "white",
+                  pointerEvents: "none",
+                  transform: `rotate(${delta}deg)`,
+                  transformOrigin: "0 0",
+                }}
+              />
+            );
+          })}
         {allText && visible && (
           <RichEditor
             positioned
@@ -503,6 +511,12 @@ export function PageFrame(props: FrameProps) {
                 const b = n.attrs?.pdfBox as
                   | { x: number; y: number; width: number }
                   | undefined;
+                if (
+                  old &&
+                  textContentKey({ type: "doc", content: [n] }) ===
+                    textContentKey(markContent(old))
+                )
+                  return old;
                 return {
                   ...(old ??
                     prev ?? {
@@ -572,7 +586,13 @@ export function PageFrame(props: FrameProps) {
             );
           })}
         {(visible
-          ? page.marks.filter((m) => !allText || m.type !== "text")
+          ? page.marks.filter(
+              (m) =>
+                (!allText || m.type !== "text") &&
+                !page.originalText?.some(
+                  (o) => o.mark.id === m.id && !preparedTextChanged(o.mark, m),
+                ),
+            )
           : []
         ).map((original) => {
           const m = draft?.id === original.id ? draft : original;

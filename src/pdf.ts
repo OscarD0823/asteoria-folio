@@ -19,6 +19,7 @@ import {
 } from "./flow";
 import { createFontProvider, finalizeFontStreams } from "./fonts";
 import type { LocalFont } from "./local-fonts";
+import { preparedTextChanged } from "./pdf-text";
 
 export type MarkType =
   | "text"
@@ -64,6 +65,7 @@ export type Page = {
   rotation: number;
   marks: Mark[];
   textReady?: boolean;
+  originalText?: { mark: Mark; rect: [number, number, number, number] }[];
 };
 export type Workspace = {
   fonts?: LocalFont[];
@@ -180,12 +182,40 @@ export async function buildPdf(
   for (const model of chosen) {
     const source = docs.get(model.sourceId);
     if (!source) throw new Error("No se encontró el documento original.");
-    const [page] = await output.copyPages(source, [model.index]);
+    const changedText =
+      model.originalText?.filter((o) =>
+        preparedTextChanged(
+          o.mark,
+          model.marks.find((m) => m.id === o.mark.id),
+        ),
+      ) ?? [];
+    const originalIds = new Set(model.originalText?.map((o) => o.mark.id));
+    let pageSource = source,
+      pageIndex = model.index;
+    if (changedText.length) {
+      const request = {
+        action: "redactText" as const,
+        bytes: state.sources.find((s) => s.id === model.sourceId)!.bytes,
+        index: model.index,
+        rects: changedText.map((o) => o.rect),
+      };
+      const bytes = (await (typeof window === "undefined"
+        ? (await import("./native-core")).nativeOperation(request)
+        : (await import("./native")).runNative(request))) as Uint8Array;
+      pageSource = await PDFDocument.load(bytes);
+      pageIndex = 0;
+    }
+    const [page] = await output.copyPages(pageSource, [pageIndex]);
     output.addPage(page);
     const baseRotation = rotation(page.getRotation().angle);
     const crop = page.getCropBox();
     page.setRotation(degrees(rotation(baseRotation + model.rotation)));
     for (const mark of model.marks) {
+      if (
+        originalIds.has(mark.id) &&
+        !changedText.some((o) => o.mark.id === mark.id)
+      )
+        continue;
       const r = rotation(baseRotation + mark.viewRotation);
       const h = r % 180 === 0 ? crop.height : crop.width;
       const matrices: Record<
@@ -217,6 +247,7 @@ export async function buildPdf(
               color: mark.color,
               align: mark.align,
               lineHeight: mark.lineHeight ?? 1.25,
+              noWrap: originalIds.has(mark.id),
             },
             getFont,
           );

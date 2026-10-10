@@ -1,6 +1,6 @@
 {
   "name": "prisma-pdf",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "license": "AGPL-3.0-or-later",
   "private": true,
   "type": "module",
@@ -35,7 +35,9 @@
     "citeproc": "2.4.63",
     "dictionary-es": "4.0.0",
     "docx": "9.9.0",
+    "exceljs": "4.4.0",
     "fflate": "0.8.3",
+    "hyperformula": "3.5.0",
     "lucide-react": "^0.468.0",
     "mathjax-full": "3.2.2",
     "mupdf": "^1.28.1",

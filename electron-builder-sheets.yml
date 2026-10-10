@@ -1,0 +1,27 @@
+appId: com.oscard.prismasheets
+productName: Prisma Sheets
+directories:
+  output: release-sheets
+extraMetadata:
+  name: prisma-sheets
+  version: 0.1.0
+  prismaProduct: sheets
+files:
+  - dist-sheets/**/*
+  - desktop/**/*
+  - package.json
+  - "!node_modules/**/*"
+asar: true
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: public/sheets-icons/prisma.ico
+  signExecutable: false
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: Prisma-Sheets-${version}-Windows-Setup.exe

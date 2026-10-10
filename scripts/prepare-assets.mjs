@@ -9,11 +9,19 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 const require = createRequire(import.meta.url);
 const writer = process.env.VITE_PRODUCT === "writer";
+const sheets = process.env.VITE_PRODUCT === "sheets";
 const appVersion = writer
-  ? "1.0.0"
-  : JSON.parse(readFileSync("package.json", "utf8")).version;
-const releaseTag = (writer ? "writer-v" : "v") + appVersion;
-const assetName = writer ? "Prisma-Writer" : "Prisma-PDF";
+  ? "1.1.0"
+  : sheets
+    ? "0.1.0"
+    : JSON.parse(readFileSync("package.json", "utf8")).version;
+const releaseTag =
+  (sheets ? "sheets-v" : writer ? "writer-v" : "v") + appVersion;
+const assetName = sheets
+  ? "Prisma-Sheets"
+  : writer
+    ? "Prisma-Writer"
+    : "Prisma-PDF";
 const release = "https://github.com/OscarD0823/prisma-pdf/releases/";
 writeFileSync(
   "public/version.json",
@@ -39,13 +47,22 @@ writeFileSync(
         "-" +
         appVersion +
         "-Windows-Setup.exe",
-      features: [
-        "Biblioteca de fuentes con favoritas, texto de muestra y vistas de lista o tarjetas",
-        "Galería de estilos, índices con relleno y numeración alineada",
-        "Revisor ortográfico de español e inspector Unicode locales",
-        "Escritura con separación de páginas e importación de DOCX",
-        "Comprobación de actualizaciones sin enviar documentos",
-      ],
+      features: sheets
+        ? [
+            "Editor local de hojas XLSX y CSV",
+            "Fórmulas, formatos y varias hojas",
+            "Tablas para Word y Writer, exportación PDF e impresión",
+            "Guardado local y aviso de funciones incompatibles",
+          ]
+        : [
+            "Informe de compatibilidad al importar documentos Word",
+            "Índices de tablas y figuras actualizables en Word",
+            "Biblioteca de fuentes con favoritas, texto de muestra y vistas de lista o tarjetas",
+            "Galería de estilos, índices con relleno y numeración alineada",
+            "Revisor ortográfico de español e inspector Unicode locales",
+            "Escritura con separación de páginas e importación de DOCX",
+            "Comprobación de actualizaciones sin enviar documentos",
+          ],
     },
     null,
     2,
@@ -93,6 +110,8 @@ for (const dependency of [
   "docx",
   "citeproc",
   "fflate",
+  "exceljs",
+  "hyperformula",
   "typo-js",
 ]) {
   let root;

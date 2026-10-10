@@ -194,6 +194,22 @@ export async function readProject(bytes: Uint8Array): Promise<Workspace> {
     )
       throw new Error("Una página del proyecto no es válida.");
     ids.add(p.id);
+    if (p.originalText !== undefined) {
+      if (!Array.isArray(p.originalText) || p.originalText.length > 100000)
+        throw new Error("Texto original del proyecto no válido.");
+      for (const o of p.originalText) {
+        if (
+          !o?.mark ||
+          !Array.isArray(o.rect) ||
+          o.rect.length !== 4 ||
+          o.rect.some((n) => !Number.isFinite(n)) ||
+          o.rect[2] <= o.rect[0] ||
+          o.rect[3] <= o.rect[1]
+        )
+          throw new Error("Área de texto original no válida.");
+        check(o.mark);
+      }
+    }
     for (const m of p.marks) {
       for (const n of [m.x, m.y, m.width, m.height, m.size, m.viewRotation])
         if (!Number.isFinite(n))

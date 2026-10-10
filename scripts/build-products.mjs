@@ -21,34 +21,44 @@ run(["node_modules/vite/bin/vite.js", "build"]);
 run(["scripts/package-source.mjs"]);
 run(["scripts/build-offline.mjs"]);
 try {
-  run(["scripts/prepare-assets.mjs"], { VITE_PRODUCT: "writer" });
-  run(["node_modules/vite/bin/vite.js", "build", "--outDir", "dist-writer"], {
-    VITE_PRODUCT: "writer",
-  });
-  cpSync("public/writer-logo.svg", "dist-writer/logo.svg");
-  cpSync("public/writer-icons", "dist-writer/icons", { recursive: true });
-  const manifest = JSON.parse(
-    readFileSync("public/manifest.webmanifest", "utf8"),
-  );
-  Object.assign(manifest, {
-    name: "Prisma Writer",
-    short_name: "Prisma Writer",
-    description: "Procesador de documentos local y privado",
-    categories: ["productivity"],
-    id: "./",
-    start_url: "./",
-    scope: "./",
-  });
-  writeFileSync(
-    "dist-writer/manifest.webmanifest",
-    JSON.stringify(manifest, null, 2) + "\n",
-  );
-  cpSync(
-    "dist/prisma-pdf-source.tar.gz",
-    "dist-writer/prisma-pdf-source.tar.gz",
-  );
-  cpSync("LICENSE", "dist-writer/LICENSE.txt");
-  run(["scripts/build-offline.mjs"], { PRISMA_OUTDIR: "dist-writer" });
+  for (const [kind, name, description] of [
+    ["writer", "Prisma Writer", "Procesador de documentos local y privado"],
+    [
+      "sheets",
+      "Prisma Sheets",
+      "Hojas de cálculo locales compatibles con XLSX",
+    ],
+  ]) {
+    const output = "dist-" + kind;
+    run(["scripts/prepare-assets.mjs"], { VITE_PRODUCT: kind });
+    run(["node_modules/vite/bin/vite.js", "build", "--outDir", output], {
+      VITE_PRODUCT: kind,
+    });
+    cpSync("public/" + kind + "-logo.svg", output + "/logo.svg");
+    cpSync("public/" + kind + "-icons", output + "/icons", { recursive: true });
+    const manifest = JSON.parse(
+      readFileSync("public/manifest.webmanifest", "utf8"),
+    );
+    Object.assign(manifest, {
+      name,
+      short_name: name,
+      description,
+      categories: ["productivity"],
+      id: "./",
+      start_url: "./",
+      scope: "./",
+    });
+    writeFileSync(
+      output + "/manifest.webmanifest",
+      JSON.stringify(manifest, null, 2) + "\n",
+    );
+    cpSync(
+      "dist/prisma-pdf-source.tar.gz",
+      output + "/prisma-pdf-source.tar.gz",
+    );
+    cpSync("LICENSE", output + "/LICENSE.txt");
+    run(["scripts/build-offline.mjs"], { PRISMA_OUTDIR: output });
+  }
 } finally {
   run(["scripts/prepare-assets.mjs"]);
 }
@@ -63,6 +73,7 @@ rmSync(siteOutput, { recursive: true, force: true });
 mkdirSync("dist-site", { recursive: true });
 cpSync("dist", "dist-site", { recursive: true });
 cpSync("dist-writer", "dist-site/writer", { recursive: true });
+cpSync("dist-sheets", "dist-site/sheets", { recursive: true });
 console.log(
-  "Prisma PDF: dist · Prisma Writer: dist-writer · Web pública: dist-site",
+  "Prisma PDF: dist · Prisma Writer: dist-writer · Prisma Sheets: dist-sheets · Web pública: dist-site",
 );

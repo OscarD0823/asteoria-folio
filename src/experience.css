@@ -769,3 +769,61 @@ tr.editor-page-gap {
     transition: none;
   }
 }
+.office-import-report {
+  display: grid;
+  gap: 12px;
+  color: #20273a;
+}
+.office-import-report h3,
+.office-import-report p {
+  margin: 0;
+}
+.office-import-report p,
+.office-import-report li {
+  line-height: 1.5;
+}
+.office-counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.office-counts > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f7f8fc;
+}
+.office-counts strong {
+  font-size: 24px;
+}
+.office-counts span {
+  font-size: 12px;
+}
+.office-style-results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.office-style-results article {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.office-style-results span,
+.office-style-results small {
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 550px) {
+  .office-style-results {
+    grid-template-columns: 1fr;
+  }
+  .office-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

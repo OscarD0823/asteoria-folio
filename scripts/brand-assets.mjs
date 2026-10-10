@@ -15,8 +15,9 @@ try {
   );
 }
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const icons = resolve(root, "public/icons");
-const logo = resolve(root, "public/logo.svg");
+const kind = process.argv.includes("--sheets") ? "sheets" : "pdf";
+const icons = resolve(root, kind === "sheets" ? "public/sheets-icons" : "public/icons");
+const logo = resolve(root, kind === "sheets" ? "public/sheets-logo.svg" : "public/logo.svg");
 mkdirSync(icons, { recursive: true });
 for (const size of [192, 512, 1024]) {
   await sharp(logo)

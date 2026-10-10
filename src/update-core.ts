@@ -25,7 +25,7 @@ export function validateRelease(value: unknown): ReleaseInfo {
   const r = value as ReleaseInfo;
   if (!r || !/^\d{1,4}\.\d{1,4}\.\d{1,4}$/.test(r.version))
     throw new Error("La información de versión no es válida.");
-  const tag = (product.writer ? "writer-v" : "v") + r.version;
+  const tag = product.tagPrefix + r.version;
   if (
     r.releaseUrl !== releaseBase + "tag/" + tag ||
     r.androidUrl !==

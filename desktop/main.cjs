@@ -23,10 +23,12 @@ protocol.registerSchemesAsPrivileged([
 ]);
 let window;
 const writer = require("../package.json").prismaProduct === "writer";
+const sheets = require("../package.json").prismaProduct === "sheets";
 if (writer) app.setName("Prisma Writer");
+if (sheets) app.setName("Prisma Sheets");
 const smoke = process.argv.includes("--smoke-test");
 app.whenReady().then(() => {
-  const root = path.resolve(__dirname, writer ? "../dist-writer" : "../dist");
+  const root = path.resolve(__dirname, sheets ? "../dist-sheets" : writer ? "../dist-writer" : "../dist");
   protocol.handle("prisma", (request) => {
     const url = new URL(request.url);
     if (url.host !== "app") return new Response("Not found", { status: 404 });
@@ -44,7 +46,7 @@ app.whenReady().then(() => {
     minWidth: 760,
     minHeight: 600,
     backgroundColor: "#f7f8fc",
-    title: writer ? "Prisma Writer" : "Prisma PDF",
+    title: sheets ? "Prisma Sheets" : writer ? "Prisma Writer" : "Prisma PDF",
     icon: path.join(root, "icons/prisma-512.png"),
     autoHideMenuBar: true,
     webPreferences: {

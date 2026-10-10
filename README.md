@@ -1,9 +1,11 @@
-# Prisma PDF 6.0 y Prisma Writer 1.0
+# Prisma PDF 6.1, Writer 1.1 y Sheets 0.1
 
 Editor de PDF y creador de documentos en español. Web, PWA, Android y Windows; todos procesan los documentos en el dispositivo.
 
 - [Abrir editor](https://oscard0823.github.io/prisma-pdf/)
 - [Abrir Prisma Writer](https://oscard0823.github.io/prisma-pdf/writer/) · [Guía y compatibilidad](README-writer.md)
+- [Abrir Prisma Sheets](https://oscard0823.github.io/prisma-pdf/sheets/) · [Funciones y límites de XLSX](README-sheets.md)
+- [Compatibilidad y orden de desarrollo de la suite Prisma](README-office.md)
 - [Descargar APK y EXE](https://github.com/OscarD0823/prisma-pdf/releases/latest)
 
 ## Crear y editar

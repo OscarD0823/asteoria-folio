@@ -1780,3 +1780,15 @@ p {
     font-size: 16px;
   }
 }
+
+/* Fixed PDF lines retain their original layout until the user changes them. */
+[data-pdf-source-line="true"] {
+  white-space: pre !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+[data-pdf-original="true"],
+[data-pdf-original="true"] * {
+  color: transparent !important;
+  background-color: transparent !important;
+}

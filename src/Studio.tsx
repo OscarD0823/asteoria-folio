@@ -771,6 +771,15 @@ export default function Studio() {
               ...p,
               sourceId: id,
               textReady: true,
+              originalText: info.objects.map((o, i) => ({
+                mark: marks[i],
+                rect: [
+                  o.x + 0.01,
+                  (o.baseline ?? o.y + o.size) - o.size * 0.65,
+                  o.x + Math.max(0.1, o.width) - 0.01,
+                  (o.baseline ?? o.y + o.size) - o.size * 0.15,
+                ] as [number, number, number, number],
+              })),
               marks: [...p.marks, ...marks],
             };
           }),
@@ -1885,6 +1894,9 @@ export default function Studio() {
             >
               Código abierto
               <ArrowRight size={13} />
+            </a>
+            <a href="https://oscard0823.github.io/prisma-pdf/sheets/">
+              Abrir Prisma Sheets <ArrowRight size={13} />
             </a>
           </footer>
         </>

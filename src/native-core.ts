@@ -29,7 +29,9 @@ export type NativeRequest = {
     | "remove"
     | "redact"
     | "compress"
-    | "editAll";
+    | "editAll"
+    | "redactText";
+  rects?: [number, number, number, number][];
   bytes: Uint8Array;
   index: number;
   objectId?: string;
@@ -238,41 +240,11 @@ export async function nativeOperation(
               ),
           );
           pages.push({ ...data, objects });
-          for (const o of objects) {
-            const baseline = o.baseline ?? o.y + o.size;
-            const a = page.createAnnotation("Redact");
-            try {
-              a.setRect([
-                o.x + 0.01,
-                baseline - o.size * 0.65,
-                o.x + Math.max(0.1, o.width) - 0.01,
-                baseline - o.size * 0.15,
-              ]);
-              a.setColor([]);
-              a.update();
-            } finally {
-              a.destroy();
-            }
-          }
-          if (objects.length) {
-            page.applyRedactions(
-              false,
-              m.PDFPage.REDACT_IMAGE_NONE,
-              m.PDFPage.REDACT_LINE_ART_NONE,
-              m.PDFPage.REDACT_TEXT_REMOVE,
-            );
-            page.update();
-          }
         } finally {
           page.destroy();
         }
       }
-      const buffer = input.saveToBuffer("garbage=4,compress=yes");
-      try {
-        return { bytes: new Uint8Array(buffer.asUint8Array()), pages };
-      } finally {
-        buffer.destroy();
-      }
+      return { bytes: request.bytes.slice(), pages };
     }
     if (request.action === "inspect" || request.action === "watermarks") {
       const page = input.loadPage(request.index);
@@ -287,6 +259,37 @@ export async function nativeOperation(
       output.graftPage(-1, input, request.index);
       const page = output.loadPage(0);
       try {
+        if (request.action === "redactText") {
+          for (const rect of request.rects ?? []) {
+            if (
+              rect.some((n) => !Number.isFinite(n)) ||
+              rect[2] <= rect[0] ||
+              rect[3] <= rect[1]
+            )
+              throw new Error("Área de texto no válida.");
+            const a = page.createAnnotation("Redact");
+            try {
+              a.setRect(rect);
+              a.setColor([]);
+              a.update();
+            } finally {
+              a.destroy();
+            }
+          }
+          page.applyRedactions(
+            false,
+            m.PDFPage.REDACT_IMAGE_NONE,
+            m.PDFPage.REDACT_LINE_ART_NONE,
+            m.PDFPage.REDACT_TEXT_REMOVE,
+          );
+          page.update();
+          const buffer = output.saveToBuffer("garbage=4,compress=yes");
+          try {
+            return new Uint8Array(buffer.asUint8Array());
+          } finally {
+            buffer.destroy();
+          }
+        }
         let box = request.rect;
         let imageMethod = m.PDFPage.REDACT_IMAGE_PIXELS,
           textMethod = m.PDFPage.REDACT_TEXT_REMOVE,

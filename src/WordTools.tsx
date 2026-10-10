@@ -986,6 +986,10 @@ export function WordTools(p: Props) {
                 !editor,
               )}
               {action("Buscar en documento", Search, p.onNavigate)}
+              {p.flow?.importReport &&
+                action("Compatibilidad con Office", BookOpen, () =>
+                  open("compatibility"),
+                )}
               {action(
                 "Buscar y reemplazar",
                 Search,
@@ -1203,6 +1207,7 @@ export function WordTools(p: Props) {
                   sections: "Secciones del documento",
                   academic: "Formatos del trabajo",
                   index: "Personalizar índice",
+                  compatibility: "Resumen de importación desde Word",
                 }[dialog]
               }
             </h2>
@@ -1210,6 +1215,75 @@ export function WordTools(p: Props) {
               <X size={19} />
             </Button>
           </header>
+          {dialog === "compatibility" && p.flow?.importReport && (
+            <div className="office-import-report">
+              <p>
+                Estos resultados corresponden al archivo DOCX al abrirlo. El
+                análisis y la edición se realizan en este dispositivo.
+              </p>
+              <div className="office-counts">
+                {Object.entries({
+                  Tablas: p.flow.importReport.tables,
+                  Imágenes: p.flow.importReport.images,
+                  "Títulos de objetos": p.flow.importReport.captions,
+                  Apéndices: p.flow.importReport.appendices,
+                  Índices: p.flow.importReport.indices,
+                  Secciones: p.flow.importReport.sections,
+                }).map(([label, value]) => (
+                  <div key={label}>
+                    <strong>{value}</strong>
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+              <h3>Normas declaradas en el documento</h3>
+              <p>
+                Se reconocen nombres de estilos o la norma guardada por Prisma.
+                La tipografía y los márgenes compartidos por varias normas no
+                bastan para identificarlas con certeza.
+              </p>
+              {p.flow.importReport.academicStyles.length ? (
+                <div className="office-style-results">
+                  {p.flow.importReport.academicStyles.map((s) => (
+                    <article key={s.style}>
+                      <strong>{s.label}</strong>
+                      <span>{s.paragraphs} párrafos</span>
+                      <small>{s.evidence.join(", ")}</small>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p>
+                  No se encontró una norma declarada. Puedes elegirla en
+                  Referencias → Formatos del trabajo.
+                </p>
+              )}
+              {!!p.flow.importReport.fontSubstitutions.length && (
+                <>
+                  <h3>Fuentes sustituidas</h3>
+                  <ul>
+                    {p.flow.importReport.fontSubstitutions.map((f) => (
+                      <li key={f.original}>
+                        {f.original} → {f.replacement}
+                      </li>
+                    ))}
+                  </ul>
+                  <p>
+                    Las alternativas pueden cambiar la paginación. Importa una
+                    copia autorizada de la fuente original cuando la institución
+                    la exija.
+                  </p>
+                </>
+              )}
+              <h3>Observaciones</h3>
+              <ul>
+                {p.flow.importReport.warnings.map((w) => (
+                  <li key={w}>{w}</li>
+                ))}
+              </ul>
+              <Button onClick={() => setDialog("")}>Cerrar resumen</Button>
+            </div>
+          )}
           {dialog === "academic" && (
             <div className="academic-browser">
               <div className="academic-format-list">
@@ -2077,9 +2151,13 @@ export function WordTools(p: Props) {
               <p>{selectedStats}</p>
             </>
           )}
-          {!["references", "symbol", "statistics", "replace"].includes(
-            dialog,
-          ) && (
+          {![
+            "references",
+            "symbol",
+            "statistics",
+            "replace",
+            "compatibility",
+          ].includes(dialog) && (
             <footer>
               <Button onClick={() => setDialog("")}>Cancelar</Button>
               <Button
