@@ -36,6 +36,7 @@ import {
 import { download } from "./download";
 import { Updates } from "./Updates";
 import { InstallApp } from "./InstallApp";
+import { product } from "./product";
 import { loadBook, saveBook } from "./sheets-storage";
 import "./sheets.css";
 type Pos = { row: number; col: number };
@@ -732,7 +733,7 @@ export default function Sheets() {
             </button>
           </div>
           <footer>
-            Prisma Sheets 0.1.0 · Primera versión{" "}
+            Prisma Sheets {product.version} · Primera versión{" "}
             <nav>
               <a
                 href="https://oscard0823.github.io/prisma-pdf/writer/"
