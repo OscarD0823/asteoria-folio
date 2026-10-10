@@ -133,11 +133,8 @@ app.whenReady().then(() => {
     });
   }
   window.webContents.setWindowOpenHandler(({ url }) => {
-    if (
-      /^https:\/\/(github\.com|mupdf\.readthedocs\.io|www\.gnu\.org)\//.test(
-        url,
-      )
-    )
+    // Explicit links open in the system browser; files and executable schemes are denied.
+    if (/^https?:\/\//i.test(url))
       void shell.openExternal(url);
     return { action: "deny" };
   });
