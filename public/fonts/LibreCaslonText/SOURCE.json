@@ -1,0 +1,83 @@
+{
+  "family": "Libre Caslon Text",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/librecaslontext/METADATA.pb",
+  "metadataSha256": "e336e3e3b8088589b73f43287e6823e139f9c0ab645092f6851d2a92a5300f0c",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/librecaslontext/OFL.txt",
+  "licenseSha256": "a294245c822c5aa9fd9a9f3189418e99415428be5fecadf797793d5d8f6a3ad3",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "LibreCaslonText[wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/librecaslontext/LibreCaslonText%5Bwght%5D.ttf",
+      "sha256": "c11809dbfd5445886293d89b32bfc2584075c80e77750cf1c284113e36b8b3f4"
+    },
+    {
+      "filename": "LibreCaslonText-Italic[wght].ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/librecaslontext/LibreCaslonText-Italic%5Bwght%5D.ttf",
+      "sha256": "60ca1a3aade61c8c381800ca85b9b2f0fb341d89ebe065e12cd6ec2ee2e53e54"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "LibreCaslonText-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "LibreCaslonText[wght].ttf",
+      "axisInstances": {
+        "wght": 400.0
+      },
+      "glyphCount": 537,
+      "unicodeCount": 446,
+      "sha256": "31564ec8010f6045032e189d5f82fdb419a7183902f24fdf03a4a8535226d255",
+      "bytes": 73816,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "LibreCaslonText-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "LibreCaslonText[wght].ttf",
+      "axisInstances": {
+        "wght": 700.0
+      },
+      "glyphCount": 537,
+      "unicodeCount": 446,
+      "sha256": "c1afc8d1f2ef28b2b70164fa8f6f16e25c235d31c525489cf4b4f398fe7b4386",
+      "bytes": 73808,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "LibreCaslonText-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "LibreCaslonText-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 400.0
+      },
+      "glyphCount": 550,
+      "unicodeCount": 447,
+      "sha256": "8ec332d7accfd7665d4ef23cb0c3144476221794bacb52421cbcb3f4479ec5c1",
+      "bytes": 103408,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "LibreCaslonText-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "LibreCaslonText-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 700.0
+      },
+      "glyphCount": 550,
+      "unicodeCount": 447,
+      "sha256": "5c614510c156f832e15ead99a550804eb6ed0cb62978e16c863567a5a2f1f6d0",
+      "bytes": 103884,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

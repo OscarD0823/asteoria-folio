@@ -1,0 +1,83 @@
+{
+  "family": "Exo 2",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/exo2/METADATA.pb",
+  "metadataSha256": "465b6e658106342dab756a190234bb03d1d7d3bdcb21e68b6d74f9807a781b43",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/exo2/OFL.txt",
+  "licenseSha256": "7f95a8eeecc6904ffc81cd10cc8ebc7fcee72a67922924bf45f02dff03b88127",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "Exo2[wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/exo2/Exo2%5Bwght%5D.ttf",
+      "sha256": "205a448676a2586f9c57c25f3d5c58ca8db7e6cf5edf7506783a010c6fe2bfb5"
+    },
+    {
+      "filename": "Exo2-Italic[wght].ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/exo2/Exo2-Italic%5Bwght%5D.ttf",
+      "sha256": "bad568cea9ed23d6ae4aea41ad3f7747752952aabdd85d7f01474af392a21b32"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "Exo2-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "Exo2[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 1033,
+      "unicodeCount": 910,
+      "sha256": "e3a9a266dcc164115fd3002fb0f86d91bbff1782aec9c97b894cec1e9854b667",
+      "bytes": 132592,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "Exo2-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "Exo2[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 1033,
+      "unicodeCount": 910,
+      "sha256": "1c78bc16589f9f39830ad32493e5cab163ec504ff9028f91c84048390d2f792f",
+      "bytes": 132700,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "Exo2-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "Exo2-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 1031,
+      "unicodeCount": 910,
+      "sha256": "47c11ed88dab804edf099cd0e16b09a77732c62ebb79fdec2967c4160195a137",
+      "bytes": 132292,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "Exo2-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "Exo2-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 1031,
+      "unicodeCount": 910,
+      "sha256": "9a0f6c5e7c0c114bfc792d3cabe0cdeb5a1b2128858bd8c5bdc8f7ec50eb8a0a",
+      "bytes": 132448,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

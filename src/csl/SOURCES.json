@@ -1,0 +1,83 @@
+[
+  {
+    "key": "mla",
+    "style": "modern-language-association",
+    "url": "https://raw.githubusercontent.com/citation-style-language/styles/f2c83bb7374107239366dd168b616c4e75ffa36a/modern-language-association.csl",
+    "sha256": "e1432698ef28938d044b06bd45ddcc57d6b974cec25f71007075646a11f99484"
+  },
+  {
+    "key": "chicago",
+    "style": "chicago-author-date",
+    "url": "https://raw.githubusercontent.com/citation-style-language/styles/f2c83bb7374107239366dd168b616c4e75ffa36a/chicago-author-date.csl",
+    "sha256": "002fade78d7e4fe9d42936a16b43a8066b097013f6255df40b1bfba6631eff9b"
+  },
+  {
+    "key": "harvard",
+    "style": "harvard-cite-them-right",
+    "url": "https://raw.githubusercontent.com/citation-style-language/styles/f2c83bb7374107239366dd168b616c4e75ffa36a/harvard-cite-them-right.csl",
+    "sha256": "0ca3d2c7c881cd98cdd81098b5349f5921edf430498aa9a5a41918621cf7cc45"
+  },
+  {
+    "key": "acs",
+    "style": "american-chemical-society",
+    "url": "https://raw.githubusercontent.com/citation-style-language/styles/f2c83bb7374107239366dd168b616c4e75ffa36a/american-chemical-society.csl",
+    "sha256": "6dac0308d4c0e2b462ef4c7607b970fda9be9a730784c93568e6e3cc8639bce6"
+  },
+  {
+    "key": "abnt",
+    "style": "associacao-brasileira-de-normas-tecnicas",
+    "url": "https://raw.githubusercontent.com/citation-style-language/styles/f2c83bb7374107239366dd168b616c4e75ffa36a/associacao-brasileira-de-normas-tecnicas.csl",
+    "sha256": "4f3f2eadb94c314476608e070acb889253f7007fbbe3e2c251ffc90e2163eaae"
+  },
+  {
+    "key": "acm",
+    "style": "association-for-computing-machinery",
+    "url": "https://raw.githubusercontent.com/citation-style-language/styles/f2c83bb7374107239366dd168b616c4e75ffa36a/association-for-computing-machinery.csl",
+    "sha256": "085a33eac864b8a88cfcac2ff25929d038d82a5227b15bdd3b23309d1c418771"
+  },
+  {
+    "key": "ama",
+    "style": "american-medical-association",
+    "url": "https://raw.githubusercontent.com/citation-style-language/styles/f2c83bb7374107239366dd168b616c4e75ffa36a/american-medical-association.csl",
+    "sha256": "d70f843d93c2b1e8c59c0e26e2396bea4ed99fb4a1aac69b6dddc249a10fadf7"
+  },
+  {
+    "key": "nature",
+    "style": "nature",
+    "url": "https://raw.githubusercontent.com/citation-style-language/styles/f2c83bb7374107239366dd168b616c4e75ffa36a/nature.csl",
+    "sha256": "15b1272a3c360168e0b51ab9257534b08ced67190ed57be7a1c32cea8fc87be8"
+  },
+  {
+    "key": "science",
+    "style": "science",
+    "url": "https://raw.githubusercontent.com/citation-style-language/styles/f2c83bb7374107239366dd168b616c4e75ffa36a/science.csl",
+    "sha256": "90b515c57773a7d926ae596561a289710875cbb2ba5f5d857c62f39c63e1930e"
+  },
+  {
+    "locale": "en-US",
+    "url": "https://raw.githubusercontent.com/citation-style-language/locales/a89adece41013402236e2c9020972d7e931fbab8/locales-en-US.xml",
+    "sha256": "ac864c7c21166b4390d82c31792cdc509400727fa0060b43d8aa17e07f9cb079"
+  },
+  {
+    "locale": "es-ES",
+    "url": "https://raw.githubusercontent.com/citation-style-language/locales/a89adece41013402236e2c9020972d7e931fbab8/locales-es-ES.xml",
+    "sha256": "ae4a12f612be754e54843ba88ae6641eb708647cea164b5b922bb6bf9b21c91f"
+  },
+  {
+    "locale": "pt-BR",
+    "url": "https://raw.githubusercontent.com/citation-style-language/locales/a89adece41013402236e2c9020972d7e931fbab8/locales-pt-BR.xml",
+    "sha256": "f67d781260405ea7617d43e20eb0c363e4e3db4e420d9b017ba9c9c2b797e12b"
+  },
+  {
+    "key": "vancouver",
+    "style": "taylor-and-francis-vancouver-national-library-of-medicine",
+    "url": "https://raw.githubusercontent.com/citation-style-language/styles/f2c83bb7374107239366dd168b616c4e75ffa36a/taylor-and-francis-vancouver-national-library-of-medicine.csl",
+    "sha256": "a63656a0a6085497dffc9638403f3d2d91c1aa01b93c9b6fae9236076d6125cd"
+  },
+  {
+    "key": "cse",
+    "style": "taylor-and-francis-council-of-science-editors-author-date",
+    "url": "https://raw.githubusercontent.com/citation-style-language/styles/f2c83bb7374107239366dd168b616c4e75ffa36a/taylor-and-francis-council-of-science-editors-author-date.csl",
+    "sha256": "b2f2fc72589410f500966d6d9e39f5ce9b8105d95e7b1300fdd4d2e370512c0d"
+  }
+]

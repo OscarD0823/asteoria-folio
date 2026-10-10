@@ -8,7 +8,13 @@ import {
   type PDFPage,
   type PDFFont,
 } from "pdf-lib";
-import { createFontProvider, resolveFontRuns } from "./fonts";
+import {
+  createFontProvider,
+  resolveFontRuns,
+  finalizeFontStreams,
+} from "./fonts";
+import type { LocalFont } from "./local-fonts";
+import { inheritedSectionLayout, type SectionInfo } from "./sections";
 import {
   normalizeAcademicDocument,
   captionBlocks,
@@ -57,11 +63,14 @@ export type Watermark = {
   image?: string;
 };
 export type FlowDocument = {
+  fonts?: LocalFont[];
   content: RichNode;
   layout: PageLayout;
   academicStyle?: AcademicStyle;
   references?: ReferenceRecord[];
   pageMap?: Record<string, number>;
+  pageLayouts?: PageLayout[];
+  pageSections?: string[];
 };
 export const defaultLayout = (): PageLayout => ({
   format: "a4",
@@ -452,10 +461,15 @@ export async function drawRichBox(
 async function buildFlowPass(
   flow: FlowDocument,
   title = "Mi documento",
-): Promise<{ bytes: Uint8Array; pageMap: Record<string, number> }> {
+): Promise<{
+  bytes: Uint8Array;
+  pageMap: Record<string, number>;
+  pageLayouts: PageLayout[];
+  pageSections: string[];
+}> {
   const doc = await PDFDocument.create(),
-    getFont = createFontProvider(doc),
-    layout = flow.layout,
+    getFont = createFontProvider(doc, flow.fonts);
+  let layout = flow.layout,
     [pw, ph] = pageSize(layout);
   const imageCache = new Map<
     string,
@@ -471,19 +485,37 @@ async function buildFlowPass(
     }
     return image;
   };
-  const marginLeft = mm(layout.left),
+  let marginLeft = mm(layout.left),
     right = mm(layout.right),
     top = mm(layout.top),
     bottom = mm(layout.bottom),
     fullWidth = pw - marginLeft - right;
-  const columns = Math.max(1, Math.min(3, layout.columns || 1)),
+  let columns = Math.max(1, Math.min(3, layout.columns || 1)),
     gap = mm(layout.columnGap ?? 6.35),
     width = (fullWidth - gap * (columns - 1)) / columns;
   let left = marginLeft,
     column = 0;
+  let sectionStart = 0,
+    numberOffset = (layout.pageNumberStart ?? 1) - 1,
+    maxY = top,
+    columnTop = top;
+  let activeSectionId = "";
+  const pageSettings: {
+    layout: PageLayout;
+    first: number;
+    number: number;
+    sectionId: string;
+  }[] = [];
+  const settings = () => ({
+    layout: { ...layout },
+    first: sectionStart,
+    number: doc.getPageCount() + numberOffset,
+    sectionId: activeSectionId,
+  });
   const pageMap: Record<string, number> = {},
     destinations = new Map<string, unknown>();
   const anchor = (n: RichNode) => {
+    maxY = Math.max(maxY, y);
     if (n.attrs?.id) {
       const id = String(n.attrs.id);
       pageMap[id] = doc.getPageCount();
@@ -497,18 +529,22 @@ async function buildFlowPass(
     throw new Error("Reduce los márgenes para dejar espacio al contenido.");
   let page = doc.addPage([pw, ph]),
     y = top;
+  pageSettings.push(settings());
   const nextPage = () => {
     page = doc.addPage([pw, ph]);
     y = top;
+    maxY = top;
+    columnTop = top;
     column = 0;
     left = marginLeft;
+    pageSettings.push(settings());
   };
   const nextColumn = () => {
     if (column + 1 >= columns) nextPage();
     else {
       column++;
       left = marginLeft + column * (width + gap);
-      y = top;
+      y = columnTop;
     }
   };
   const room = (height: number) => {
@@ -564,10 +600,70 @@ async function buildFlowPass(
         String(n.attrs?.textAlign ?? "left"),
       );
       y += line.height;
+      maxY = Math.max(maxY, y);
     }
     y += Number(n.attrs?.spaceAfter ?? (heading ? 10 : 7));
   }
   async function render(n: RichNode, indent = 0, prefix = ""): Promise<void> {
+    if (n.type === "sectionBreak") {
+      const section: SectionInfo = {
+        id: String(n.attrs?.id ?? ""),
+        title: String(n.attrs?.title ?? ""),
+        kind: (n.attrs?.kind ?? "nextPage") as SectionInfo["kind"],
+        layout: n.attrs?.layout as PageLayout,
+        linkToPrevious: n.attrs?.linkToPrevious !== false,
+        restartNumbering: n.attrs?.restartNumbering === true,
+      };
+      const next = inheritedSectionLayout(layout, section),
+        size = pageSize(next),
+        continuous =
+          section.kind === "continuous" &&
+          Math.abs(size[0] - pw) < 0.1 &&
+          Math.abs(size[1] - ph) < 0.1;
+      const used = maxY > top + 0.1 || y > top + 0.1 || column > 0;
+      if (!continuous && used) nextPage();
+      if (
+        !continuous &&
+        (section.kind === "oddPage" || section.kind === "evenPage")
+      ) {
+        const parity = section.kind === "oddPage" ? 1 : 0;
+        if (doc.getPageCount() % 2 !== parity) nextPage();
+      }
+      layout = next;
+      [pw, ph] = size;
+      marginLeft = mm(layout.left);
+      right = mm(layout.right);
+      top = mm(layout.top);
+      bottom = mm(layout.bottom);
+      fullWidth = pw - marginLeft - right;
+      columns = Math.max(1, Math.min(3, layout.columns || 1));
+      gap = mm(layout.columnGap ?? 6.35);
+      width = (fullWidth - gap * (columns - 1)) / columns;
+      if (width < 80 || ph - top - bottom < 100)
+        throw new Error(
+          "Reduce los márgenes de la sección para dejar espacio al contenido.",
+        );
+      activeSectionId = section.id;
+      sectionStart = doc.getPageCount() - 1;
+      column = 0;
+      left = marginLeft;
+      if (section.restartNumbering)
+        numberOffset = (layout.pageNumberStart ?? 1) - doc.getPageCount();
+      if (continuous && used) {
+        y = Math.max(maxY, y, top) + 7;
+        columnTop = y;
+        sectionStart = doc.getPageCount();
+        if (y > ph - bottom - 40) nextPage();
+      } else {
+        page.setSize(pw, ph);
+        y = top;
+        maxY = top;
+        columnTop = top;
+        pageSettings[doc.getPageCount() - 1] = settings();
+      }
+      anchor(n);
+      return;
+    }
     if (n.type === "caption") return;
     if (n.type === "generatedIndex") {
       if (
@@ -950,19 +1046,29 @@ async function buildFlowPass(
       }
       for (const b of blocks.before) await render(b, indent);
       await render(child, indent, prefix);
+      maxY = Math.max(maxY, y);
       for (const b of blocks.after) await render(b, indent);
     }
   }
   await render(flow.content);
   for (const [index, p] of doc.getPages().entries()) {
+    const setting = pageSettings[index],
+      layout = setting.layout,
+      [pw, ph] = pageSize(layout),
+      marginLeft = mm(layout.left),
+      right = mm(layout.right),
+      top = mm(layout.top),
+      bottom = mm(layout.bottom),
+      fullWidth = pw - marginLeft - right,
+      first = index === setting.first;
     const header =
-      layout.differentFirst && index === 0
+      layout.differentFirst && first
         ? (layout.headerFirst ?? "")
         : layout.oddEven && index % 2 === 1
           ? (layout.headerEven ?? layout.header)
           : layout.header;
     const footer =
-      layout.differentFirst && index === 0
+      layout.differentFirst && first
         ? (layout.footerFirst ?? "")
         : layout.oddEven && index % 2 === 1
           ? (layout.footerEven ?? layout.footer)
@@ -1001,7 +1107,7 @@ async function buildFlowPass(
       );
     if (layout.numbering) {
       const label = layout.pageNumberPosition
-          ? String(index + (layout.pageNumberStart ?? 1))
+          ? String(setting.number)
           : `${index + 1} / ${doc.getPageCount()}`,
         font = await getFont("PrismaSans", false, false, label),
         pos = layout.pageNumberPosition ?? "footer-right";
@@ -1038,7 +1144,13 @@ async function buildFlowPass(
   doc.setTitle(title);
   doc.setCreator("Prisma PDF");
   doc.setProducer("Prisma PDF · documentos");
-  return { bytes: await doc.save(), pageMap };
+  await finalizeFontStreams(doc);
+  return {
+    bytes: await doc.save(),
+    pageMap,
+    pageLayouts: pageSettings.map((s) => s.layout),
+    pageSections: pageSettings.map((s) => s.sectionId),
+  };
 }
 
 export async function drawWatermark(

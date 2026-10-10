@@ -4,6 +4,7 @@ import { Button, PageThumbnail } from "./components";
 import { getPdf } from "./renderer";
 import { collectDocumentEntries, academicPlainText } from "./academic";
 import { findNodes } from "./document-tools";
+import { documentSections } from "./sections";
 import type { Workspace } from "./pdf";
 import type { RichEditorInstance } from "./LazyRichEditor";
 type Result = {
@@ -209,6 +210,7 @@ export function DocumentNavigation({
           "Tablas",
           "Apéndices",
           "Comentarios",
+          ...(workspace.flow ? ["Secciones"] : []),
         ].map((t) => (
           <Button
             key={t}
@@ -247,7 +249,33 @@ export function DocumentNavigation({
               <b>{i + 1}</b>
             </button>
           ))}
-        {!["Buscar", "Páginas", "Comentarios"].includes(tab) && (
+        {tab === "Secciones" &&
+          workspace.flow &&
+          documentSections(workspace.flow.content, workspace.flow.layout).map(
+            (section, i) => (
+              <button
+                key={section.id || "first"}
+                onClick={() =>
+                  go(
+                    workspace.flow?.pageMap?.[section.id] ?? 1,
+                    section.id || undefined,
+                  )
+                }
+              >
+                <span>
+                  {i + 1}. {section.title}
+                </span>
+                <small>
+                  {section.layout.format.toUpperCase()} ·{" "}
+                  {section.layout.orientation === "landscape"
+                    ? "Horizontal"
+                    : "Vertical"}{" "}
+                  · {section.layout.columns || 1} columna(s)
+                </small>
+              </button>
+            ),
+          )}
+        {!["Buscar", "Páginas", "Comentarios", "Secciones"].includes(tab) && (
           <>
             {!list.length && (
               <p>

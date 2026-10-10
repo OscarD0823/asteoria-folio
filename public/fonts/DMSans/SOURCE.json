@@ -1,0 +1,87 @@
+{
+  "family": "DM Sans",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/dmsans/METADATA.pb",
+  "metadataSha256": "55b3697a416f7d08c093918a4019a75cca7186c64bc56b1bb23e197a5d559dee",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/dmsans/OFL.txt",
+  "licenseSha256": "9af36190332437f5ecd09974de43c1f7c77a310a996cdd8ceb25628b458840e1",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "DMSans[opsz,wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/dmsans/DMSans%5Bopsz%2Cwght%5D.ttf",
+      "sha256": "8cd08d97e89c24d0aa92edd2f0f4c8ee6195eee9b7c9f154865a58b02f0c1c0d"
+    },
+    {
+      "filename": "DMSans-Italic[opsz,wght].ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/dmsans/DMSans-Italic%5Bopsz%2Cwght%5D.ttf",
+      "sha256": "22259c0cc8237221b80f44c76ba8d36e6bce3cda72779f5b2773643d499720ae"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "DMSans-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "DMSans[opsz,wght].ttf",
+      "axisInstances": {
+        "opsz": 12,
+        "wght": 400
+      },
+      "glyphCount": 486,
+      "unicodeCount": 403,
+      "sha256": "2795b3656a02b5593fb405065f52573efff90841bef37902c909a3e891781553",
+      "bytes": 52744,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "DMSans-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "DMSans[opsz,wght].ttf",
+      "axisInstances": {
+        "opsz": 12,
+        "wght": 700
+      },
+      "glyphCount": 486,
+      "unicodeCount": 403,
+      "sha256": "e6359c1fa95358945d04126ca42e828f3de2ffab4c1cb6226812ed999aa97996",
+      "bytes": 52732,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "DMSans-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "DMSans-Italic[opsz,wght].ttf",
+      "axisInstances": {
+        "opsz": 12,
+        "wght": 400
+      },
+      "glyphCount": 486,
+      "unicodeCount": 403,
+      "sha256": "feff208c76e2e5917770da0508e0f41befbe54b8d6e7ecc33d2b4164355e4553",
+      "bytes": 57324,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "DMSans-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "DMSans-Italic[opsz,wght].ttf",
+      "axisInstances": {
+        "opsz": 12,
+        "wght": 700
+      },
+      "glyphCount": 486,
+      "unicodeCount": 403,
+      "sha256": "efff4c8ba39f677cdafe326f875bf039d19ecb03c91b0a1cda308e7cdd07cfab",
+      "bytes": 57332,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "family": "DM Serif Text",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/dmseriftext/METADATA.pb",
+  "metadataSha256": "044bc4d85dbae3d086ad34d7fc4a7e4df2c650e145903d7b88bd45eb68622b99",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/dmseriftext/OFL.txt",
+  "licenseSha256": "a3e5cdd67d4571dd0a24fcc968de0efde7ae97ef752daf0906e4767619dd7231",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "DMSerifText-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/dmseriftext/DMSerifText-Regular.ttf",
+      "sha256": "94b5fa7bac0f406cb3149512037f37ea21b55cecd732c3fd3a076260441399cd"
+    },
+    {
+      "filename": "DMSerifText-Italic.ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/dmseriftext/DMSerifText-Italic.ttf",
+      "sha256": "d016b81df5cd7462188a0ba11dc343ce2897dffa39fb1fcff0fef0bb7684364e"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "DMSerifText-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "DMSerifText-Regular.ttf",
+      "axisInstances": {},
+      "glyphCount": 355,
+      "unicodeCount": 333,
+      "sha256": "94b5fa7bac0f406cb3149512037f37ea21b55cecd732c3fd3a076260441399cd",
+      "bytes": 78376,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "DMSerifText-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "DMSerifText-Italic.ttf",
+      "axisInstances": {},
+      "glyphCount": 355,
+      "unicodeCount": 336,
+      "sha256": "d016b81df5cd7462188a0ba11dc343ce2897dffa39fb1fcff0fef0bb7684364e",
+      "bytes": 71156,
+      "derivation": "None: unmodified official static font."
+    }
+  ]
+}

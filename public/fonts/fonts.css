@@ -1,3 +1,4 @@
+@import "./EXTRA.css";
 @font-face {
   font-family: "PrismaSans";
   src: url("./LiberationSans-Regular.ttf") format("truetype");

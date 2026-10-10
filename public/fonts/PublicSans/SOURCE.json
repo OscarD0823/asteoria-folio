@@ -1,0 +1,83 @@
+{
+  "family": "Public Sans",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/publicsans/METADATA.pb",
+  "metadataSha256": "a6bf37ce312a499068a820ae995601242aaf7c6d92fbcfe1e4c609392c1defb7",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/publicsans/OFL.txt",
+  "licenseSha256": "157a9e77f7580246e97c769490e2e977ae94399f9d30f4556015c41fe8c28bac",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "PublicSans[wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/publicsans/PublicSans%5Bwght%5D.ttf",
+      "sha256": "d75a7dc1a27eb9e336d5b33f55489d2ecb5621bf694d5c43b2415bce2ca830a8"
+    },
+    {
+      "filename": "PublicSans-Italic[wght].ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/publicsans/PublicSans-Italic%5Bwght%5D.ttf",
+      "sha256": "6ce292b05aa8c66bc644bedff834b4d0ddee9af75c55f98dcb28faa32a81056f"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "PublicSans-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "PublicSans[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 645,
+      "unicodeCount": 565,
+      "sha256": "d1e3b922f088deb4c9586422bff8b419510b70f2138eb70bcb057a708ecec4e5",
+      "bytes": 55452,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "PublicSans-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "PublicSans[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 645,
+      "unicodeCount": 565,
+      "sha256": "c801ac40a5335b8fc0174c2ddddd242b5af08ffe3fc280561149b90522cfbd1e",
+      "bytes": 55632,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "PublicSans-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "PublicSans-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 645,
+      "unicodeCount": 565,
+      "sha256": "e9a2f932c6b862c9a4cc73ce428ac427687c2393190b9d7e7551f3190bb3dcb8",
+      "bytes": 57596,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "PublicSans-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "PublicSans-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 645,
+      "unicodeCount": 565,
+      "sha256": "5e3710914c09a096fd26de40147047c51c8f4125c637571708ffad8ca4484a13",
+      "bytes": 57964,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

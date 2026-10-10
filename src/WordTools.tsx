@@ -51,6 +51,14 @@ import {
 } from "./graphics";
 import { textStatistics, documentStatistics } from "./document-tools";
 import { uid, type Mark } from "./pdf";
+import {
+  changeSection,
+  documentSections,
+  selectedSection,
+  sectionKinds,
+  type SectionKind,
+} from "./sections";
+import { replaceText, replacementMatches } from "./find-replace";
 type Props = {
   tab: string;
   flow?: FlowDocument;
@@ -88,6 +96,7 @@ const emptyRef = (): ReferenceRecord => ({
   year: "",
   url: "",
   site: "",
+  language: "es-ES",
   accessed: new Date().toISOString().slice(0, 10),
 });
 export function WordTools(p: Props) {
@@ -96,6 +105,7 @@ export function WordTools(p: Props) {
     [ref, setRef] = useState<ReferenceRecord>(emptyRef),
     [working, setWorking] = useState(false),
     [referenceTab, setReferenceTab] = useState("list");
+  const [citationPage, setCitationPage] = useState("");
   const [symbolGroup, setSymbolGroup] = useState("Matemáticas"),
     [character, setCharacter] = useState(""),
     [selectedStats, setSelectedStats] = useState(""),
@@ -103,6 +113,25 @@ export function WordTools(p: Props) {
     [videoData, setVideoData] = useState("");
   const editor = p.editor && !p.editor.isDestroyed ? p.editor : null,
     style = p.flow?.academicStyle ?? "free";
+  const sections = p.flow
+    ? documentSections(p.flow.content, p.flow.layout)
+    : [];
+  const sectionDialog = (name: string) => {
+    const section = p.flow ? selectedSection(editor, p.flow.layout) : null;
+    open(name, {
+      sectionId: section?.id ?? "",
+      title:
+        name === "new-section"
+          ? "Sección " + (sections.length + 1)
+          : (section?.title ?? ""),
+      kind: section?.kind ?? "nextPage",
+      link: String(name === "new-section" || section?.linkToPrevious === true),
+      restart: String(
+        name !== "new-section" && section?.restartNumbering === true,
+      ),
+      start: String(section?.layout.pageNumberStart ?? 1),
+    });
+  };
   const mediaType =
     ["image", "equation", "chart", "shape", "video"].find((type) =>
       editor?.isActive(type),
@@ -314,6 +343,45 @@ export function WordTools(p: Props) {
   async function submit() {
     setWorking(true);
     try {
+      if (dialog === "new-section" || dialog === "sections") {
+        const flow = p.flow;
+        if (!flow)
+          throw new Error(
+            "Convierte el PDF a documento de texto para crear secciones.",
+          );
+        const existing =
+          sections.find((s) => s.id === fields.sectionId) ?? sections[0];
+        const attrs = {
+          title: fields.title.trim() || "Sección " + (sections.length + 1),
+          kind: fields.kind as SectionKind,
+          linkToPrevious: fields.link === "true",
+          restartNumbering: fields.restart === "true",
+          layout: {
+            ...(dialog === "new-section" ? p.layout : existing.layout),
+            pageNumberStart: Math.max(
+              1,
+              Math.min(100000, Number(fields.start) || 1),
+            ),
+          },
+        };
+        if (dialog === "new-section") {
+          const e = needsEditor(),
+            from = e.state.selection.$from,
+            pos = from.depth ? from.after(1) : from.pos;
+          e.chain()
+            .focus()
+            .insertContentAt(pos, [
+              { type: "sectionBreak", attrs: { ...attrs, id: uid() } },
+              { type: "paragraph" },
+            ])
+            .run();
+        } else if (existing.id)
+          p.onFlow({
+            ...flow,
+            content: changeSection(flow.content, existing.id, attrs),
+          });
+        else p.onFlow({ ...flow, layout: attrs.layout });
+      }
       if (dialog === "paragraph")
         updateAttributes({
           firstLineIndent: Number(fields.first),
@@ -793,6 +861,28 @@ export function WordTools(p: Props) {
               }),
             ),
           )}
+          {group(
+            "Secciones",
+            <>
+              {action(
+                "Salto de sección",
+                FilePlus2,
+                () => sectionDialog("new-section"),
+                !editor || !p.flow,
+              )}
+              {action(
+                "Administrar secciones",
+                BookOpen,
+                () => sectionDialog("sections"),
+                !p.flow,
+              )}
+              <span className="section-current">
+                {p.flow
+                  ? selectedSection(editor, p.flow.layout).title
+                  : "Documento PDF"}
+              </span>
+            </>,
+          )}
         </>
       )}
       {p.tab === "Referencias" && (
@@ -867,6 +957,20 @@ export function WordTools(p: Props) {
                 !editor,
               )}
               {action("Buscar en documento", Search, p.onNavigate)}
+              {action(
+                "Buscar y reemplazar",
+                Search,
+                () => {
+                  setSelectedStats("");
+                  open("replace", {
+                    query: "",
+                    replacement: "",
+                    case: "false",
+                    word: "false",
+                  });
+                },
+                !editor,
+              )}
               <label className="check-option">
                 <input
                   type="checkbox"
@@ -1065,6 +1169,9 @@ export function WordTools(p: Props) {
                   references: "Citas y referencias",
                   symbol: "Símbolos y caracteres",
                   statistics: "Estadísticas",
+                  replace: "Buscar y reemplazar",
+                  "new-section": "Crear sección",
+                  sections: "Secciones del documento",
                 }[dialog]
               }
             </h2>
@@ -1072,6 +1179,173 @@ export function WordTools(p: Props) {
               <X size={19} />
             </Button>
           </header>
+          {(dialog === "new-section" || dialog === "sections") && (
+            <>
+              <p>
+                Las secciones permiten cambiar papel, orientación, columnas,
+                márgenes, encabezados y numeración dentro del mismo documento.
+              </p>
+              {dialog === "sections" && (
+                <label>
+                  Sección
+                  <select
+                    aria-label="Seleccionar sección"
+                    value={fields.sectionId}
+                    onChange={(e) => {
+                      const s = sections.find((s) => s.id === e.target.value)!;
+                      setFields({
+                        sectionId: s.id,
+                        title: s.title,
+                        kind: s.kind,
+                        link: String(s.linkToPrevious),
+                        restart: String(s.restartNumbering),
+                        start: String(s.layout.pageNumberStart ?? 1),
+                      });
+                    }}
+                  >
+                    {sections.map((s, i) => (
+                      <option key={s.id || "first"} value={s.id}>
+                        {i + 1}. {s.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <div className="form-grid">
+                {(dialog === "new-section" || fields.sectionId) &&
+                  field("title", "Nombre de la sección")}
+                {(dialog === "new-section" || fields.sectionId) && (
+                  <>
+                    {field(
+                      "kind",
+                      "Tipo de salto",
+                      "text",
+                      Object.entries(sectionKinds) as [string, string][],
+                    )}
+                    {field("link", "Encabezados y pies", "text", [
+                      ["true", "Vincular a la sección anterior"],
+                      ["false", "Independientes"],
+                    ])}
+                    {field("restart", "Numeración", "text", [
+                      ["false", "Continuar numeración"],
+                      ["true", "Reiniciar en esta sección"],
+                    ])}
+                  </>
+                )}
+                {field("start", "Número inicial", "number")}
+              </div>
+              {dialog === "new-section" && (
+                <p>
+                  Se insertará después del párrafo o bloque actual. Coloca luego
+                  el cursor en la nueva sección para configurar su diseño.
+                  Cambiar el tamaño de papel u orientación requiere una página
+                  nueva.
+                </p>
+              )}
+              {dialog === "sections" && fields.sectionId && (
+                <div className="section-actions">
+                  <Button
+                    onClick={() => {
+                      p.onLocate(fields.sectionId);
+                      if (editor) {
+                        let found = -1;
+                        editor.state.doc.forEach((n, pos) => {
+                          if (n.attrs.id === fields.sectionId) found = pos;
+                        });
+                        if (found >= 0)
+                          editor
+                            .chain()
+                            .focus()
+                            .setTextSelection(found + 1)
+                            .run();
+                      }
+                      setDialog("");
+                    }}
+                  >
+                    Ir a la sección
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (p.flow)
+                        p.onFlow({
+                          ...p.flow,
+                          content: {
+                            ...p.flow.content,
+                            content: p.flow.content.content?.filter(
+                              (n) =>
+                                !(
+                                  n.type === "sectionBreak" &&
+                                  n.attrs?.id === fields.sectionId
+                                ),
+                            ),
+                          },
+                        });
+                      setDialog("");
+                    }}
+                  >
+                    Eliminar salto y unir secciones
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+          {dialog === "replace" && (
+            <>
+              <div className="form-grid">
+                {field("query", "Buscar texto")}
+                {field("replacement", "Reemplazar por")}
+                {field("case", "Mayúsculas y minúsculas", "text", [
+                  ["false", "No distinguir"],
+                  ["true", "Distinguir"],
+                ])}
+                {field("word", "Coincidencia", "text", [
+                  ["false", "Cualquier coincidencia"],
+                  ["true", "Palabra completa"],
+                ])}
+              </div>
+              <p>
+                {editor
+                  ? replacementMatches(
+                      editor.state.doc,
+                      fields.query ?? "",
+                      fields.case === "true",
+                      fields.word === "true",
+                    ).length
+                  : 0}{" "}
+                coincidencia(s) en el texto editable. Las citas, imágenes y
+                textos de índices automáticos se conservan.
+              </p>
+              <div className="section-actions">
+                {[false, true].map((all) => (
+                  <Button
+                    key={String(all)}
+                    disabled={!fields.query || !editor}
+                    onClick={() => {
+                      try {
+                        if (!editor) return;
+                        const count = replaceText(
+                          editor,
+                          fields.query,
+                          fields.replacement ?? "",
+                          {
+                            caseSensitive: fields.case === "true",
+                            wholeWord: fields.word === "true",
+                            all,
+                          },
+                        );
+                        setSelectedStats(count + " reemplazo(s) realizado(s)");
+                      } catch (e) {
+                        p.onError(e);
+                      }
+                    }}
+                  >
+                    {all ? "Reemplazar todo" : "Reemplazar siguiente"}
+                  </Button>
+                ))}
+              </div>
+              <p role="status">{selectedStats}</p>
+            </>
+          )}
           {dialog === "paragraph" && (
             <div className="form-grid">
               {field("first", "Primera línea (pt)", "number")}
@@ -1317,6 +1591,15 @@ export function WordTools(p: Props) {
           )}
           {dialog === "references" && (
             <>
+              <label>
+                Página o localizador de la próxima cita (opcional)
+                <input
+                  aria-label="Página de la cita"
+                  placeholder="Ejemplo: 25–27"
+                  value={citationPage}
+                  onChange={(e) => setCitationPage(e.target.value)}
+                />
+              </label>
               <div className="reference-actions">
                 <Button
                   className="primary"
@@ -1359,7 +1642,11 @@ export function WordTools(p: Props) {
                         onClick={() => {
                           insert({
                             type: "citation",
-                            attrs: { id: uid(), refId: r.id },
+                            attrs: {
+                              id: uid(),
+                              refId: r.id,
+                              locator: citationPage,
+                            },
                           });
                           setDialog("");
                         }}
@@ -1527,6 +1814,22 @@ export function WordTools(p: Props) {
                 ))}
               </div>
               <div className="reference-preview">
+                <label>
+                  Idioma del título
+                  <select
+                    aria-label="Idioma de la referencia"
+                    value={ref.language ?? "es-ES"}
+                    onChange={(e) =>
+                      setRef({ ...ref, language: e.target.value })
+                    }
+                  >
+                    <option value="es-ES">Español</option>
+                    <option value="en-US">Inglés</option>
+                    <option value="pt-BR">Portugués</option>
+                    <option value="fr-FR">Francés</option>
+                    <option value="de-DE">Alemán</option>
+                  </select>
+                </label>
                 <small>Vista previa · {academicPresets[style].label}</small>
                 <p>{formatReference(ref, style, 1)}</p>
                 <small>
@@ -1614,7 +1917,9 @@ export function WordTools(p: Props) {
               <p>{selectedStats}</p>
             </>
           )}
-          {!["references", "symbol", "statistics"].includes(dialog) && (
+          {!["references", "symbol", "statistics", "replace"].includes(
+            dialog,
+          ) && (
             <footer>
               <Button onClick={() => setDialog("")}>Cancelar</Button>
               <Button

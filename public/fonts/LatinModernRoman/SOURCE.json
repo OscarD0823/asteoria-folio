@@ -1,0 +1,41 @@
+{
+  "family": "Latin Modern Roman",
+  "license": "GUST Font License",
+  "version": "2.005",
+  "upstream": "https://www.gust.org.pl/projects/e-foundry/latin-modern",
+  "packageUrl": "https://ctan.org/pkg/lm",
+  "archiveUrl": "https://mirrors.ctan.org/fonts/lm.zip",
+  "archiveSha256": "71c48809cb50fbfe09c8eddaa251398957c7b243acdf69f7f807268f0d42c939",
+  "licenseSha256": "49ea6cb9257bbee0a3979c48a774cd221550ac1c20c95549efe45fc99cc18050",
+  "derivation": "None: original OpenType files from Latin Modern 2.005.",
+  "outputs": [
+    {
+      "file": "lmroman10-regular.otf",
+      "style": "Regular",
+      "archivePath": "lm/fonts/opentype/public/lm/lmroman10-regular.otf",
+      "sha256": "1aa18cfefa58132c52ce5de70db1fd1154201c19cd2b2cdaffba4906a33e6852",
+      "bytes": 111536
+    },
+    {
+      "file": "lmroman10-bold.otf",
+      "style": "Bold",
+      "archivePath": "lm/fonts/opentype/public/lm/lmroman10-bold.otf",
+      "sha256": "102fe06c430a8b681b2bf6876b7cd967ae4d47b4b6b41d915eb7913b726d9fb1",
+      "bytes": 111240
+    },
+    {
+      "file": "lmroman10-italic.otf",
+      "style": "Italic",
+      "archivePath": "lm/fonts/opentype/public/lm/lmroman10-italic.otf",
+      "sha256": "c1fce25075567bb8dbf2151658c3b442690041db17a2d49fc9e55905ea5b7169",
+      "bytes": 118828
+    },
+    {
+      "file": "lmroman10-bolditalic.otf",
+      "style": "BoldItalic",
+      "archivePath": "lm/fonts/opentype/public/lm/lmroman10-bolditalic.otf",
+      "sha256": "c37a28eed7a6e03f792b98b5e5f637b2fcda378bb4855f99284f1a88fe35f124",
+      "bytes": 118204
+    }
+  ]
+}

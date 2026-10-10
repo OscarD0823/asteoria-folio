@@ -4,6 +4,9 @@ import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { captionBlocks } from "./academic";
 import { plainText } from "./flow";
 import { correctWord } from "./document-tools";
+import { sectionKinds, type SectionKind } from "./sections";
+import { defaultLayout } from "./flow";
+import { validateLayout } from "./projects";
 const attributes = (defaults: Record<string, unknown>) =>
   Object.fromEntries(
     Object.entries(defaults).map(([key, value]) => [key, { default: value }]),
@@ -14,7 +17,13 @@ export const Citation = Node.create({
   inline: true,
   atom: true,
   addAttributes: () =>
-    attributes({ id: "", refId: "", label: "[?]", referenceAnchor: "" }),
+    attributes({
+      id: "",
+      refId: "",
+      label: "[?]",
+      referenceAnchor: "",
+      locator: "",
+    }),
   parseHTML: () => [{ tag: "span[data-citation]" }],
   renderHTML: ({ HTMLAttributes }) => [
     "span",
@@ -86,6 +95,49 @@ export const GeneratedIndex = Node.create({
       contenteditable: "false",
     }),
     0,
+  ],
+});
+export const SectionBreak = Node.create({
+  name: "sectionBreak",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes: () =>
+    attributes({
+      id: "",
+      title: "",
+      kind: "nextPage",
+      layout: defaultLayout(),
+      linkToPrevious: true,
+      restartNumbering: false,
+    }),
+  parseHTML: () => [
+    {
+      tag: "div[data-section-break]",
+      getAttrs: (element) => {
+        try {
+          const attrs = JSON.parse(
+            element.getAttribute("data-section-settings") || "{}",
+          );
+          validateLayout(attrs.layout);
+          if (!(attrs.kind in sectionKinds)) return false;
+          return attrs;
+        } catch {
+          return false;
+        }
+      },
+    },
+  ],
+  renderHTML: ({ node }) => [
+    "div",
+    {
+      "data-section-break": true,
+      "data-section-settings": JSON.stringify(node.attrs),
+      class: "section-break",
+      contenteditable: "false",
+      id: "block-" + node.attrs.id,
+    },
+    `${node.attrs.title || "Sección"} · Salto de sección (${sectionKinds[node.attrs.kind as SectionKind] ?? "Página siguiente"})`,
   ],
 });
 export const ColumnBreak = Node.create({

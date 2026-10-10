@@ -1,6 +1,6 @@
 {
   "name": "prisma-pdf",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "license": "AGPL-3.0-or-later",
   "private": true,
   "type": "module",
@@ -31,6 +31,9 @@
     "@tiptap/pm": "3.31.4",
     "@tiptap/react": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.4",
+    "citeproc": "2.4.63",
+    "docx": "9.9.0",
+    "fflate": "0.8.3",
     "lucide-react": "^0.468.0",
     "mathjax-full": "3.2.2",
     "mupdf": "^1.28.1",

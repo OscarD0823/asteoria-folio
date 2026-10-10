@@ -1,0 +1,83 @@
+{
+  "family": "STIX Two Text",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/stixtwotext/METADATA.pb",
+  "metadataSha256": "016d54115a48569414380f270c534ece0b53d64d945c666407c67a5cc09d4ae1",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/stixtwotext/OFL.txt",
+  "licenseSha256": "62c0967a997b9691326d35b1f90baf085a557327b711618bc4161325ce1bb1b2",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "STIXTwoText[wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/stixtwotext/STIXTwoText%5Bwght%5D.ttf",
+      "sha256": "7962b8b7811e6a896c9a91a0bccbb5241047770eb24d4997c5cb5fe21d5c0df2"
+    },
+    {
+      "filename": "STIXTwoText-Italic[wght].ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/stixtwotext/STIXTwoText-Italic%5Bwght%5D.ttf",
+      "sha256": "88c0e2e316eaff56eddc9e51e4850317e2a1e490bbf758b2dec4793aedba9c74"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "STIXTwoText-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "STIXTwoText[wght].ttf",
+      "axisInstances": {
+        "wght": 400.0
+      },
+      "glyphCount": 2209,
+      "unicodeCount": 1281,
+      "sha256": "d7ec85d1309a98e690a79ec139bf8fe88b0dbc4d9a61701e864f8cd13e671094",
+      "bytes": 273504,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "STIXTwoText-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "STIXTwoText[wght].ttf",
+      "axisInstances": {
+        "wght": 700.0
+      },
+      "glyphCount": 2209,
+      "unicodeCount": 1281,
+      "sha256": "d4e6e9bf35adf2687fbb9f66339aac0474140ea7ef0a0910264e32a807899c66",
+      "bytes": 274020,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "STIXTwoText-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "STIXTwoText-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 400.0
+      },
+      "glyphCount": 2226,
+      "unicodeCount": 1281,
+      "sha256": "d222a9fa05134a4339aaab45e416590cf11808b49b62fc76ba2bec7cf6c96bba",
+      "bytes": 299184,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "STIXTwoText-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "STIXTwoText-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 700.0
+      },
+      "glyphCount": 2226,
+      "unicodeCount": 1281,
+      "sha256": "6959fc3006dda3742506e092a56a6bb1036f27eed21ff75aed2f358b4d7fba2b",
+      "bytes": 299380,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

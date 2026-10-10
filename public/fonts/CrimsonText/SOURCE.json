@@ -1,0 +1,103 @@
+{
+  "family": "Crimson Text",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/crimsontext/METADATA.pb",
+  "metadataSha256": "c5ca01516f7cf8769bbeaede301300db4a28e5a246090bcb7ed9091b37175d0d",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/crimsontext/OFL.txt",
+  "licenseSha256": "50fd67cddc097377a5c871e8452b778bc5aedfa3480a705cb27c5e3a078218df",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "CrimsonText-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/crimsontext/CrimsonText-Regular.ttf",
+      "sha256": "48e6c5d5ad1d01599d374ecb817e15890d1feb3b8a3a88e527d44c90389e1f06"
+    },
+    {
+      "filename": "CrimsonText-Italic.ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/crimsontext/CrimsonText-Italic.ttf",
+      "sha256": "4ed1699ac7c64e8b3d33f6bb8323c3d7206b0d7bacb9ee2d65c697e6014d29de"
+    },
+    {
+      "filename": "CrimsonText-SemiBold.ttf",
+      "weight": 600,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/crimsontext/CrimsonText-SemiBold.ttf",
+      "sha256": "802e84000740fec2a9fbe0ae09b6b6811bd86a78a0173b15d44450a1530e9410"
+    },
+    {
+      "filename": "CrimsonText-SemiBoldItalic.ttf",
+      "weight": 600,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/crimsontext/CrimsonText-SemiBoldItalic.ttf",
+      "sha256": "8f4a0db2d181ba4493a4ad53042edc3b57ab50fedd8fa32c7b2ad57173208543"
+    },
+    {
+      "filename": "CrimsonText-Bold.ttf",
+      "weight": 700,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/crimsontext/CrimsonText-Bold.ttf",
+      "sha256": "a3a0765fc5e8d0b49b540a23aefe0184887dd79f06a0bdf4db7035cea6befa93"
+    },
+    {
+      "filename": "CrimsonText-BoldItalic.ttf",
+      "weight": 700,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/crimsontext/CrimsonText-BoldItalic.ttf",
+      "sha256": "467013e913e46304760461c46661c994b2aa1769e3fbd31371026300315181b4"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "CrimsonText-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "CrimsonText-Regular.ttf",
+      "axisInstances": {},
+      "glyphCount": 718,
+      "unicodeCount": 675,
+      "sha256": "48e6c5d5ad1d01599d374ecb817e15890d1feb3b8a3a88e527d44c90389e1f06",
+      "bytes": 107200,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "CrimsonText-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "CrimsonText-Bold.ttf",
+      "axisInstances": {},
+      "glyphCount": 718,
+      "unicodeCount": 675,
+      "sha256": "a3a0765fc5e8d0b49b540a23aefe0184887dd79f06a0bdf4db7035cea6befa93",
+      "bytes": 112796,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "CrimsonText-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "CrimsonText-Italic.ttf",
+      "axisInstances": {},
+      "glyphCount": 720,
+      "unicodeCount": 675,
+      "sha256": "4ed1699ac7c64e8b3d33f6bb8323c3d7206b0d7bacb9ee2d65c697e6014d29de",
+      "bytes": 110216,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "CrimsonText-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "CrimsonText-BoldItalic.ttf",
+      "axisInstances": {},
+      "glyphCount": 720,
+      "unicodeCount": 675,
+      "sha256": "467013e913e46304760461c46661c994b2aa1769e3fbd31371026300315181b4",
+      "bytes": 115112,
+      "derivation": "None: unmodified official static font."
+    }
+  ]
+}

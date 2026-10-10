@@ -1,0 +1,83 @@
+{
+  "family": "Red Hat Display",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/redhatdisplay/METADATA.pb",
+  "metadataSha256": "f18cc68ad2e2a6d1cb0b9ed9e217006b15c79e49b059226abc79febe7d3213f0",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/redhatdisplay/OFL.txt",
+  "licenseSha256": "435fbfb7e66988b2a06686a4cb966faec733f35d8fe100a1601573c27f3e0bb8",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "RedHatDisplay[wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/redhatdisplay/RedHatDisplay%5Bwght%5D.ttf",
+      "sha256": "46c9d4c4a2415e7e72020b318f5cda2bcbc9018d78b1a67e480a76d8d6e4b379"
+    },
+    {
+      "filename": "RedHatDisplay-Italic[wght].ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/redhatdisplay/RedHatDisplay-Italic%5Bwght%5D.ttf",
+      "sha256": "6f1e62869decc48f589b022b88b486b1f3f55792618e79f986a6b656c9378a59"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "RedHatDisplay-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "RedHatDisplay[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 444,
+      "unicodeCount": 405,
+      "sha256": "791fa5fc3602c9b6ad5e0977bf677b84cdf3326b67f5d250048f511f8d8bc68c",
+      "bytes": 48684,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "RedHatDisplay-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "RedHatDisplay[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 444,
+      "unicodeCount": 405,
+      "sha256": "8a483ea1694255c3259607cdb7de41c991d253d7f720884c3daa16a366afc06e",
+      "bytes": 48688,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "RedHatDisplay-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "RedHatDisplay-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 442,
+      "unicodeCount": 404,
+      "sha256": "4f9c5be5e5381a5b9cb55b3113c7845df287d9d4c6047c2f6ae4b3904b4c4781",
+      "bytes": 49600,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "RedHatDisplay-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "RedHatDisplay-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 442,
+      "unicodeCount": 404,
+      "sha256": "9d76e356af04b927301252045769ba5ca608e53d262bf65408ab4decd0ea342f",
+      "bytes": 49636,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

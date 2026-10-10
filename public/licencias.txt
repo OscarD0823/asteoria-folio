@@ -1,4 +1,4 @@
-Prisma PDF 3.0 — Copyright (C) 2026 Prisma PDF contributors.
+Prisma PDF 5.0 — Copyright (C) 2026 Prisma PDF contributors.
 Software libre bajo GNU Affero General Public License, version 3 o posterior.
 Sin garantia. Licencia completa: ./LICENSE.txt
 Codigo fuente de esta version: ./prisma-pdf-source.tar.gz
@@ -87,3 +87,12 @@ No todas las familias incluyen negrita/cursiva; la variante regular es el respal
 Las familias Noto adicionales cubren símbolos, matemáticas, CJK simplificado, árabe, hebreo, tailandés y devanagari.
 La cobertura Unicode depende de los glifos originales incluidos; no incluye todas las escrituras ni todos los emoji.
 No se usan servicios remotos de tipografías durante la edición.
+Prisma PDF 5.0 — nuevas dependencias y recursos locales:
+docx 9.9.0 — MIT; ./third-party/docx-LICENSE.txt
+fflate 0.8.3 — MIT; ./third-party/fflate-LICENSE.txt
+citeproc-js 2.4.63 — licencia dual AGPL-3.0 / CPAL-1.0; ./third-party/citeproc-LICENSE.txt (se utiliza AGPL-3.0).
+Estilos y localizaciones Citation Style Language — CC BY-SA 3.0; ./third-party/CSL-LICENSE.txt.
+  Autores originales, archivos, revisiones, URLs y SHA-256: src/csl/SOURCES.json y cada CSL/XML dentro del código fuente distribuido.
+50 familias nuevas, 171 archivos: ./fonts/EXTRA-CATALOG.md y ./fonts/EXTRA-catalog.json.
+  Archivos originales, versiones, derivaciones y licencias: ./fonts/<familia>/SOURCE.json y LICENSE.txt.
+  SIL OFL 1.1, Apache 2.0 o GUST Font License según cada familia.

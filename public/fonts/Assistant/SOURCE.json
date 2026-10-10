@@ -1,0 +1,50 @@
+{
+  "family": "Assistant",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/assistant/METADATA.pb",
+  "metadataSha256": "c58ad8f244684867e28b9bb56c78b9f48af000340eef4d455c7912fbf08c1a88",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/assistant/OFL.txt",
+  "licenseSha256": "7eaf6282cfab122b99ffd62a122fc27b6c3c8f2c65b56ff9b3a25badbc64887d",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "Assistant[wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/assistant/Assistant%5Bwght%5D.ttf",
+      "sha256": "1c3b393884f8fb133a1b17f41d26178adae1050a4f86d7a429d1b5658c314fa3"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "Assistant-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "Assistant[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 373,
+      "unicodeCount": 353,
+      "sha256": "a07ed17d429a89fb6715ff08939883894279f48836bb34809e7b482bb98e1049",
+      "bytes": 38756,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "Assistant-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "Assistant[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 373,
+      "unicodeCount": 353,
+      "sha256": "276064e4ef8c177efd116c3cc58b68d75e59f278033ec89340c0a6a31f7c9af3",
+      "bytes": 38680,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

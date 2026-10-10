@@ -1,6 +1,13 @@
 import type { PageLayout, RichNode } from "./flow";
+import { extraAcademicPresets } from "./academic-catalog";
+import {
+  formatCsl,
+  isCslStyle,
+  numberedStyle,
+  type CslStyle,
+} from "./csl-format";
 
-export type AcademicStyle = "free" | "apa" | "ieee" | "iso690";
+export type AcademicStyle = "free" | "apa" | "ieee" | "iso690" | CslStyle;
 export type ReferenceType =
   | "web"
   | "book"
@@ -35,6 +42,7 @@ export type ReferenceRecord = {
   shortAuthor?: string;
   /** A continuously changing web page needs a retrieval date in APA. */
   dynamic?: boolean;
+  language?: string;
 };
 export type AcademicPreset = {
   label: string;
@@ -44,6 +52,8 @@ export type AcademicPreset = {
   fontSize?: number;
   lineHeight?: number;
   pageNumberPosition?: "header-right" | "footer-center";
+  firstLineIndent?: number;
+  source?: string;
 };
 export const academicPresets: Record<AcademicStyle, AcademicPreset> = {
   free: { label: "Libre", description: "Formato personalizado." },
@@ -95,6 +105,7 @@ export const academicPresets: Record<AcademicStyle, AcademicPreset> = {
     description:
       "Referencias y citas numéricas configuradas según los elementos de ISO 690. Esta norma no fija una maquetación universal del trabajo.",
   },
+  ...extraAcademicPresets,
 };
 export type DocumentEntry = {
   id: string;
@@ -242,6 +253,8 @@ export function formatReferenceParts(
   number = 1,
   yearSuffix = "",
 ): ReferencePart[] {
+  if (isCslStyle(style))
+    return formatCsl([ref], style).references.get(ref.id) ?? [];
   const parts: ReferencePart[] = [];
   const add = (text: string, italic = false, href?: string) => {
     if (text)
@@ -344,6 +357,8 @@ export function citationLabel(
   yearSuffix = "",
 ): string {
   if (!ref) return "[Referencia no encontrada]";
+  if (isCslStyle(style))
+    return formatCsl([ref], style).citations.get(ref.id) ?? "[?]";
   return style === "ieee" || style === "iso690"
     ? `[${number}]`
     : `(${shortAuthor(ref)}, ${year(ref)}${yearSuffix})`;
@@ -465,6 +480,15 @@ export function applyAcademicStyle(
     preset = academicPresets[style];
   if (!preset.fontFamily || !preset.fontSize) return next;
   function apply(node: RichNode, inTable = false) {
+    if (node.type === "sectionBreak" && preset.layout)
+      node.attrs = {
+        ...node.attrs,
+        layout: {
+          ...(node.attrs?.layout as PageLayout),
+          ...preset.layout,
+          pageNumberPosition: preset.pageNumberPosition,
+        },
+      };
     const table = inTable || node.type === "table";
     if (node.type === "paragraph" || node.type === "heading") {
       const attrs = node.attrs || {},
@@ -478,7 +502,10 @@ export function applyAcademicStyle(
         lineHeight: table ? 1 : preset.lineHeight,
         indent: 0,
         hangingIndent: 0,
-        firstLineIndent: heading || table ? 0 : style === "apa" ? 36 : 10,
+        firstLineIndent:
+          heading || table
+            ? 0
+            : (preset.firstLineIndent ?? (style === "apa" ? 36 : 10)),
         spaceBefore: 0,
         spaceAfter: 0,
         textAlign: heading
@@ -535,7 +562,7 @@ function referenceOrder(
   const unique = refs.filter(
     (ref, i) => refs.findIndex((other) => other.id === ref.id) === i,
   );
-  if (style !== "ieee" && style !== "iso690") return alphabetical(unique);
+  if (!numberedStyle(style)) return alphabetical(unique);
   const ids = collectCitationOccurrences(content).map(
     (citation) => citation.refId,
   );
@@ -839,6 +866,7 @@ export function normalizeAcademicDocument(
     "citation",
     "appendix",
     "generatedIndex",
+    "sectionBreak",
   ]);
   walk(next, (node) => {
     if (!identifiable.has(node.type || "")) return;
@@ -1016,8 +1044,13 @@ export function normalizeAcademicDocument(
     };
     node.content = captionBlocks(node, style).before;
   });
-  const ordered = referenceOrder(next, references, style),
-    disambiguation = suffixes(ordered);
+  let ordered = referenceOrder(next, references, style);
+  const csl = isCslStyle(style) ? formatCsl(ordered, style) : null;
+  if (csl)
+    ordered = csl.ordered
+      .map((id) => ordered.find((ref) => ref.id === id)!)
+      .filter(Boolean);
+  const disambiguation = suffixes(ordered);
   const byId = new Map(
     ordered.map((ref, i) => [ref.id, { ref, number: i + 1 }]),
   );
@@ -1026,14 +1059,19 @@ export function normalizeAcademicDocument(
     const match = byId.get(clean(node.attrs?.refId));
     node.attrs = {
       ...node.attrs,
-      label: citationLabel(
-        match?.ref,
-        style,
-        match?.number,
-        style === "apa" || style === "free"
-          ? disambiguation.get(match?.ref.id || "")
-          : "",
-      ),
+      label:
+        csl?.cite(match?.ref.id ?? "", clean(node.attrs?.locator)) ??
+        citationLabel(
+          match?.ref,
+          style,
+          match?.number,
+          style === "apa" || style === "free"
+            ? disambiguation.get(match?.ref.id || "")
+            : "",
+        ) +
+          (node.attrs?.locator
+            ? " (p. " + String(node.attrs.locator) + ")"
+            : ""),
       referenceAnchor: match ? "reference-" + match.ref.id : "",
       ...(match ? { number: match.number } : { number: null }),
     };
@@ -1048,14 +1086,19 @@ export function normalizeAcademicDocument(
         ? ordered.map((ref, i) => ({
             id: ref.id,
             targetId: "reference-" + ref.id,
-            label: formatReference(
-              ref,
-              style,
-              i + 1,
-              style === "apa" || style === "free"
-                ? disambiguation.get(ref.id)
-                : "",
-            ),
+            label:
+              csl?.references
+                .get(ref.id)
+                ?.map((p) => p.text)
+                .join("") ??
+              formatReference(
+                ref,
+                style,
+                i + 1,
+                style === "apa" || style === "free"
+                  ? disambiguation.get(ref.id)
+                  : "",
+              ),
             kind: "reference" as const,
             title: ref.title,
             path: [],
@@ -1082,7 +1125,7 @@ export function normalizeAcademicDocument(
               fontSize: academicPresets[style].fontSize,
             }
           : {}),
-        ...(kind === "references" && style === "apa"
+        ...(kind === "references" && (style === "apa" || csl?.hanging)
           ? { hangingIndent: 36 }
           : { hangingIndent: 0 }),
       };
@@ -1095,13 +1138,16 @@ export function normalizeAcademicDocument(
       return {
         type: "paragraph",
         attrs,
-        content: formatReferenceParts(
-          match.ref,
-          style,
-          match.number,
-          style === "apa" || style === "free"
-            ? disambiguation.get(match.ref.id)
-            : "",
+        content: (
+          csl?.references.get(match.ref.id) ??
+          formatReferenceParts(
+            match.ref,
+            style,
+            match.number,
+            style === "apa" || style === "free"
+              ? disambiguation.get(match.ref.id)
+              : "",
+          )
         ).map((part) => ({
           type: "text",
           text: part.text,

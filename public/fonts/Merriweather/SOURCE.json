@@ -1,0 +1,117 @@
+{
+  "family": "Merriweather",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "e9263a54d43d89ddcf351c5ae8ab2179f1aebc89",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/e9263a54d43d89ddcf351c5ae8ab2179f1aebc89/ofl/merriweather/METADATA.pb",
+  "metadataSha256": "2b677b680114a7b39e287a037478a07a33b6a55744d141f601ce9676c1eb8471",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/e9263a54d43d89ddcf351c5ae8ab2179f1aebc89/ofl/merriweather/OFL.txt",
+  "licenseSha256": "a7ba785ad99b6eae0444ab89910e512d4af9865937fddbcb5c72c4f59f55d6ad",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "Merriweather-Light.ttf",
+      "weight": 300,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/e9263a54d43d89ddcf351c5ae8ab2179f1aebc89/ofl/merriweather/Merriweather-Light.ttf",
+      "sha256": "d3ecc46bab128ed073ad9189bd7efdd2df455d8942ec056f14129bf35bcea7e5"
+    },
+    {
+      "filename": "Merriweather-LightItalic.ttf",
+      "weight": 300,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/e9263a54d43d89ddcf351c5ae8ab2179f1aebc89/ofl/merriweather/Merriweather-LightItalic.ttf",
+      "sha256": "8521c8eb542adf178b19c7ab7a0210fb4715fe68bb6ea578be129277b642c1f0"
+    },
+    {
+      "filename": "Merriweather-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/e9263a54d43d89ddcf351c5ae8ab2179f1aebc89/ofl/merriweather/Merriweather-Regular.ttf",
+      "sha256": "bc38fe756b3e259248183fc0b75ad81b02774f3ca68e5e544e925827b0186d40"
+    },
+    {
+      "filename": "Merriweather-Italic.ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/e9263a54d43d89ddcf351c5ae8ab2179f1aebc89/ofl/merriweather/Merriweather-Italic.ttf",
+      "sha256": "fc80dbac0ca9da894ae1801df9abe58f6dcca179ec4f8f6f7ea80fd13a1d387d"
+    },
+    {
+      "filename": "Merriweather-Bold.ttf",
+      "weight": 700,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/e9263a54d43d89ddcf351c5ae8ab2179f1aebc89/ofl/merriweather/Merriweather-Bold.ttf",
+      "sha256": "55139769a87085bff777f68e3ecf92450c21a04c5ddd1e9e9528960ba4088c9f"
+    },
+    {
+      "filename": "Merriweather-BoldItalic.ttf",
+      "weight": 700,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/e9263a54d43d89ddcf351c5ae8ab2179f1aebc89/ofl/merriweather/Merriweather-BoldItalic.ttf",
+      "sha256": "403b1bece3d70420e65c670315693e9bca255e9c95884d9cb2b334838e67b509"
+    },
+    {
+      "filename": "Merriweather-Black.ttf",
+      "weight": 900,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/e9263a54d43d89ddcf351c5ae8ab2179f1aebc89/ofl/merriweather/Merriweather-Black.ttf",
+      "sha256": "dff1048499a2c245713dfa41e3683cfecfd15df757cc4cb20f85bceba7bfd58b"
+    },
+    {
+      "filename": "Merriweather-BlackItalic.ttf",
+      "weight": 900,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/e9263a54d43d89ddcf351c5ae8ab2179f1aebc89/ofl/merriweather/Merriweather-BlackItalic.ttf",
+      "sha256": "42b5cdd80b293acb1d7a15958a2c2f8b6b95213709110777486763c75bc83ebf"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "Merriweather-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "Merriweather-Regular.ttf",
+      "axisInstances": {},
+      "glyphCount": 996,
+      "unicodeCount": 876,
+      "sha256": "bc38fe756b3e259248183fc0b75ad81b02774f3ca68e5e544e925827b0186d40",
+      "bytes": 156096,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "Merriweather-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "Merriweather-Bold.ttf",
+      "axisInstances": {},
+      "glyphCount": 996,
+      "unicodeCount": 876,
+      "sha256": "55139769a87085bff777f68e3ecf92450c21a04c5ddd1e9e9528960ba4088c9f",
+      "bytes": 149112,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "Merriweather-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "Merriweather-Italic.ttf",
+      "axisInstances": {},
+      "glyphCount": 996,
+      "unicodeCount": 876,
+      "sha256": "fc80dbac0ca9da894ae1801df9abe58f6dcca179ec4f8f6f7ea80fd13a1d387d",
+      "bytes": 149340,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "Merriweather-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "Merriweather-BoldItalic.ttf",
+      "axisInstances": {},
+      "glyphCount": 996,
+      "unicodeCount": 876,
+      "sha256": "403b1bece3d70420e65c670315693e9bca255e9c95884d9cb2b334838e67b509",
+      "bytes": 150560,
+      "derivation": "None: unmodified official static font."
+    }
+  ]
+}

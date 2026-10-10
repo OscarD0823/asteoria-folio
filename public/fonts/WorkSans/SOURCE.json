@@ -1,0 +1,83 @@
+{
+  "family": "Work Sans",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/worksans/METADATA.pb",
+  "metadataSha256": "b55627dfda8d7bdb0b2500b0f6b2b942c1f8242bf756ca5c98e8a7cd22b28946",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/worksans/OFL.txt",
+  "licenseSha256": "749aca05078664ce682dce1b1b10096ac397cb088c1a6df4e1bb56f0092a9272",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "WorkSans[wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/worksans/WorkSans%5Bwght%5D.ttf",
+      "sha256": "f50f61f2ba738e239442d40bf1069adb195c224b6a5a73a581fc2f3ed62a9f63"
+    },
+    {
+      "filename": "WorkSans-Italic[wght].ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/worksans/WorkSans-Italic%5Bwght%5D.ttf",
+      "sha256": "0a9f935ea490d3477fc97e40248f356c29bce11a1973939056c4316b122341ec"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "WorkSans-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "WorkSans[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 1318,
+      "unicodeCount": 751,
+      "sha256": "ce335bad504f2c7da0f8172d1a723e9db2212fad4aa25e7ae32d351892ac329b",
+      "bytes": 174408,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "WorkSans-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "WorkSans[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 1329,
+      "unicodeCount": 751,
+      "sha256": "28d54be0095fc7773aca18146ea77c673003176bf4f0882204f14d7f029281d0",
+      "bytes": 176504,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "WorkSans-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "WorkSans-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 1206,
+      "unicodeCount": 751,
+      "sha256": "0c6862ff4b557ac4a726419817af24da2bd07d21b29e31a9e81e3a517ab082ad",
+      "bytes": 161368,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "WorkSans-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "WorkSans-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 1211,
+      "unicodeCount": 751,
+      "sha256": "0324a4a57d304f461a48f47946534f124fe186755fe4c5bbe85620be0d44aa59",
+      "bytes": 162756,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

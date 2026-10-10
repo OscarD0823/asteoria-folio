@@ -37,5 +37,5 @@
 
     <!-- Permissions -->
 
-    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.INTERNET" />
 </manifest>

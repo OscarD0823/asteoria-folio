@@ -1,0 +1,71 @@
+{
+  "family": "Cardo",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/cardo/METADATA.pb",
+  "metadataSha256": "47adcedcb24ab4687157d6d035b504ae81a429b1ddb5b123f94a32194f1bfb16",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/cardo/OFL.txt",
+  "licenseSha256": "8e28b778b6e1a7ff9ca72f4dee2d53120aa2856dc1bfd0be44307e365b0e45bb",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "Cardo-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/cardo/Cardo-Regular.ttf",
+      "sha256": "bcb81f376f1c3892c7026dabf2beafbd1a7ee8ae95d132ee7d4ff7d7c3988261"
+    },
+    {
+      "filename": "Cardo-Italic.ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/cardo/Cardo-Italic.ttf",
+      "sha256": "52c51cfde3a827dd9428511c4a968699952b8a917c5f0e97be782cbfa1880f9c"
+    },
+    {
+      "filename": "Cardo-Bold.ttf",
+      "weight": 700,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/cardo/Cardo-Bold.ttf",
+      "sha256": "6c9383b1471936ee83b08b67bf79f0ed92bee3d5e8363ec3ba21309d5a272e36"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "Cardo-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "Cardo-Regular.ttf",
+      "axisInstances": {},
+      "glyphCount": 3845,
+      "unicodeCount": 3830,
+      "sha256": "bcb81f376f1c3892c7026dabf2beafbd1a7ee8ae95d132ee7d4ff7d7c3988261",
+      "bytes": 400468,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "Cardo-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "Cardo-Bold.ttf",
+      "axisInstances": {},
+      "glyphCount": 2993,
+      "unicodeCount": 2992,
+      "sha256": "6c9383b1471936ee83b08b67bf79f0ed92bee3d5e8363ec3ba21309d5a272e36",
+      "bytes": 348320,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "Cardo-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "Cardo-Italic.ttf",
+      "axisInstances": {},
+      "glyphCount": 2387,
+      "unicodeCount": 2412,
+      "sha256": "52c51cfde3a827dd9428511c4a968699952b8a917c5f0e97be782cbfa1880f9c",
+      "bytes": 262388,
+      "derivation": "None: unmodified official static font."
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+Citation Style Language styles and locales
+https://github.com/citation-style-language/styles
+https://github.com/citation-style-language/locales
+
+Files retained without modification. Contributors and licensing are declared in each XML file.
+Styles: Creative Commons Attribution-ShareAlike 3.0 https://creativecommons.org/licenses/by-sa/3.0/
+Locales: Creative Commons Attribution-ShareAlike 3.0 https://creativecommons.org/licenses/by-sa/3.0/
+SOURCES.json records exact revisions, URLs and SHA-256.

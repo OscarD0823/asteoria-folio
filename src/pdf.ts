@@ -17,7 +17,8 @@ import {
   mm,
   drawWatermark,
 } from "./flow";
-import { createFontProvider } from "./fonts";
+import { createFontProvider, finalizeFontStreams } from "./fonts";
+import type { LocalFont } from "./local-fonts";
 
 export type MarkType =
   | "text"
@@ -65,6 +66,7 @@ export type Page = {
   textReady?: boolean;
 };
 export type Workspace = {
+  fonts?: LocalFont[];
   sources: Source[];
   pages: Page[];
   name: string;
@@ -126,6 +128,7 @@ export async function appendPdf(
   const source: Source = { id: uid(), name, bytes };
   return {
     name: state.pages.length ? state.name : name.replace(/\.pdf$/i, ""),
+    fonts: state.fonts,
     sources: [...state.sources, source],
     pages: [
       ...state.pages,
@@ -153,7 +156,7 @@ export async function buildPdf(
                 await import("./flow-renderer")
               ).renderFlow(flow, title, "export")
             ).bytes
-    )(state.flow, state.name);
+    )({ ...state.flow, fonts: state.fonts ?? state.flow.fonts }, state.name);
     if (!onlyIds) return bytes;
     const doc = await PDFDocument.load(bytes),
       out = await PDFDocument.create();
@@ -170,7 +173,7 @@ export async function buildPdf(
     : state.pages;
   if (!chosen.length) throw new Error("Añade al menos una página.");
   const output = await PDFDocument.create();
-  const getFont = createFontProvider(output);
+  const getFont = createFontProvider(output, state.fonts);
   const docs = new Map<string, PDFDocument>();
   for (const source of state.sources)
     docs.set(source.id, await PDFDocument.load(source.bytes));
@@ -414,6 +417,7 @@ export async function buildPdf(
       page.pushOperators(popGraphicsState());
     }
   }
+  await finalizeFontStreams(output);
   return output.save();
 }
 export function pageRange(value: string, count: number): number[] {

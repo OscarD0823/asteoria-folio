@@ -1,0 +1,41 @@
+{
+  "family": "Latin Modern Sans",
+  "license": "GUST Font License",
+  "version": "2.005",
+  "upstream": "https://www.gust.org.pl/projects/e-foundry/latin-modern",
+  "packageUrl": "https://ctan.org/pkg/lm",
+  "archiveUrl": "https://mirrors.ctan.org/fonts/lm.zip",
+  "archiveSha256": "71c48809cb50fbfe09c8eddaa251398957c7b243acdf69f7f807268f0d42c939",
+  "licenseSha256": "49ea6cb9257bbee0a3979c48a774cd221550ac1c20c95549efe45fc99cc18050",
+  "derivation": "None: original OpenType files from Latin Modern 2.005.",
+  "outputs": [
+    {
+      "file": "lmsans10-regular.otf",
+      "style": "Regular",
+      "archivePath": "lm/fonts/opentype/public/lm/lmsans10-regular.otf",
+      "sha256": "d431b786b9b603662718e79cfe9b441f47a8b0b3e854dde89d5acb3ed7cfd682",
+      "bytes": 95128
+    },
+    {
+      "file": "lmsans10-bold.otf",
+      "style": "Bold",
+      "archivePath": "lm/fonts/opentype/public/lm/lmsans10-bold.otf",
+      "sha256": "a597b710326c1a8a2c7238d808e5d38711638a72a32383478db4829d63afd687",
+      "bytes": 107448
+    },
+    {
+      "file": "lmsans10-oblique.otf",
+      "style": "Italic",
+      "archivePath": "lm/fonts/opentype/public/lm/lmsans10-oblique.otf",
+      "sha256": "1b38b36efc21f9d3f34edf6a13f9d71f59c41f824e790f5d3ee5ba5b4936f377",
+      "bytes": 101412
+    },
+    {
+      "file": "lmsans10-boldoblique.otf",
+      "style": "BoldItalic",
+      "archivePath": "lm/fonts/opentype/public/lm/lmsans10-boldoblique.otf",
+      "sha256": "e45673d84754a94f2f053bd4c15950b4b320144fbb622c630a26fd7b68cfabc5",
+      "bytes": 114984
+    }
+  ]
+}

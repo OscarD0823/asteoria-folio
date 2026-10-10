@@ -1,0 +1,83 @@
+{
+  "family": "Roboto Condensed",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/robotocondensed/METADATA.pb",
+  "metadataSha256": "2661545ea47047600f634d2b2485b9794758c1088b2dac15024ebc6c20fc1f47",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/robotocondensed/OFL.txt",
+  "licenseSha256": "0e4cc6ece88573545be2ed25835363662a6182ba4a4c1b5c8feda52add30e8a6",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "RobotoCondensed[wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/robotocondensed/RobotoCondensed%5Bwght%5D.ttf",
+      "sha256": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0"
+    },
+    {
+      "filename": "RobotoCondensed-Italic[wght].ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/robotocondensed/RobotoCondensed-Italic%5Bwght%5D.ttf",
+      "sha256": "78f643b1923008b00dfc9b371a2ecd4d80a017722925f1a3fac9940be56d1b7d"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "RobotoCondensed-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "RobotoCondensed[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 1315,
+      "unicodeCount": 917,
+      "sha256": "2fed378adf770be712e4a5595941e178bbe351c3f8928e78a9d011adbc1f3abd",
+      "bytes": 143136,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "RobotoCondensed-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "RobotoCondensed[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 1315,
+      "unicodeCount": 917,
+      "sha256": "101bceedd1b525c58bdd23608c687d3d7af83b135cff36848c4a1eb4d89e19a5",
+      "bytes": 143776,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "RobotoCondensed-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "RobotoCondensed-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 1315,
+      "unicodeCount": 917,
+      "sha256": "2b5ee5ac73952d0a6d86d5cbc7103dfd8b4d14a0f61600721d3baef7094d5ed6",
+      "bytes": 148784,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "RobotoCondensed-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "RobotoCondensed-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 1315,
+      "unicodeCount": 917,
+      "sha256": "6a3cbaaed0caafa6f6636c2aedc72e9d34f76e9fafa99f1574852e4fc6ae9136",
+      "bytes": 149488,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

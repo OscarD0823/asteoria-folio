@@ -1,7 +1,47 @@
-import { cpSync, mkdirSync, existsSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 const require = createRequire(import.meta.url);
+const appVersion = JSON.parse(readFileSync("package.json", "utf8")).version;
+const release = "https://github.com/OscarD0823/prisma-pdf/releases/";
+writeFileSync(
+  "public/version.json",
+  JSON.stringify(
+    {
+      version: appVersion,
+      releaseUrl: release + "tag/v" + appVersion,
+      androidUrl:
+        release +
+        "download/v" +
+        appVersion +
+        "/Prisma-PDF-" +
+        appVersion +
+        "-Android.apk",
+      windowsUrl:
+        release +
+        "download/v" +
+        appVersion +
+        "/Prisma-PDF-" +
+        appVersion +
+        "-Windows-Setup.exe",
+      features: [
+        "Biblioteca de 81 familias tipográficas e importación de fuentes personales",
+        "Reglas laterales y secciones con diseño independiente",
+        "Más estilos bibliográficos, citas y búsqueda con reemplazo",
+        "Exportación a Word, HTML, Markdown, TXT e imágenes",
+        "Comprobación de actualizaciones sin enviar documentos",
+      ],
+    },
+    null,
+    2,
+  ) + "\n",
+);
 const base = dirname(require.resolve("pdfjs-dist/package.json"));
 mkdirSync("public/pdfjs", { recursive: true });
 for (const name of ["cmaps", "standard_fonts", "wasm"])
@@ -36,6 +76,9 @@ for (const dependency of [
   "@tiptap/extension-placeholder",
   "@tiptap/extension-subscript",
   "@tiptap/extension-superscript",
+  "docx",
+  "citeproc",
+  "fflate",
 ]) {
   let root;
   if (dependency === "mupdf") root = dirname(engine);

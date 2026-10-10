@@ -5,7 +5,8 @@ import { getPdf, pdfjs } from "./renderer";
 import { runNative, type Inspection, type NativeObject } from "./native";
 import { fontCss } from "./fonts";
 import { plainText, type RichNode } from "./flow";
-import type { Watermark } from "./flow";
+import type { Watermark, PageLayout } from "./flow";
+import { DocumentRuler, VerticalDocumentRuler } from "./DocumentRuler";
 import {
   rotation,
   turnPoint,
@@ -42,6 +43,8 @@ export type FrameProps = {
   onPlace: (x: number, y: number) => void;
   readonly?: boolean;
   watermark?: Watermark;
+  rulerLayout?: PageLayout;
+  onRulerLayout?: (layout: PageLayout) => void;
 };
 function RichView({ node }: { node: RichNode }) {
   if (node.type === "text") {
@@ -403,7 +406,7 @@ export function PageFrame(props: FrameProps) {
       </div>
       <div
         ref={root}
-        className={`page-surface tool-${tool}`}
+        className={`page-surface tool-${tool} ${props.rulerLayout ? "ruled-page" : ""}`}
         style={{ width, height: (width * h) / w }}
         onPointerDown={down}
         onPointerMove={move}
@@ -416,6 +419,25 @@ export function PageFrame(props: FrameProps) {
           setDraft(null);
         }}
       >
+        {props.rulerLayout && props.onRulerLayout && (
+          <>
+            <DocumentRuler
+              layout={props.rulerLayout}
+              onChange={props.onRulerLayout}
+            />
+            <VerticalDocumentRuler
+              layout={props.rulerLayout}
+              onChange={props.onRulerLayout}
+              height={(width * h) / w}
+            />
+            <VerticalDocumentRuler
+              side="right"
+              layout={props.rulerLayout}
+              onChange={props.onRulerLayout}
+              height={(width * h) / w}
+            />
+          </>
+        )}
         {visible && (
           <PageCanvas
             source={source}

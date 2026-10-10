@@ -1,6 +1,6 @@
 # Formato académico local
 
-`src/academic.ts` implementa formatos comunes de citas, metadatos editables, numeración e índices. No consulta la web, no carga documentos y no requiere servicios de bibliografía. Los metadatos permanecen dentro del proyecto local.
+`src/academic.ts` y el motor local citeproc-js implementan formatos comunes de citas, metadatos editables, numeración e índices. El editor no consulta la web, no carga documentos y no requiere servicios de bibliografía. Los metadatos permanecen dentro del proyecto local. Las fuentes oficiales se consultaron durante el desarrollo, el 9 y 10 de octubre de 2026.
 
 ## Formatos y alcance
 
@@ -9,11 +9,39 @@
 - **ISO 690:** selección de referencias y citas numéricas. Se conservan el papel, los márgenes y las fuentes personales. La norma trata las referencias de los recursos; no se presenta como una regla universal para el diseño de una tesis.
 - **Libre:** conserva el diseño. Las referencias usan una presentación sencilla de autor y fecha.
 
+La versión 5.0 añade los siguientes estilos. «Bibliografía» conserva el papel y diseño actuales; «Presentación» también aplica una base de márgenes, fuente y espaciado al documento completo y sus secciones.
+
+| Opción             | Alcance y variante                                                                                                                               | Fuente de consulta                                                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| MLA 9              | Presentación; citas autor–página. El apellido del encabezado se completa manualmente.                                                            | [MLA Style Center](https://style.mla.org/mla-format/)                                                                                          |
+| Chicago / Turabian | Presentación estudiantil; variante autor–fecha. No implementa el sistema de notas al pie.                                                        | [University of Chicago](https://www.chicagomanualofstyle.org/turabian/Student-Tip-Sheets.html)                                                 |
+| Harvard            | Bibliografía autor–año, Cite Them Right. Hay variantes institucionales.                                                                          | [Open University](https://university.open.ac.uk/library/library/referencing-and-plagiarism/quick-guide-to-harvard-referencing-cite-them-right) |
+| Vancouver          | Bibliografía numérica en orden de cita; variante Taylor & Francis/NLM.                                                                           | [ICMJE](https://icmje.org/recommendations/browse/manuscript-preparation/preparing-for-submission.html)                                         |
+| ACS                | Bibliografía numérica de química.                                                                                                                | [ACS Guide](https://pubs.acs.org/doi/book/10.1021/acsguide)                                                                                    |
+| ABNT               | Presentación A4 de una cara: texto 12 pt, espacio 1,5, márgenes superior/izquierdo 30 mm e inferior/derecho 20 mm; variante CSL ABNT para citas. | [NBR 14724:2024 alojada por UFPB](https://www.ccs.ufpb.br/coordfarm/wp-content/uploads/sites/21/sites/454/2026/03/ABNT_NBR_14724_2024-1.pdf)   |
+| ACM                | Bibliografía de computación; conserva el diseño, pues manuscrito y publicación tienen procesos diferentes.                                       | [ACM TAPS](https://www.acm.org/publications/taps/word-template-workflow)                                                                       |
+| AMA                | Bibliografía numérica médica.                                                                                                                    | [AMA Manual of Style](https://www.amamanualofstyle.com/)                                                                                       |
+| CSE                | Bibliografía nombre–año, variante Taylor & Francis.                                                                                              | [Council of Science Editors](https://www.councilscienceeditors.org/scientific-style-and-format)                                                |
+| Nature             | Bibliografía numérica Nature.                                                                                                                    | [Guía de Nature](https://www.nature.com/nature/for-authors/formatting-guide)                                                                   |
+| Science            | Bibliografía numérica Science.                                                                                                                   | [Instrucciones de Science](https://www.science.org/content/page/instructions-preparing-initial-manuscript)                                     |
+
+No existe un catálogo universal de todos los formatos de entrega: revistas, universidades y convocatorias publican requisitos propios. **ICONTEC NTC 1486** también se utiliza para trabajos académicos en Colombia ([catálogo oficial](https://tienda.icontec.org/product/documentacion-presentacion-de-trabajos-academicos/)). Su texto completo no estuvo disponible para validar un preajuste; se configura con Libre y la guía institucional. No se etiqueta un formato aproximado como cumplimiento certificado. Portada, resúmenes, listas preliminares, paginación especial y estructura del trabajo se completan según la institución.
+
+## Tipografías para entregas
+
+La [guía oficial de fuentes APA, revisada en febrero de 2026](https://apastyle.apa.org/style-grammar-guidelines/paper-format/font), admite varias fuentes legibles y menciona Aptos 12, Calibri 11, Arial 11, Lucida Sans Unicode 10, Times New Roman 12, Georgia 11 y Computer Modern 10. El selector académico ofrece Arimo, Carlito, Liberation Serif, Gelasio y Latin Modern Roman como alternativas libres, con el tamaño correspondiente. Las alternativas mantienen su nombre real y no garantizan aceptación si la institución exige la fuente original exacta.
+
+El catálogo incluye 81 familias: también Inter, IBM Plex, STIX Two Text, EB Garamond, Gentium Plus, Merriweather, Libre Baskerville y fuentes Noto para varios alfabetos. Puedes importar TTF/OTF estáticas con permisos compatibles y conservarlas en `.prisma`, PDF, DOCX y HTML. Aptos y Lucida Sans Unicode se importan desde una copia autorizada; no se distribuyen sus archivos comerciales. Véase [Microsoft: licencias de fuentes](https://learn.microsoft.com/en-us/typography/fonts/font-faq).
+
+## Motor y procedencia de estilos
+
+Los once estilos nuevos usan citeproc-js 2.4.63, archivos CSL y localizaciones distribuidos con la aplicación. No se descargan durante la edición. `src/csl/SOURCES.json` identifica cada archivo, revisión del repositorio, URL y SHA-256. Los originales proceden de [Citation Style Language](https://github.com/citation-style-language/styles) y conservan sus autores y licencia CC BY-SA 3.0. `src/csl-data.ts` contiene los mismos textos para el navegador y las pruebas. Las variantes Vancouver y CSE se identifican expresamente, sin atribuirles un formato universal.
+
 Se formatean páginas web, libros y artículos habituales; otros tipos conservan sus elementos bibliográficos, pero no cubren todas las variantes editoriales. Deben revisarse los nombres, la fecha, la capitalización del título y los requisitos de entrega. Los formatos se basan en las guías públicas; no sustituyen la revisión de la norma completa o del editor.
 
 ## Datos, contadores y navegación
 
-`ReferenceRecord` conserva `id`, `type`, `author`, `title`, `year` y elementos opcionales como URL, sitio, editorial, DOI, fecha de consulta, revista, volumen, número, páginas y edición. Introducir nombres personales como `Apellido, Iniciales` y separar autores con punto y coma. Se acepta el nombre completo de una entidad. `shortAuthor` permite aclarar el nombre usado en una cita.
+`ReferenceRecord` conserva `id`, `type`, `author`, `title`, `year` y elementos opcionales como URL, sitio, editorial, DOI, fecha de consulta, revista, volumen, número, páginas, edición e idioma. Introducir nombres personales como `Apellido, Nombre` o `Apellido, Iniciales` y separar autores con punto y coma. Se acepta el nombre completo de una entidad. `shortAuthor` permite aclarar el nombre usado en una cita APA. Cada cita puede llevar un localizador de página; cambiar el estilo actualiza sus etiquetas y las referencias. El idioma del título evita aplicar capitalización inglesa a títulos en español.
 
 `referenceFromUrl("google.com")` obtiene exclusivamente la dirección y el dominio. Deja vacíos autor, título y fecha. No presupone que el dominio sea autor ni inventa una fecha o un título. `missingReferenceFields()` permite solicitar esos datos. El formato muestra explícitamente los datos ausentes; por ejemplo, `s. f.` y `[Página web]`.
 
@@ -37,3 +65,5 @@ Consultadas el 9 de octubre de 2026:
 ## Verificación
 
 `pnpm exec tsx --test tests/academic.test.ts` comprueba que reordenar objetos y citas cambia la numeración, que APA/IEEE se pueden alternar, que no se inventan metadatos web, que los IDs copiados se corrigen, que la normalización se estabiliza y que los apéndices conservan su numeración.
+
+`tests/expansion.test.ts` verifica los once estilos CSL, localizadores, numeración por primera cita, secciones con geometría distinta, fuentes personales y exportaciones DOCX/HTML. Las pruebas no sustituyen la revisión editorial de un trabajo concreto.

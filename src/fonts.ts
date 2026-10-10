@@ -1,4 +1,14 @@
-import { StandardFonts, type PDFDocument, type PDFFont } from "pdf-lib";
+import {
+  StandardFonts,
+  PDFRawStream,
+  PDFName,
+  PDFDict,
+  decodePDFRawStream,
+  type PDFDocument,
+  type PDFFont,
+} from "pdf-lib";
+import { decodeFont, type LocalFont } from "./local-fonts";
+import { extraFontFamilies } from "./extra-fonts";
 
 export type FontStyle = "Regular" | "Bold" | "Italic" | "BoldItalic";
 export type FontFamily = {
@@ -374,7 +384,7 @@ export const fontFamilies: FontFamily[] = [
   },
   {
     value: "Helvetica",
-    label: "Arial / Helvetica",
+    label: "Helvetica · estándar PDF",
     css: "Arial, sans-serif",
     category: "sans-serif",
   },
@@ -390,6 +400,7 @@ export const fontFamilies: FontFamily[] = [
     css: "Courier New, monospace",
     category: "monospace",
   },
+  ...extraFontFamilies,
 ];
 
 const fallbacks = [
@@ -416,6 +427,8 @@ function fallbackOrder(text: string): string[] {
   return [...new Set([...preferred, ...fallbacks])];
 }
 export const fontCss = (font?: string) => {
+  if (font && /^local-[a-f0-9]{20}$/.test(font))
+    return [font, ...fallbacks, "serif"].join(", ");
   const family = fontFamilies.find((f) => f.value === font) ?? fontFamilies[0];
   const [primary, ...generic] = family.css.split(",");
   return [
@@ -471,7 +484,7 @@ export function setFontLoader(next: typeof loader) {
   loader = next;
   clearFontDataCache();
 }
-function readFontFile(file: string): Promise<Uint8Array> {
+export function readFontFile(file: string): Promise<Uint8Array> {
   const cached = data.get(file);
   if (cached) {
     data.delete(file);
@@ -581,13 +594,39 @@ export function assertFontCoverage(font: PDFFont, text: string) {
   if (missing.length) throw new UnsupportedGlyphError(missing);
 }
 
-export function createFontProvider(doc: PDFDocument) {
+export function createFontProvider(doc: PDFDocument, local: LocalFont[] = []) {
   const fonts = new Map<string, Promise<PDFFont>>();
   async function embed(
     family = "PrismaSans",
     bold = false,
     italic = false,
   ): Promise<PDFFont> {
+    const localFamily = local.filter((f) => f.value === family);
+    if (localFamily.length) {
+      const style: FontStyle = bold
+        ? italic
+          ? "BoldItalic"
+          : "Bold"
+        : italic
+          ? "Italic"
+          : "Regular";
+      const asset =
+        localFamily.find((f) => f.style === style) ??
+        localFamily.find((f) => f.style === (bold ? "Bold" : "Regular")) ??
+        localFamily[0];
+      if (!fonts.has(asset.hash))
+        fonts.set(
+          asset.hash,
+          (async () => {
+            doc.registerFontkit(await loadFontkit());
+            return doc.embedFont(decodeFont(asset.bytes), {
+              subset: false,
+              features: { liga: false, clig: false },
+            });
+          })(),
+        );
+      return fonts.get(asset.hash)!;
+    }
     const known =
       fontFamilies.find((f) => f.value === family) ?? fontFamilies[0];
     const file = fontFile(known.value, bold, italic);
@@ -598,11 +637,12 @@ export function createFontProvider(doc: PDFDocument) {
       const pending = (async () => {
         if (file) {
           doc.registerFontkit(await loadFontkit());
-          // Fontkit 1.1.1 also drops later glyphs when subsetting this large
-          // CJK TrueType family. Embed its validated static instance in full;
-          // all the other local faces keep their small character subsets.
+          // Fontkit 1.1.1 creates invalid outlines for several modern fonts
+          // when subsetting. Keep validated originals and disable optional
+          // Latin ligatures so exported words remain copyable.
           return doc.embedFont(await readFontFile(file), {
-            subset: known.value !== "NotoSansSC",
+            subset: false,
+            features: { liga: false, clig: false },
           });
         }
         const name =
@@ -657,6 +697,46 @@ export function createFontProvider(doc: PDFDocument) {
   };
 }
 export type FontProvider = ReturnType<typeof createFontProvider>;
+/** A full OTF container is OpenType, rather than a raw CFF font program. */
+export async function finalizeFontStreams(doc: PDFDocument) {
+  await doc.flush();
+  const descriptors = new Set<PDFDict>();
+  for (const [, object] of doc.context.enumerateIndirectObjects())
+    if (
+      object instanceof PDFDict &&
+      object.get(PDFName.of("Type")) === PDFName.of("FontDescriptor")
+    ) {
+      const ref =
+        object.get(PDFName.of("FontFile2")) ??
+        object.get(PDFName.of("FontFile3"));
+      if (!ref) continue;
+      const stream = doc.context.lookup(ref);
+      if (!(stream instanceof PDFRawStream)) continue;
+      const bytes = decodePDFRawStream(stream).decode();
+      if (
+        bytes[0] !== 79 ||
+        bytes[1] !== 84 ||
+        bytes[2] !== 84 ||
+        bytes[3] !== 79
+      )
+        continue;
+      stream.dict.set(PDFName.of("Subtype"), PDFName.of("OpenType"));
+      object.delete(PDFName.of("FontFile2"));
+      object.set(PDFName.of("FontFile3"), ref);
+      descriptors.add(object);
+    }
+  for (const [, object] of doc.context.enumerateIndirectObjects())
+    if (
+      object instanceof PDFDict &&
+      object.get(PDFName.of("Subtype")) === PDFName.of("CIDFontType2")
+    ) {
+      const ref = object.get(PDFName.of("FontDescriptor"));
+      if (ref && descriptors.has(doc.context.lookup(ref) as PDFDict)) {
+        object.set(PDFName.of("Subtype"), PDFName.of("CIDFontType0"));
+        object.delete(PDFName.of("CIDToGIDMap"));
+      }
+    }
+}
 export type FontRun = { text: string; font: PDFFont; family: string };
 
 export async function resolveFontRuns(

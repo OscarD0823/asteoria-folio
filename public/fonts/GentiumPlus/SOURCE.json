@@ -1,0 +1,89 @@
+{
+  "family": "Gentium Plus",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/gentiumplus/METADATA.pb",
+  "metadataSha256": "6398e988c30ba480f9b9ab54cbcef415801dbdf5e1522bab040e2ad2273e4b50",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/gentiumplus/OFL.txt",
+  "licenseSha256": "c309a440be606e283ccacc746662d714b9c5b5a7a0a10dd2514b90206b55ddfe",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "GentiumPlus-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/gentiumplus/GentiumPlus-Regular.ttf",
+      "sha256": "845e06bb4673a908a5f3b3b4ac9f38841750a07faa9aa45bfcb5796893346f0b"
+    },
+    {
+      "filename": "GentiumPlus-Italic.ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/gentiumplus/GentiumPlus-Italic.ttf",
+      "sha256": "18df1f3ddf09cf72338f25c45ca0d1922fb5e86cdd748522dbd6bede4fb1f99d"
+    },
+    {
+      "filename": "GentiumPlus-Bold.ttf",
+      "weight": 700,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/gentiumplus/GentiumPlus-Bold.ttf",
+      "sha256": "716c4a16887550b13f40b408df5dad6c410c72a00867c5fe802a9ed483e3fb8d"
+    },
+    {
+      "filename": "GentiumPlus-BoldItalic.ttf",
+      "weight": 700,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/gentiumplus/GentiumPlus-BoldItalic.ttf",
+      "sha256": "35e7ad6591694a832de59df1899bccc88e0af8ad5fff20533b63751747851c71"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "GentiumPlus-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "GentiumPlus-Regular.ttf",
+      "axisInstances": {},
+      "glyphCount": 4307,
+      "unicodeCount": 2783,
+      "sha256": "845e06bb4673a908a5f3b3b4ac9f38841750a07faa9aa45bfcb5796893346f0b",
+      "bytes": 822956,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "GentiumPlus-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "GentiumPlus-Bold.ttf",
+      "axisInstances": {},
+      "glyphCount": 4307,
+      "unicodeCount": 2783,
+      "sha256": "716c4a16887550b13f40b408df5dad6c410c72a00867c5fe802a9ed483e3fb8d",
+      "bytes": 824904,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "GentiumPlus-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "GentiumPlus-Italic.ttf",
+      "axisInstances": {},
+      "glyphCount": 4307,
+      "unicodeCount": 2783,
+      "sha256": "18df1f3ddf09cf72338f25c45ca0d1922fb5e86cdd748522dbd6bede4fb1f99d",
+      "bytes": 873104,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "GentiumPlus-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "GentiumPlus-BoldItalic.ttf",
+      "axisInstances": {},
+      "glyphCount": 4307,
+      "unicodeCount": 2783,
+      "sha256": "35e7ad6591694a832de59df1899bccc88e0af8ad5fff20533b63751747851c71",
+      "bytes": 890860,
+      "derivation": "None: unmodified official static font."
+    }
+  ]
+}

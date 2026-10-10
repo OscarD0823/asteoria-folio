@@ -1,0 +1,83 @@
+{
+  "family": "Gelasio",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/gelasio/METADATA.pb",
+  "metadataSha256": "03e0786b11a780cca302f7d43265567331ccf262f79ec85b992af70d30675acf",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/gelasio/OFL.txt",
+  "licenseSha256": "b393cb01867c919b44381512120dc3e4c954c7b47e2035c405f3a324799a4d29",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "Gelasio[wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/gelasio/Gelasio%5Bwght%5D.ttf",
+      "sha256": "4daecea457258c9ebeb8bc99ed3fd24353618bfad3ea4b93fa0b5d0468fc04e4"
+    },
+    {
+      "filename": "Gelasio-Italic[wght].ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/gelasio/Gelasio-Italic%5Bwght%5D.ttf",
+      "sha256": "52559e845a4d33514e5f93bb9ae7dbeae1894a53f2c565a15f18af40cd337c09"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "Gelasio-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "Gelasio[wght].ttf",
+      "axisInstances": {
+        "wght": 400.0
+      },
+      "glyphCount": 1062,
+      "unicodeCount": 917,
+      "sha256": "530e50716bec8e68b9027799bbc8e710ca9803585ae88ede33767a38cf384b93",
+      "bytes": 95864,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "Gelasio-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "Gelasio[wght].ttf",
+      "axisInstances": {
+        "wght": 700.0
+      },
+      "glyphCount": 1062,
+      "unicodeCount": 917,
+      "sha256": "b8c14e6ba661fe4fafb00ec46e4cd5461df1c47098625f9a284e63c13d11b115",
+      "bytes": 96116,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "Gelasio-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "Gelasio-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 400.0
+      },
+      "glyphCount": 1062,
+      "unicodeCount": 917,
+      "sha256": "07dfa92b1f3029e14bc787aba2a1cf5d517de3aeab8033d2d3884ba3a1532ba7",
+      "bytes": 97620,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "Gelasio-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "Gelasio-Italic[wght].ttf",
+      "axisInstances": {
+        "wght": 700.0
+      },
+      "glyphCount": 1062,
+      "unicodeCount": 917,
+      "sha256": "225f0992f779efb1aaa97cb696516dea2a77821cbe9efdcac4b8489008bc1c1c",
+      "bytes": 97696,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

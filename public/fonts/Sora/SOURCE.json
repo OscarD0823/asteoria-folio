@@ -1,0 +1,50 @@
+{
+  "family": "Sora",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/sora/METADATA.pb",
+  "metadataSha256": "02662b9eb0e843a22cd88d3574b76a209b152ab90ec6945f406ee36d893401ab",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/sora/OFL.txt",
+  "licenseSha256": "ba0b9729c9428ba79a0459ab8ec575791b51509dbec213e383d0316d37fec299",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "Sora[wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/sora/Sora%5Bwght%5D.ttf",
+      "sha256": "84ff7096ae3ec6c8be47d906d1a0ba4de7f2ce78c615275c77301964a316e16c"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "Sora-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "Sora[wght].ttf",
+      "axisInstances": {
+        "wght": 400
+      },
+      "glyphCount": 508,
+      "unicodeCount": 376,
+      "sha256": "9b6ba9bec040b1d9a54f7e66434cd6ab761ef81005dbecec9b204ec5ca94d3a9",
+      "bytes": 53352,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "Sora-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "Sora[wght].ttf",
+      "axisInstances": {
+        "wght": 700
+      },
+      "glyphCount": 508,
+      "unicodeCount": 376,
+      "sha256": "c41572035fb255a0aa02dacac8246bf2af6f330397bec0cf1fdf0b76e20df64a",
+      "bytes": 53424,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

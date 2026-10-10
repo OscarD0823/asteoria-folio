@@ -1,0 +1,87 @@
+{
+  "family": "Asap",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/asap/METADATA.pb",
+  "metadataSha256": "1188fe4148fd4ba93660ac03256a774146925b6cfc477210de619b8fa3e12b7c",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/asap/OFL.txt",
+  "licenseSha256": "a6f4d778db0d2a87c2c6e560f71eb018b4253505b2f23c108724dea5d4d74ed0",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "Asap[wdth,wght].ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/asap/Asap%5Bwdth%2Cwght%5D.ttf",
+      "sha256": "7bf29bcab72f7d00de600e964a3fc206620050d8448ddd976822378d0fe18028"
+    },
+    {
+      "filename": "Asap-Italic[wdth,wght].ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/asap/Asap-Italic%5Bwdth%2Cwght%5D.ttf",
+      "sha256": "a21e12f9babf2d02526003b27dff884b6d1cd0fed883ffe7740725626a11dd59"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "Asap-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "Asap[wdth,wght].ttf",
+      "axisInstances": {
+        "wght": 400,
+        "wdth": 100.0
+      },
+      "glyphCount": 783,
+      "unicodeCount": 647,
+      "sha256": "5bae3a8cac8655481a1b95e9ef5685738d2da20173f1e64dd09e0142445f0158",
+      "bytes": 68648,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "Asap-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "Asap[wdth,wght].ttf",
+      "axisInstances": {
+        "wght": 700,
+        "wdth": 100.0
+      },
+      "glyphCount": 785,
+      "unicodeCount": 647,
+      "sha256": "4142945f1b7003bc5b6088c7de9df3c562ab6979d5ffa9e73d333e89f237d32d",
+      "bytes": 68924,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "Asap-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "Asap-Italic[wdth,wght].ttf",
+      "axisInstances": {
+        "wght": 400,
+        "wdth": 100.0
+      },
+      "glyphCount": 783,
+      "unicodeCount": 647,
+      "sha256": "2cacf6b04f559e0bfc1caa87efbdc20a424c164731ab70a0110cc7354894068d",
+      "bytes": 73272,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    },
+    {
+      "file": "Asap-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "Asap-Italic[wdth,wght].ttf",
+      "axisInstances": {
+        "wght": 700,
+        "wdth": 100.0
+      },
+      "glyphCount": 785,
+      "unicodeCount": 647,
+      "sha256": "c0f572e4c3817e20d46dcbc0fd084275823c0b4d4444e4a6d16ccbf93d1fa5cb",
+      "bytes": 73696,
+      "derivation": "Static instance and Unicode subset; Prisma internal names."
+    }
+  ]
+}

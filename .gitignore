@@ -10,3 +10,6 @@ release/
 *.p12
 *.jks
 *.dpapi
+
+__pycache__/
+*.pyc

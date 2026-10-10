@@ -6,6 +6,7 @@ const files = [
   "LICENSE",
   "README.md",
   "README-academic.md",
+  "README-word.md",
   "package.json",
   "pnpm-lock.yaml",
   "pnpm-workspace.yaml",
@@ -25,9 +26,11 @@ const files = [
   "public/fonts",
   "public/manifest.webmanifest",
   "public/licencias.txt",
+  "public/version.json",
   "public/third-party",
 ];
 const excludes = [
+  "scripts/__pycache__",
   "android/.gradle",
   "android/build",
   "android/app/build",

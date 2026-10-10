@@ -94,16 +94,23 @@ import { DocumentNavigation } from "./DocumentNavigation";
 import { blankWithWatermarks, watermarkCandidate } from "./watermarks";
 import { insertBlankPage } from "./page-insertion";
 import { WordTools } from "./WordTools";
-import { DocumentRuler } from "./DocumentRuler";
+import { DocumentRuler, VerticalDocumentRuler } from "./DocumentRuler";
+import { selectedSection, documentSections, changeSection } from "./sections";
 import { normalizeAcademicDocument, academicPlainText } from "./academic";
 import { documentStatistics } from "./document-tools";
 import type { TextPreparation, Inspection } from "./native";
 import type { RichNode } from "./flow";
-import { fontFamilies } from "./fonts";
+import { FontPicker } from "./FontPicker";
+import {
+  importLocalFont,
+  validateLocalFonts,
+  mountLocalFonts,
+} from "./local-fonts";
 import { RichEditor, type RichEditorInstance } from "./LazyRichEditor";
 import { PageFrame } from "./PageFrame";
 import { Button, PageThumbnail, Signature } from "./components";
 import { download } from "./download";
+import { Updates } from "./Updates";
 import { preparePrint, printDocument, type PrintPage } from "./printing";
 import { InstallApp } from "./InstallApp";
 import { formatRichNode, hasRichMark } from "./rich-format";
@@ -176,6 +183,7 @@ export default function Studio() {
     [range, setRange] = useState("1"),
     [compress, setCompress] = useState(false),
     [exportName, setExportName] = useState("");
+  const [exportFormat, setExportFormat] = useState("pdf");
   const [printPages, setPrintPages] = useState<PrintPage[]>([]),
     [printCount, setPrintCount] = useState(0),
     [printScope, setPrintScope] = useState("all"),
@@ -238,6 +246,38 @@ export default function Studio() {
     state.current = clean;
     setWorkspace(clean);
     setSaved("Guardando…");
+  }
+  useEffect(() => {
+    let closed = false,
+      dispose: (() => void) | undefined;
+    mountLocalFonts(workspace.fonts ?? [])
+      .then((cleanup) => {
+        if (closed) cleanup();
+        else dispose = cleanup;
+      })
+      .catch(fail);
+    return () => {
+      closed = true;
+      dispose?.();
+    };
+  }, [workspace.fonts]);
+  async function importFonts(files: File[]) {
+    const fonts = [...(state.current.fonts ?? [])];
+    for (const file of files) {
+      if (file.size > 8 * 1024 * 1024)
+        throw new Error("Elige fuentes TTF u OTF de hasta 8 MB por archivo.");
+      const face = await importLocalFont(
+        new Uint8Array(await file.arrayBuffer()),
+      );
+      const index = fonts.findIndex(
+        (f) => f.value === face.value && f.style === face.style,
+      );
+      if (index >= 0) fonts[index] = face;
+      else fonts.push(face);
+    }
+    await validateLocalFonts(fonts);
+    commit({ ...state.current, fonts });
+    inform("Fuentes importadas en este proyecto.");
   }
   function changeMark(pageId: string, m: Mark) {
     commit(
@@ -352,37 +392,41 @@ export default function Studio() {
     const expected = ++flowJob.current,
       flow = workspace.flow;
     const t = setTimeout(() => {
-      renderFlow(flow, state.current.name)
-        .then(async ({ bytes, content, pageMap }) => {
-          if (expected !== flowJob.current || state.current.flow !== flow)
-            return;
-          const doc = await PDFDocument.load(bytes),
-            sourceId = uid();
-          const next = {
-            ...state.current,
-            flow: {
-              ...flow,
-              pageMap,
-              content:
-                JSON.stringify(content) === JSON.stringify(flow.content)
-                  ? flow.content
-                  : content,
-            },
-            sources: [
-              { id: sourceId, name: state.current.name + ".pdf", bytes },
-            ],
-            pages: doc.getPages().map((_, index) => ({
-              id: state.current.pages[index]?.id ?? uid(),
-              sourceId,
-              index,
-              rotation: 0,
-              marks: [],
-            })),
-          };
-          state.current = next;
-          setWorkspace(next);
-          if (!activeId) setActiveId(next.pages[0].id);
-        })
+      renderFlow({ ...flow, fonts: state.current.fonts }, state.current.name)
+        .then(
+          async ({ bytes, content, pageMap, pageLayouts, pageSections }) => {
+            if (expected !== flowJob.current || state.current.flow !== flow)
+              return;
+            const doc = await PDFDocument.load(bytes),
+              sourceId = uid();
+            const next = {
+              ...state.current,
+              flow: {
+                ...flow,
+                pageMap,
+                pageLayouts,
+                pageSections,
+                content:
+                  JSON.stringify(content) === JSON.stringify(flow.content)
+                    ? flow.content
+                    : content,
+              },
+              sources: [
+                { id: sourceId, name: state.current.name + ".pdf", bytes },
+              ],
+              pages: doc.getPages().map((_, index) => ({
+                id: state.current.pages[index]?.id ?? uid(),
+                sourceId,
+                index,
+                rotation: 0,
+                marks: [],
+              })),
+            };
+            state.current = next;
+            setWorkspace(next);
+            if (!activeId) setActiveId(next.pages[0].id);
+          },
+        )
         .catch((e) => {
           if (e?.name !== "AbortError") fail(e);
         });
@@ -396,6 +440,7 @@ export default function Studio() {
     workspace.flow?.layout,
     workspace.flow?.references,
     workspace.flow?.academicStyle,
+    workspace.fonts,
   ]);
   useEffect(() => {
     if (!rich) return;
@@ -796,7 +841,7 @@ export default function Studio() {
       setBusy("");
     }
   }
-  async function updateDocumentLayout(next: PageLayout) {
+  async function updateDocumentLayout(next: PageLayout, sectionId?: string) {
     validateLayout(next);
     if (
       !Number.isFinite(next.left) ||
@@ -814,12 +859,40 @@ export default function Studio() {
       h - ((next.top + next.bottom) * 72) / 25.4 < 100
     )
       throw new Error("Reduce los márgenes para dejar espacio al contenido.");
-    if (state.current.flow)
+    if (state.current.flow) {
+      const flow = state.current.flow,
+        section =
+          sectionId === undefined
+            ? selectedSection(rich, flow.layout)
+            : (documentSections(flow.content, flow.layout).find(
+                (s) => s.id === sectionId,
+              ) ?? documentSections(flow.content, flow.layout)[0]);
+      const headerKeys = [
+        "header",
+        "footer",
+        "headerFirst",
+        "footerFirst",
+        "headerEven",
+        "footerEven",
+        "differentFirst",
+        "oddEven",
+      ] as const;
+      const changedHeaders = headerKeys.some(
+        (key) => section.layout[key] !== next[key],
+      );
       commit({
         ...state.current,
-        flow: { ...state.current.flow, layout: next },
+        flow: section.id
+          ? {
+              ...flow,
+              content: changeSection(flow.content, section.id, {
+                layout: next,
+                ...(changedHeaders ? { linkToPrevious: false } : {}),
+              }),
+            }
+          : { ...flow, layout: next },
       });
-    else {
+    } else {
       setBusy("Aplicando diseño…");
       try {
         const current = state.current.layout;
@@ -1124,6 +1197,35 @@ export default function Studio() {
   async function exportPdf() {
     setBusy("Preparando PDF…");
     try {
+      if (["docx", "html", "md", "txt"].includes(exportFormat)) {
+        const [{ documentForExport }, exporter] = await Promise.all([
+          import("./export-source"),
+          import("./document-export"),
+        ]);
+        const flow = await documentForExport(state.current),
+          name = safeName(exportName),
+          mime =
+            exportFormat === "docx"
+              ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              : exportFormat === "html"
+                ? "text/html;charset=utf-8"
+                : exportFormat === "md"
+                  ? "text/markdown;charset=utf-8"
+                  : "text/plain;charset=utf-8";
+        setBusy("Preparando " + exportFormat.toUpperCase() + "…");
+        const bytes =
+          exportFormat === "docx"
+            ? await exporter.exportDocx(flow, name, state.current.fonts)
+            : exportFormat === "html"
+              ? await exporter.exportHtml(flow, name, state.current.fonts)
+              : exportFormat === "md"
+                ? exporter.exportMarkdown(flow)
+                : new TextEncoder().encode(academicPlainText(flow.content));
+        await download(bytes, name + "." + exportFormat, mime);
+        setDialog(null);
+        inform("Documento exportado como " + exportFormat.toUpperCase() + ".");
+        return;
+      }
       const ids =
         scope === "current" && active
           ? [active.id]
@@ -1133,6 +1235,21 @@ export default function Studio() {
               )
             : undefined;
       let bytes = await buildPdf(state.current, ids);
+      if (exportFormat === "png") {
+        const { exportPageImages } = await import("./image-export"),
+          result = await exportPageImages(
+            bytes,
+            state.current.sources.map((s) => s.id),
+          );
+        await download(
+          result.bytes,
+          safeName(exportName) + "." + result.extension,
+          result.mime,
+        );
+        setDialog(null);
+        inform("Imágenes exportadas.");
+        return;
+      }
       if (compress)
         bytes = (await runNative({
           action: "compress",
@@ -1393,11 +1510,24 @@ export default function Studio() {
   const rw = fit
       ? Math.min(800, Math.max(240, stageWidth - 72))
       : (595.28 * zoom) / 100,
-    sf = rich?.getAttributes("textStyle").fontFamily ?? selected?.font ?? font,
+    sf =
+      rich?.getAttributes("textStyle").fontFamily ??
+      rich?.getAttributes(rich.isActive("heading") ? "heading" : "paragraph")
+        .fontFamily ??
+      selected?.font ??
+      font,
     ss =
       parseFloat(rich?.getAttributes("textStyle").fontSize ?? "") ||
+      Number(
+        rich?.getAttributes(rich.isActive("heading") ? "heading" : "paragraph")
+          .fontSize,
+      ) ||
       selected?.size ||
       size;
+  const currentSection = workspace.flow
+    ? selectedSection(rich, workspace.flow.layout)
+    : null;
+  const currentLayout = currentSection?.layout ?? workspace.layout ?? layout;
   const icon = (
     label: string,
     Icon: React.ComponentType<{ size?: number }>,
@@ -1462,6 +1592,10 @@ export default function Studio() {
                 100 % local
               </span>
               <InstallApp />
+              <Updates
+                beforeReload={() => saveSession(state.current)}
+                onError={fail}
+              />
             </div>
           </header>
           <main className="home-main">
@@ -1637,7 +1771,7 @@ export default function Studio() {
             </section>
           </main>
           <footer className="home-footer">
-            <span>Prisma PDF 4.0 · Hecho para crear.</span>
+            <span>Prisma PDF 5.0 · Hecho para crear.</span>
             <a
               href="https://github.com/OscarD0823/prisma-pdf"
               target="_blank"
@@ -1685,13 +1819,17 @@ export default function Studio() {
               {icon("Guardar proyecto", Save, () => void saveNamed())}
               {icon("Imprimir", Printer, () => void beginPrint())}
               <InstallApp />
+              <Updates
+                beforeReload={() => saveSession(state.current)}
+                onError={fail}
+              />
               <Button
-                title="Guardar PDF"
+                title="Exportar documento"
                 className="primary"
                 onClick={beginExport}
               >
                 <Download size={16} />
-                <span>Guardar PDF</span>
+                <span>Exportar</span>
               </Button>
             </div>
           </header>
@@ -1787,17 +1925,48 @@ export default function Studio() {
                   )}
                   <div className="ribbon-group font-group">
                     <div className="ribbon-row">
-                      <select
-                        aria-label="Tipo de letra"
+                      <FontPicker
                         value={sf}
-                        onChange={(e) => format("font", e.target.value)}
-                      >
-                        {fontFamilies.map((f) => (
-                          <option key={f.value} value={f.value}>
-                            {f.label}
-                          </option>
-                        ))}
-                      </select>
+                        fonts={workspace.fonts}
+                        onChange={(value) => format("font", value)}
+                        onAcademicFont={(value, points) => {
+                          if (rich && !rich.isDestroyed) {
+                            rich
+                              .chain()
+                              .focus()
+                              .setFontFamily(value)
+                              .setFontSize(points + "pt")
+                              .run();
+                            setFont(value);
+                            setSize(points);
+                            setTick((v) => v + 1);
+                          } else {
+                            setFont(value);
+                            setSize(points);
+                            if (selected)
+                              for (const page of workspace.pages)
+                                if (page.marks.some((m) => m.id === selectedId))
+                                  changeMark(page.id, {
+                                    ...selected,
+                                    font: value,
+                                    size: points,
+                                    richText: selected.richText
+                                      ? formatRichNode(
+                                          formatRichNode(
+                                            selected.richText,
+                                            "font",
+                                            value,
+                                          ),
+                                          "size",
+                                          String(points),
+                                        )
+                                      : undefined,
+                                  });
+                          }
+                        }}
+                        onImport={importFonts}
+                        onError={fail}
+                      />
                       <input
                         aria-label="Tamaño de letra"
                         type="number"
@@ -2206,7 +2375,7 @@ export default function Studio() {
               tab={tab}
               flow={workspace.flow}
               editor={rich}
-              layout={workspace.flow?.layout ?? workspace.layout ?? layout}
+              layout={currentLayout}
               onFlow={(flow) => {
                 commit({ ...state.current, flow });
                 setView("write");
@@ -2359,15 +2528,15 @@ export default function Studio() {
                 <div
                   className="flow-paper"
                   style={{
-                    width: (pageSize(workspace.flow.layout)[0] * 4) / 3,
-                    zoom: rw / ((pageSize(workspace.flow.layout)[0] * 4) / 3),
-                    minHeight: (pageSize(workspace.flow.layout)[1] * 4) / 3,
-                    padding: `${workspace.flow.layout.top}mm ${workspace.flow.layout.right}mm ${workspace.flow.layout.bottom}mm ${workspace.flow.layout.left}mm`,
+                    width: (pageSize(currentLayout)[0] * 4) / 3,
+                    zoom: rw / ((pageSize(currentLayout)[0] * 4) / 3),
+                    minHeight: (pageSize(currentLayout)[1] * 4) / 3,
+                    padding: `${currentLayout.top}mm ${currentLayout.right}mm ${currentLayout.bottom}mm ${currentLayout.left}mm`,
                   }}
                 >
                   {showRuler && (
                     <DocumentRuler
-                      layout={workspace.flow.layout}
+                      layout={currentLayout}
                       onChange={(next) => {
                         void updateDocumentLayout(next).catch(fail);
                       }}
@@ -2392,6 +2561,32 @@ export default function Studio() {
                           .run()
                       }
                     />
+                  )}
+                  {showRuler && (
+                    <VerticalDocumentRuler
+                      layout={currentLayout}
+                      onChange={(next) =>
+                        void updateDocumentLayout(next).catch(fail)
+                      }
+                    />
+                  )}
+                  {showRuler && (
+                    <VerticalDocumentRuler
+                      side="right"
+                      layout={currentLayout}
+                      onChange={(next) =>
+                        void updateDocumentLayout(next).catch(fail)
+                      }
+                    />
+                  )}
+                  {currentSection && (
+                    <div className="active-section-label">
+                      {currentSection.title} ·{" "}
+                      {currentLayout.orientation === "portrait"
+                        ? "Vertical"
+                        : "Horizontal"}{" "}
+                      · {currentLayout.columns || 1} columna(s)
+                    </div>
                   )}
                   {workspace.flow.layout.watermark?.text && (
                     <div
@@ -2448,6 +2643,19 @@ export default function Studio() {
                       selected={selectedId}
                       editing={editing}
                       readonly={!!workspace.flow}
+                      rulerLayout={
+                        showRuler
+                          ? (workspace.flow?.pageLayouts?.[i] ??
+                            workspace.layout ??
+                            layout)
+                          : undefined
+                      }
+                      onRulerLayout={(next) =>
+                        void updateDocumentLayout(
+                          next,
+                          workspace.flow?.pageSections?.[i],
+                        ).catch(fail)
+                      }
                       watermark={
                         !workspace.flow
                           ? workspace.layout?.watermark
@@ -2637,7 +2845,37 @@ export default function Studio() {
             {dialog === "export" ? (
               <>
                 <h2 id="dialog-title">Tu documento, listo.</h2>
-                <p>Guarda un PDF con todos tus cambios.</p>
+                <p>
+                  Exporta tus cambios en el formato que necesites. La copia
+                  .prisma conserva el proyecto para continuar editándolo.
+                </p>
+                <label className="field">
+                  Formato
+                  <select
+                    aria-label="Formato de exportación"
+                    value={exportFormat}
+                    onChange={(e) => setExportFormat(e.target.value)}
+                  >
+                    <option value="pdf">PDF · diseño final</option>
+                    <option value="docx">Word · DOCX editable</option>
+                    <option value="html">
+                      HTML · documento con fuentes e imágenes
+                    </option>
+                    <option value="md">Markdown · MD</option>
+                    <option value="txt">Texto sin formato · TXT</option>
+                    <option value="png">Imágenes · PNG / ZIP</option>
+                  </select>
+                </label>
+                {!["pdf", "png"].includes(exportFormat) && (
+                  <p className="export-limit">
+                    Se exporta todo el documento. En DOCX el texto y las tablas
+                    son editables; las ecuaciones y gráficos se conservan como
+                    imágenes. HTML ofrece una lectura continua; Markdown y TXT
+                    priorizan el contenido. PDF conserva el diseño final. Al
+                    convertir un PDF de posiciones fijas, revisa el orden de
+                    lectura y los saltos en el archivo exportado.
+                  </p>
+                )}
                 <label className="field">
                   Nombre
                   <input
@@ -2645,18 +2883,20 @@ export default function Studio() {
                     onChange={(e) => setExportName(e.target.value)}
                   />
                 </label>
-                <label className="field">
-                  Páginas
-                  <select
-                    value={scope}
-                    onChange={(e) => setScope(e.target.value)}
-                  >
-                    <option value="all">Todo el documento</option>
-                    <option value="current">Página actual</option>
-                    <option value="range">Un rango de páginas</option>
-                  </select>
-                </label>
-                {scope === "range" && (
+                {["pdf", "png"].includes(exportFormat) && (
+                  <label className="field">
+                    Páginas
+                    <select
+                      value={scope}
+                      onChange={(e) => setScope(e.target.value)}
+                    >
+                      <option value="all">Todo el documento</option>
+                      <option value="current">Página actual</option>
+                      <option value="range">Un rango de páginas</option>
+                    </select>
+                  </label>
+                )}
+                {["pdf", "png"].includes(exportFormat) && scope === "range" && (
                   <label className="field">
                     Rango
                     <input
@@ -2666,14 +2906,16 @@ export default function Studio() {
                     />
                   </label>
                 )}
-                <label className="checkbox">
-                  <input
-                    type="checkbox"
-                    checked={compress}
-                    onChange={(e) => setCompress(e.target.checked)}
-                  />
-                  Optimizar tamaño
-                </label>
+                {exportFormat === "pdf" && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={compress}
+                      onChange={(e) => setCompress(e.target.checked)}
+                    />
+                    Optimizar tamaño
+                  </label>
+                )}
                 <div className="modal-actions">
                   <Button onClick={() => void portable()}>
                     <Save size={16} />
@@ -2681,7 +2923,7 @@ export default function Studio() {
                   </Button>
                   <Button className="primary" onClick={() => void exportPdf()}>
                     <Download size={16} />
-                    Guardar PDF
+                    Exportar {exportFormat.toUpperCase()}
                   </Button>
                 </div>
               </>

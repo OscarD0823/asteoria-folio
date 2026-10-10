@@ -1,8 +1,10 @@
-import type { FlowDocument, RichNode } from "./flow";
+import type { FlowDocument, RichNode, PageLayout } from "./flow";
 type Result = {
   bytes: Uint8Array;
   pageMap: Record<string, number>;
   content: RichNode;
+  pageLayouts: PageLayout[];
+  pageSections: string[];
 };
 type Job = {
   id: number;

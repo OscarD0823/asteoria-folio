@@ -2,6 +2,8 @@ import { PDFDocument } from "pdf-lib";
 import { pruneSources } from "./storage";
 import { uid, type Workspace } from "./pdf";
 import { pageSize, type PageLayout } from "./flow";
+import { validateLocalFonts } from "./local-fonts";
+import { academicPresets } from "./academic";
 export function validateLayout(l: PageLayout): void {
   const formats = [
     "a4",
@@ -121,6 +123,12 @@ export async function readProject(bytes: Uint8Array): Promise<Workspace> {
   )
     throw new Error("El proyecto está incompleto.");
   const docs = new Map<string, number>();
+  if (w.fonts) await validateLocalFonts(w.fonts);
+  if (w.flow?.fonts) {
+    await validateLocalFonts(w.flow.fonts);
+    if (!w.fonts) w.fonts = w.flow.fonts;
+    delete w.flow.fonts;
+  }
   let total = 0;
   for (const source of w.sources) {
     if (
@@ -161,6 +169,19 @@ export async function readProject(bytes: Uint8Array): Promise<Workspace> {
         throw new Error("Las imágenes deben estar incluidas en el proyecto.");
       check(v, depth + 1);
     }
+    const node = value as {
+      type?: string;
+      attrs?: { layout?: PageLayout; kind?: string };
+    };
+    if (node.type === "sectionBreak") {
+      if (
+        !["continuous", "nextPage", "oddPage", "evenPage"].includes(
+          node.attrs?.kind ?? "",
+        )
+      )
+        throw new Error("El salto de sección no es válido.");
+      validateLayout(node.attrs?.layout as PageLayout);
+    }
   };
   for (const p of w.pages) {
     if (
@@ -185,7 +206,7 @@ export async function readProject(bytes: Uint8Array): Promise<Workspace> {
     validateLayout(w.flow.layout);
     if (
       w.flow.academicStyle &&
-      !["free", "apa", "ieee", "iso690"].includes(w.flow.academicStyle)
+      !Object.hasOwn(academicPresets, w.flow.academicStyle)
     )
       throw new Error("El estilo académico no es válido.");
     if (

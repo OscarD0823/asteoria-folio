@@ -1,0 +1,103 @@
+{
+  "family": "Playfair Display",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "d08233f9c581786e8c834a1f0695a4f27869c119",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/d08233f9c581786e8c834a1f0695a4f27869c119/ofl/playfairdisplay/METADATA.pb",
+  "metadataSha256": "f908ff4e8d2cb1e653fb85d5cfd9bc5c0262d9ddd7c8de3a1ebcdf40bc271c62",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/d08233f9c581786e8c834a1f0695a4f27869c119/ofl/playfairdisplay/OFL.txt",
+  "licenseSha256": "f5b03ea0b27c7f5afb9702771ee57679ae8ba6b471b6ba9e62d985d3256f1929",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "PlayfairDisplay-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/d08233f9c581786e8c834a1f0695a4f27869c119/ofl/playfairdisplay/PlayfairDisplay-Regular.ttf",
+      "sha256": "844b4c3b02e307318abb61d8ebd55bfb8e19304515075fd8af06af099480191e"
+    },
+    {
+      "filename": "PlayfairDisplay-Italic.ttf",
+      "weight": 400,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/d08233f9c581786e8c834a1f0695a4f27869c119/ofl/playfairdisplay/PlayfairDisplay-Italic.ttf",
+      "sha256": "f658325ffab1a9f9ce0bdcd2cfc2f7d6ac144bf92a49580eb70913732825a3e2"
+    },
+    {
+      "filename": "PlayfairDisplay-Bold.ttf",
+      "weight": 700,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/d08233f9c581786e8c834a1f0695a4f27869c119/ofl/playfairdisplay/PlayfairDisplay-Bold.ttf",
+      "sha256": "37fcc00a7503976693088bed271e64ce34fca5119181da9acf5b74bd59da8c7e"
+    },
+    {
+      "filename": "PlayfairDisplay-BoldItalic.ttf",
+      "weight": 700,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/d08233f9c581786e8c834a1f0695a4f27869c119/ofl/playfairdisplay/PlayfairDisplay-BoldItalic.ttf",
+      "sha256": "aa17c37411fc706e484f29591a86c5b15be51022cb7b33a3ce411274a7d9e9b5"
+    },
+    {
+      "filename": "PlayfairDisplay-Black.ttf",
+      "weight": 900,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/d08233f9c581786e8c834a1f0695a4f27869c119/ofl/playfairdisplay/PlayfairDisplay-Black.ttf",
+      "sha256": "145f22e93511706943bb9f0af3496e70ec139e89c675a9c1543301634b11262f"
+    },
+    {
+      "filename": "PlayfairDisplay-BlackItalic.ttf",
+      "weight": 900,
+      "style": "italic",
+      "url": "https://raw.githubusercontent.com/google/fonts/d08233f9c581786e8c834a1f0695a4f27869c119/ofl/playfairdisplay/PlayfairDisplay-BlackItalic.ttf",
+      "sha256": "b9f4b47055adea18249253913994b06eba9c3c073c4ef3bf890732b5b433c13c"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "PlayfairDisplay-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "PlayfairDisplay-Regular.ttf",
+      "axisInstances": {},
+      "glyphCount": 1102,
+      "unicodeCount": 658,
+      "sha256": "844b4c3b02e307318abb61d8ebd55bfb8e19304515075fd8af06af099480191e",
+      "bytes": 210208,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "PlayfairDisplay-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "PlayfairDisplay-Bold.ttf",
+      "axisInstances": {},
+      "glyphCount": 1102,
+      "unicodeCount": 658,
+      "sha256": "37fcc00a7503976693088bed271e64ce34fca5119181da9acf5b74bd59da8c7e",
+      "bytes": 213592,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "PlayfairDisplay-Italic.ttf",
+      "style": "Italic",
+      "sourceFile": "PlayfairDisplay-Italic.ttf",
+      "axisInstances": {},
+      "glyphCount": 1100,
+      "unicodeCount": 658,
+      "sha256": "f658325ffab1a9f9ce0bdcd2cfc2f7d6ac144bf92a49580eb70913732825a3e2",
+      "bytes": 213028,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "PlayfairDisplay-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "sourceFile": "PlayfairDisplay-BoldItalic.ttf",
+      "axisInstances": {},
+      "glyphCount": 1100,
+      "unicodeCount": 658,
+      "sha256": "aa17c37411fc706e484f29591a86c5b15be51022cb7b33a3ce411274a7d9e9b5",
+      "bytes": 215008,
+      "derivation": "None: unmodified official static font."
+    }
+  ]
+}

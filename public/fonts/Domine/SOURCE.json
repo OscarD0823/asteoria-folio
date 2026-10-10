@@ -1,0 +1,53 @@
+{
+  "family": "Domine",
+  "license": "OFL-1.1",
+  "upstream": "https://github.com/google/fonts",
+  "revision": "b8611166432c039f7019a007d6c67600ea4b27be",
+  "metadataUrl": "https://raw.githubusercontent.com/google/fonts/b8611166432c039f7019a007d6c67600ea4b27be/ofl/domine/METADATA.pb",
+  "metadataSha256": "faf090f3f05d456c7c57ce418587bec9e79a8279b123ba5fa837d149a86eeacb",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/b8611166432c039f7019a007d6c67600ea4b27be/ofl/domine/OFL.txt",
+  "licenseSha256": "96e65d9c227a972e38035b849bba1e8b7879eecbb52f278be1e71dd481187f02",
+  "fonttoolsVersion": "4.61.1",
+  "derivation": "Unmodified official static faces where supplied; other faces are static 400/700 instances, optical size 12 where available, Unicode subset and Prisma internal names. All fonts retaining their reserved displayed names use unmodified static releases. Original copyright and license retained.",
+  "unicodeRanges": "0000-052F,1D00-1FFF,2000-27FF,2C60-2C7F,2DE0-2DFF,A640-A69F,A720-A7FF,FB00-FB06,FEFF",
+  "inputs": [
+    {
+      "filename": "Domine-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/b8611166432c039f7019a007d6c67600ea4b27be/ofl/domine/Domine-Regular.ttf",
+      "sha256": "506e373ccfe036ede8b8488e1beb2b86c3839ebe32b7a2dba43270164fcd443b"
+    },
+    {
+      "filename": "Domine-Bold.ttf",
+      "weight": 700,
+      "style": "normal",
+      "url": "https://raw.githubusercontent.com/google/fonts/b8611166432c039f7019a007d6c67600ea4b27be/ofl/domine/Domine-Bold.ttf",
+      "sha256": "d3a54ebdf4811bb8aee01c9617e418ce9e5e0e8abcfd675f4b51adb2ad19446e"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "Domine-Regular.ttf",
+      "style": "Regular",
+      "sourceFile": "Domine-Regular.ttf",
+      "axisInstances": {},
+      "glyphCount": 462,
+      "unicodeCount": 438,
+      "sha256": "506e373ccfe036ede8b8488e1beb2b86c3839ebe32b7a2dba43270164fcd443b",
+      "bytes": 137880,
+      "derivation": "None: unmodified official static font."
+    },
+    {
+      "file": "Domine-Bold.ttf",
+      "style": "Bold",
+      "sourceFile": "Domine-Bold.ttf",
+      "axisInstances": {},
+      "glyphCount": 462,
+      "unicodeCount": 438,
+      "sha256": "d3a54ebdf4811bb8aee01c9617e418ce9e5e0e8abcfd675f4b51adb2ad19446e",
+      "bytes": 146200,
+      "derivation": "None: unmodified official static font."
+    }
+  ]
+}
