@@ -223,6 +223,10 @@ export const DocumentAttributes = Extension.create({
         },
       },
       {
+        types: ["paragraph", "heading", "table"],
+        attributes: { academicStyle: { default: null } },
+      },
+      {
         types: ["paragraph", "heading", "caption", "appendix"],
         attributes: {
           fontFamily: {

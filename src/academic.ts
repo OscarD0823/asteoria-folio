@@ -787,6 +787,28 @@ export function normalizeAcademicDocument(
   const next = clone(content),
     reserved = new Set<string>(),
     used = new Set<string>();
+  // Initialize newly inserted blocks once. Later manual formatting remains editable.
+  function inheritStyle(node: RichNode, inTable = false) {
+    if (node.type === "generatedIndex" || node.type === "caption") return;
+    const table = inTable || node.type === "table";
+    if (
+      academicPresets[style].fontFamily &&
+      (node.type === "paragraph" || node.type === "heading") &&
+      node.attrs?.academicStyle !== style
+    ) {
+      const formatted = applyAcademicStyle(node, style);
+      if (table) {
+        formatted.attrs = {
+          ...formatted.attrs,
+          firstLineIndent: 0,
+          lineHeight: 1,
+        };
+      }
+      Object.assign(node, formatted);
+    }
+    node.content?.forEach((child) => inheritStyle(child, table));
+  }
+  inheritStyle(next);
   const originalIds = new WeakMap<RichNode, string>();
   walk(next, (node) => {
     if (clean(node.attrs?.id)) {

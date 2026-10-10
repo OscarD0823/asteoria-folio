@@ -287,6 +287,50 @@ test("applying APA reformats all paragraphs/headings and ISO preserves custom la
   assert.deepEqual(applyAcademicStyle(apa, "apa"), apa);
 });
 
+test("new paragraphs inherit the academic preset while existing manual formatting survives typing", () => {
+  const first = normalizeAcademicDocument(
+    {
+      type: "doc",
+      content: [
+        paragraph(text("Nuevo cuerpo")),
+        {
+          type: "table",
+          content: [
+            {
+              type: "tableRow",
+              content: [
+                { type: "tableCell", content: [paragraph(text("Celda"))] },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    [],
+    "apa",
+  );
+  assert.equal(first.content?.[0].attrs?.fontFamily, "PrismaSerif");
+  assert.equal(first.content?.[0].attrs?.firstLineIndent, 36);
+  assert.equal(first.content?.[0].attrs?.lineHeight, 2);
+  const table = first.content?.find((n) => n.type === "table");
+  const cell = table?.content?.[0].content?.[0].content?.[0];
+  assert.equal(cell?.attrs?.firstLineIndent, 0);
+  assert.equal(cell?.attrs?.lineHeight, 1);
+  first.content![0].attrs!.fontSize = 14;
+  first.content![0].attrs!.lineHeight = 1.5;
+  const afterTyping = normalizeAcademicDocument(first, [], "apa");
+  assert.equal(afterTyping.content?.[0].attrs?.fontSize, 14);
+  assert.equal(afterTyping.content?.[0].attrs?.lineHeight, 1.5);
+  const iso = {
+    type: "doc",
+    content: [paragraph(text("Formato institucional"))],
+  };
+  assert.equal(
+    normalizeAcademicDocument(iso, [], "iso690").content?.[0].attrs?.fontFamily,
+    undefined,
+  );
+});
+
 test("duplicate pasted IDs become unique; generated index contents do not count as source", () => {
   const doc: RichNode = {
     type: "doc",

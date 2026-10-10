@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { captureSelection, restoreSelection } from "./document-selection";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { Node, Extension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
@@ -165,13 +166,13 @@ export function RichEditor({
       !editor.isDestroyed &&
       JSON.stringify(editor.getJSON()) !== incoming
     ) {
-      const { from, to } = editor.state.selection;
+      const selection = captureSelection(editor.state.selection);
       editor.commands.setContent(content, { emitUpdate: false });
-      const end = editor.state.doc.content.size;
-      editor.commands.setTextSelection({
-        from: Math.min(from, end),
-        to: Math.min(to, end),
-      });
+      editor.view.dispatch(
+        editor.state.tr.setSelection(
+          restoreSelection(selection, editor.state.doc),
+        ),
+      );
     }
   }, [content, editor]);
   useEffect(() => {
