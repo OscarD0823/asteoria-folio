@@ -734,8 +734,20 @@ export default function Sheets() {
           <footer>
             Prisma Sheets 0.1.0 · Primera versión{" "}
             <nav>
-              <a href="../writer/">Prisma Writer</a>
-              <a href="../">Prisma PDF</a>
+              <a
+                href="https://oscard0823.github.io/prisma-pdf/writer/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Prisma Writer
+              </a>
+              <a
+                href="https://oscard0823.github.io/prisma-pdf/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Prisma PDF
+              </a>
               <a href="https://github.com/OscarD0823/prisma-pdf">
                 Código abierto
               </a>

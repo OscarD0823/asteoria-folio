@@ -1,4 +1,4 @@
-# Prisma Sheets 0.1.0
+# Prisma Sheets 0.1.1
 
 Primera aplicación de hojas de cálculo de la familia Prisma. Funciona localmente en la web, Android y Windows, con importación/exportación XLSX y CSV.
 

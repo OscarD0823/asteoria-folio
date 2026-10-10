@@ -5,7 +5,7 @@ export const product = {
   sheets,
   id: sheets ? "prisma-sheets" : writer ? "prisma-writer" : "prisma-pdf",
   name: sheets ? "Prisma Sheets" : writer ? "Prisma Writer" : "Prisma PDF",
-  version: sheets ? "0.1.0" : writer ? "1.1.0" : "6.1.0",
+  version: sheets ? "0.1.1" : writer ? "1.1.1" : "6.1.1",
   assetName: sheets ? "Prisma-Sheets" : writer ? "Prisma-Writer" : "Prisma-PDF",
   tagPrefix: sheets ? "sheets-v" : writer ? "writer-v" : "v",
   website:
