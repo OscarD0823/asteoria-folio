@@ -1,103 +1,2456 @@
-import {useEffect,useRef,useState,type PointerEvent as Pointer} from 'react';
-import {ArrowDown,ArrowRight,ArrowUp,Check,CheckCheck,ChevronLeft,ChevronRight,CircleHelp,Copy,Download,FilePlus2,FolderOpen,Highlighter,ImagePlus,Layers3,LoaderCircle,LockKeyhole,Maximize2,Minus,MousePointer2,PanelLeftClose,PenLine,Plus,Redo2,RotateCw,ShieldCheck,Sparkles,Trash2,Type,Undo2,X,ScanText,Shapes,MoreHorizontal,Search,Scissors,FileImage,Underline,Strikethrough,Square, Circle, Eraser} from 'lucide-react';
-import {appendPdf,buildPdf,demoWorkspace,emptyWorkspace,pageRange,rotation,turnPoint,uid,type Mark,type MarkType,type Page,type Tool,type Workspace} from './pdf';
-import {clearPdfCache,getPdf} from './renderer';
-import {runNative,type NativeObject,type Inspection} from './native';
-import {clearSession,loadSession,pruneSources,saveSession} from './storage';
-import {Button,PageCanvas,MarkView,Signature} from './components';
-import {download,clearNativeExports} from './download';
-import {InstallApp} from './InstallApp';
-
-const tools=[{id:'select',icon:MousePointer2,label:'Seleccionar',key:'V'},{id:'edit',icon:ScanText,label:'Editar texto',key:'E'},{id:'objects',icon:Shapes,label:'Imágenes originales',key:'O'},{id:'text',icon:Type,label:'Añadir texto',key:'T'},{id:'highlight',icon:Highlighter,label:'Resaltar',key:'H'},{id:'draw',icon:PenLine,label:'Dibujar',key:'D'},{id:'image',icon:ImagePlus,label:'Imagen',key:'I'},{id:'signature',icon:PenLine,label:'Firma',key:'F'}] as const;
-const moreTools=[{id:'underline',icon:Underline,label:'Subrayar'},{id:'strikeout',icon:Strikethrough,label:'Tachar'},{id:'rectangle',icon:Square,label:'Rectángulo'},{id:'ellipse',icon:Circle,label:'Elipse'},{id:'arrow',icon:ArrowRight,label:'Flecha'},{id:'redact',icon:Eraser,label:'Eliminar por área'}] as const;
-const palette=['#183e3b','#1fa994','#ffce54','#f48e75','#5c7bd9','#101820'];
-const message=(e:unknown)=>e instanceof Error?e.message:'No pudimos completar esta acción.';
-const safeName=(name:string)=>name.replace(/\.pdf$/i,'').replace(/[<>:"/\\|?*\x00-\x1f]/g,'-')||'Mi documento';
-function ObjectBox({object,page,w,h,scale,selected,onSelect}:{object:NativeObject;page:Page;w:number;h:number;scale:number;selected:boolean;onSelect:()=>void}){const delta=page.rotation;const [bw,bh]=delta%180?[h,w]:[w,h];const [x,y]=turnPoint(object.x,object.y,bw,bh,delta);return <button type="button" className={`original-box ${object.kind} ${selected?'selected':''}`} aria-label={object.kind==='text'?`Editar texto: ${object.text}`:`Seleccionar imagen original ${object.id}`} title={object.editable?'Haz clic para editar':'Texto vertical o girado: usa Eliminar por área'} onPointerDown={e=>e.stopPropagation()} onClick={onSelect} style={{left:x*scale,top:y*scale,width:object.width*scale,height:object.height*scale,transform:`rotate(${delta}deg)`,transformOrigin:'0 0'}}/>;}
-
-export default function Studio(){
-  const [workspace,setWorkspace]=useState<Workspace>(emptyWorkspace);const state=useRef(workspace);state.current=workspace;
-  const [activeId,setActiveId]=useState(''),[tool,setTool]=useState<Tool>('select'),[selectedId,setSelectedId]=useState('');
-  const [nativeSelected,setNativeSelected]=useState<NativeObject|null>(null),[inspection,setInspection]=useState<Inspection|null>(null),[inspecting,setInspecting]=useState(false);
-  const [zoom,setZoom]=useState(85),[fit,setFit]=useState(true),[stageWidth,setStageWidth]=useState(850),[dimensions,setDimensions]=useState<[number,number]>([595.28,841.89]);
-  const [text,setText]=useState('Tu texto aquí'),[size,setSize]=useState(16),[color,setColor]=useState('#183e3b'),[font,setFont]=useState('Helvetica'),[bold,setBold]=useState(false),[italic,setItalic]=useState(false);
-  const [pendingImage,setPendingImage]=useState<{data:string;ratio:number;type:'image'|'signature'}|null>(null);
-  const [busy,setBusy]=useState(''),[notice,setNotice]=useState(''),[error,setError]=useState('');
-  const [modal,setModal]=useState<'signature'|'export'|'help'|'more'|null>(null),[exportName,setExportName]=useState(''),[exportScope,setExportScope]=useState('all'),[range,setRange]=useState('1'),[compress,setCompress]=useState(false);
-  const [showPages,setShowPages]=useState(()=>window.innerWidth>800),[dirty,setDirty]=useState(false),[isDemo,setIsDemo]=useState(true),[ready,setReady]=useState(false),[localStatus,setLocalStatus]=useState(''),[find,setFind]=useState('');
-  const [history,setHistory]=useState<{past:Workspace[];future:Workspace[]}>({past:[],future:[]});const histories=useRef(history);histories.current=history;
-  const [draft,setDraft]=useState<Mark|null>(null);const initialized=useRef(false),stage=useRef<HTMLDivElement>(null),fileInput=useRef<HTMLInputElement>(null),appendInput=useRef<HTMLInputElement>(null),imageInput=useRef<HTMLInputElement>(null),imagesPdfInput=useRef<HTMLInputElement>(null);
-  const gesture=useRef<{mode:'move'|'draw'|'area';start:[number,number];mark:Mark;pageId:string}|null>(null);
-  const active=workspace.pages.find(p=>p.id===activeId)??workspace.pages[0],source=workspace.sources.find(s=>s.id===active?.sourceId),selected=active?.marks.find(m=>m.id===selectedId);
-  const pageNumber=active?workspace.pages.indexOf(active)+1:0,[w,h]=dimensions,renderWidth=fit?Math.min(w,Math.max(120,stageWidth-50)):w*zoom/100,scale=renderWidth/w;
-  const inform=(msg:string)=>{setNotice(msg);setError('');};
-  const clearSelection=()=>{setSelectedId('');setNativeSelected(null);};
-  function commit(next:Workspace){const previous=state.current;const clean=pruneSources(next);setHistory(h=>({past:[...h.past,previous].slice(-25),future:[]}));state.current=clean;setWorkspace(clean);setDirty(true);setIsDemo(false);}
-  function changePage(page:Page){commit({...state.current,pages:state.current.pages.map(p=>p.id===page.id?page:p)});}
-  function undo(){const h=histories.current;if(!h.past.length)return;setHistory({past:h.past.slice(0,-1),future:[state.current,...h.future]});setWorkspace(h.past.at(-1)!);clearSelection();setDirty(true);}
-  function redo(){const h=histories.current;if(!h.future.length)return;setHistory({past:[...h.past,state.current],future:h.future.slice(1)});setWorkspace(h.future[0]);clearSelection();setDirty(true);}
-  useEffect(()=>{if(initialized.current)return;initialized.current=true;setBusy('Preparando tu espacio');(async()=>{let saved;try{saved=await loadSession();}catch{setLocalStatus('Guardado local no disponible');}if(saved?.workspace.pages.length){setWorkspace(saved.workspace);setActiveId(saved.workspace.pages[0].id);setIsDemo(false);inform('Recuperamos tu sesión desde este navegador.');}else{const demo=await demoWorkspace();setWorkspace(demo);setActiveId(demo.pages[0].id);}setReady(true);})().catch(e=>setError(message(e))).finally(()=>setBusy(''));},[]);
-  useEffect(()=>{if(!ready||isDemo||!workspace.pages.length)return;setLocalStatus('Guardando en tu navegador…');const timer=setTimeout(()=>{void saveSession(workspace).then(()=>setLocalStatus('Guardado en este navegador')).catch(()=>setLocalStatus('Sin espacio local: descarga tu PDF'));},300);return()=>clearTimeout(timer);},[workspace,isDemo,ready]);
-  useEffect(()=>{if(!stage.current)return;const observer=new ResizeObserver(entries=>setStageWidth(entries[0].contentRect.width));observer.observe(stage.current);return()=>observer.disconnect();},[]);
-  useEffect(()=>{if(!notice)return;const timer=setTimeout(()=>setNotice(''),6000);return()=>clearTimeout(timer);},[notice]);
-  useEffect(()=>{let cancelled=false;setInspection(null);setNativeSelected(null);if(!source||!active||!['edit','objects'].includes(tool)){setInspecting(false);return;}setInspecting(true);void runNative({action:'inspect',bytes:source.bytes,index:active.index}).then(result=>{if(!cancelled)setInspection(result as Inspection);}).catch(e=>{if(!cancelled)setError(message(e));}).finally(()=>{if(!cancelled)setInspecting(false);});return()=>{cancelled=true;};},[source?.id,active?.index,tool]);
-  useEffect(()=>{const handler=(e:BeforeUnloadEvent)=>{if(dirty&&localStatus!=='Guardado en este navegador')e.preventDefault();};window.addEventListener('beforeunload',handler);return()=>window.removeEventListener('beforeunload',handler);},[dirty,localStatus]);
-  useEffect(()=>{if(!modal)return;const old=document.activeElement as HTMLElement|null;const dialog=document.querySelector<HTMLElement>('[role="dialog"]');dialog?.querySelector<HTMLElement>('input,textarea,button')?.focus();const key=(e:KeyboardEvent)=>{if(e.key==='Escape'&&!busy)setModal(null);if(e.key==='Tab'&&dialog){const elements=Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled),input,textarea,select,a[href]'));const first=elements[0],last=elements.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}};window.addEventListener('keydown',key);return()=>{window.removeEventListener('keydown',key);old?.focus();};},[modal,busy]);
-  useEffect(()=>{const key=(e:KeyboardEvent)=>{if(busy||modal||document.querySelector('[aria-labelledby="install-title"]'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();beginExport();return;}if((e.target as HTMLElement).closest('input,textarea,select'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();}else if(e.key==='Escape'){setTool('select');clearSelection();setPendingImage(null);}else if(e.key==='Delete'&&selected){removeSelected();}else{const t=tools.find(t=>t.key.toLowerCase()===e.key.toLowerCase());if(t)chooseTool(t.id);}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);});
-  function chooseTool(next:Tool){clearSelection();setPendingImage(null);setModal(null);if(next==='image')imageInput.current?.click();else if(next==='signature')setModal('signature');else{setTool(next);if(next==='highlight')setColor('#ffce54');if(['draw','rectangle','ellipse','arrow','underline','strikeout'].includes(next))setSize(2);}}
-  async function openFiles(files:FileList|File[]|null,append=false){if(!files?.length||busy)return;setBusy(append?'Uniendo documentos':'Abriendo documento');try{let next=append?state.current:emptyWorkspace();let total=next.sources.reduce((n,s)=>n+s.bytes.length,0);for(const file of Array.from(files)){if(!/\.pdf$/i.test(file.name)&&file.type!=='application/pdf')throw new Error('Selecciona archivos PDF.');total+=file.size;if(total>100*1024*1024)throw new Error('Usa un conjunto de documentos de hasta 100 MB.');next=await appendPdf(next,new Uint8Array(await file.arrayBuffer()),file.name);}if(append)commit(next);else{await clearPdfCache();setWorkspace(next);setHistory({past:[],future:[]});setDirty(false);}setIsDemo(false);setActiveId(next.pages[append?state.current.pages.length-1:0].id);clearSelection();setTool('edit');inform('Tu PDF está listo. Los archivos permanecen en este dispositivo.');}catch(e){setError(message(e));}finally{setBusy('');if(fileInput.current)fileInput.current.value='';if(appendInput.current)appendInput.current.value='';}}
-  async function loadImage(file?:File,type:'image'|'signature'='image',dataUrl?:string){if(!file&&!dataUrl)return;const url=dataUrl??URL.createObjectURL(file!);try{const image=new Image();image.src=url;await image.decode();const c=document.createElement('canvas'),ratio=Math.min(1,2400/Math.max(image.naturalWidth,image.naturalHeight));c.width=Math.round(image.naturalWidth*ratio);c.height=Math.round(image.naturalHeight*ratio);c.getContext('2d')!.drawImage(image,0,0,c.width,c.height);setPendingImage({data:c.toDataURL('image/png'),ratio:c.width/c.height,type});setTool(type);clearSelection();inform('Haz clic en la página para colocar '+(type==='image'?'la imagen.':'tu firma.'));}catch{setError('Usa una imagen PNG, JPG o WebP.');}finally{if(!dataUrl)URL.revokeObjectURL(url);if(imageInput.current)imageInput.current.value='';}}
-  function selectNative(object:NativeObject){setNativeSelected(object);setSelectedId('');setText(object.text??'');setSize(object.size||16);setColor(object.color);setFont(object.font);setBold(object.bold);setItalic(object.italic);}
-  async function applyNative(deleteOnly=false){if(!source||!active||!nativeSelected||busy)return;const object=nativeSelected;setBusy(deleteOnly?'Eliminando elemento original':'Editando el contenido original');try{if(object.kind==='text'&&!deleteOnly){const {StandardFonts,PDFDocument}=await import('pdf-lib');const d=await PDFDocument.create();const check=await d.embedFont(StandardFonts.Helvetica);try{check.encodeText(text);}catch{throw new Error('Usa letras, números y signos comunes. Los emojis no son compatibles.');}}
-      const bytes=await runNative({action:'remove',bytes:source.bytes,index:active.index,objectId:object.id}) as Uint8Array;
-      let mark:Mark|undefined;if(!deleteOnly)mark={id:uid(),type:object.kind==='text'?'text':'image',x:object.x,y:object.kind==='text'?(object.baseline??object.y+object.size)-size:object.y,width:object.width,height:object.kind==='text'?size*1.25*Math.max(1,text.split('\n').length):object.height,size,color,font,bold,italic,text:object.kind==='text'?text:undefined,data:object.data,viewRotation:0};
-      const id=uid();commit({...state.current,sources:[...state.current.sources,{id,name:source.name,bytes}],pages:state.current.pages.map(p=>p.id===active.id?{...p,sourceId:id,index:0,marks:mark?[...p.marks,mark]:p.marks}:p)});setTool('select');setNativeSelected(null);setSelectedId(mark?.id??'');inform(deleteOnly?'Elemento eliminado del contenido.':object.kind==='text'?'Texto original sustituido. Puedes moverlo y ajustarlo.':'Imagen lista para mover, cambiar de tamaño o eliminar.');
-    }catch(e){setError(message(e));}finally{setBusy('');}}
-  function point(e:Pointer):[number,number]{const rect=e.currentTarget.getBoundingClientRect();return [Math.max(0,Math.min(w,(e.clientX-rect.left)/scale)),Math.max(0,Math.min(h,(e.clientY-rect.top)/scale))];}
-  function down(e:Pointer){if(!active||busy||(e.target as HTMLElement).closest('[data-mark],.original-box'))return;clearSelection();if(['select','edit','objects'].includes(tool))return;const p=point(e);e.currentTarget.setPointerCapture(e.pointerId);const base:Mark={id:uid(),type:tool as MarkType,x:p[0],y:p[1],width:180,height:22,color,size,font,bold,italic,viewRotation:active.rotation};
-    if(tool==='text'){if(!text.trim()){setError('Escribe el texto antes de colocarlo.');return;}const mark={...base,text,width:Math.max(50,...text.split('\n').map(t=>t.length*size*.56)),height:text.split('\n').length*size*1.25};changePage({...active,marks:[...active.marks,mark]});setSelectedId(mark.id);setTool('select');}
-    else if(tool==='image'||tool==='signature'){if(!pendingImage)return;const width=Math.min(180,w*.45),height=width/pendingImage.ratio;const mark={...base,type:pendingImage.type,data:pendingImage.data,width,height,x:Math.min(p[0],w-width),y:Math.min(p[1],h-height)};changePage({...active,marks:[...active.marks,mark]});setSelectedId(mark.id);setPendingImage(null);setTool('select');}
-    else{const mark={...base,width:1,height:1,points:tool==='draw'?[[0,0] as [number,number]]:undefined};gesture.current={mode:tool==='draw'?'draw':'area',start:p,mark,pageId:active.id};setDraft(mark);}}
-  function move(e:Pointer){const g=gesture.current;if(!g)return;const p=point(e);if(g.mode==='move'){const delta=rotation(active.rotation-g.mark.viewRotation),dx=p[0]-g.start[0],dy=p[1]-g.start[1];const [mx,my]=delta===90?[dy,-dx]:delta===180?[-dx,-dy]:delta===270?[-dy,dx]:[dx,dy];setDraft({...g.mark,x:g.mark.x+mx,y:g.mark.y+my});}else if(g.mode==='area')setDraft({...g.mark,x:Math.min(g.start[0],p[0]),y:Math.min(g.start[1],p[1]),width:Math.max(1,Math.abs(p[0]-g.start[0])),height:Math.max(1,Math.abs(p[1]-g.start[1]))});else{const points=[...(g.mark.points??[]),[p[0]-g.mark.x,p[1]-g.mark.y] as [number,number]];g.mark={...g.mark,points,width:Math.max(1,...points.map(v=>Math.abs(v[0]))),height:Math.max(1,...points.map(v=>Math.abs(v[1])))};setDraft(g.mark);}}
-  function up(){const g=gesture.current,mark=draft;gesture.current=null;setDraft(null);if(!g||!mark)return;const page=state.current.pages.find(p=>p.id===g.pageId);if(!page)return;if(g.mode==='move'){if(Math.abs(mark.x-g.mark.x)+Math.abs(mark.y-g.mark.y)>.3)changePage({...page,marks:page.marks.map(m=>m.id===mark.id?mark:m)});}else if(g.mode==='draw'?(mark.points?.length??0)>1:mark.width>3&&mark.height>3){if(mark.type==='redact')void redact(mark);else{changePage({...page,marks:[...page.marks,mark]});setSelectedId(mark.id);}}}
-  function startMove(e:Pointer,mark:Mark){if(!['select','edit','objects'].includes(tool)||busy)return;e.stopPropagation();setSelectedId(mark.id);setNativeSelected(null);const paper=e.currentTarget.closest('.paper')!,r=paper.getBoundingClientRect();paper.setPointerCapture(e.pointerId);gesture.current={mode:'move',start:[(e.clientX-r.left)/scale,(e.clientY-r.top)/scale],mark,pageId:active.id};setDraft(mark);}
-  async function redact(mark:Mark){if(!source||!active)return;setBusy('Eliminando contenido del área');try{const a=turnPoint(mark.x,mark.y,w,h,rotation(-active.rotation)),b=turnPoint(mark.x+mark.width,mark.y+mark.height,w,h,rotation(-active.rotation));const rect:[number,number,number,number]=[Math.min(a[0],b[0]),Math.min(a[1],b[1]),Math.max(a[0],b[0]),Math.max(a[1],b[1])];const bytes=await runNative({action:'redact',bytes:source.bytes,index:active.index,rect}) as Uint8Array;const id=uid();const marks=active.marks.filter(m=>{const delta=rotation(active.rotation-m.viewRotation),[bw,bh]=delta%180?[h,w]:[w,h];const q=turnPoint(m.x,m.y,bw,bh,delta),r=turnPoint(m.x+m.width,m.y+m.height,bw,bh,delta);return Math.max(q[0],r[0])<mark.x||Math.min(q[0],r[0])>mark.x+mark.width||Math.max(q[1],r[1])<mark.y||Math.min(q[1],r[1])>mark.y+mark.height;});commit({...state.current,sources:[...state.current.sources,{id,name:source.name,bytes}],pages:state.current.pages.map(p=>p.id===active.id?{...p,sourceId:id,index:0,marks}:p)});inform('Contenido eliminado del área. Revisa el resultado antes de descargar.');}catch(e){setError(message(e));}finally{setBusy('');}}
-  function updateSelected(patch:Partial<Mark>){if(selected&&active)changePage({...active,marks:active.marks.map(m=>m.id===selected.id?{...m,...patch}:m)});}
-  function removeSelected(){if(!selected)return;changePage({...active,marks:active.marks.filter(m=>m.id!==selected.id)});setSelectedId('');}
-  function reorder(direction:number){const i=workspace.pages.indexOf(active),n=i+direction;if(n<0||n>=workspace.pages.length)return;const pages=[...workspace.pages];[pages[i],pages[n]]=[pages[n],pages[i]];commit({...workspace,pages});}
-  function deletePage(){if(!active||workspace.pages.length<2)return;const pages=workspace.pages.filter(p=>p.id!==active.id);commit({...workspace,pages});setActiveId(pages[Math.min(pageNumber-1,pages.length-1)].id);clearSelection();}
-  async function blankPage(){if(busy)return;setBusy('Añadiendo página');try{const {PDFDocument}=await import('pdf-lib');const doc=await PDFDocument.create();doc.addPage([595.28,841.89]);const next=await appendPdf(workspace,await doc.save(),'Página en blanco.pdf');commit({...next,name:workspace.pages.length?workspace.name:'Mi documento'});setActiveId(next.pages.at(-1)!.id);}catch(e){setError(message(e));}finally{setBusy('');}}
-  function beginExport(scope='all'){if(!active)return;setExportName(workspace.name);setExportScope(scope);setModal('export');}
-  async function exportDocument(){if(!active||busy)return;setBusy('Preparando tu PDF');try{const ids=exportScope==='current'?[active.id]:exportScope==='range'?pageRange(range,workspace.pages.length).map(i=>workspace.pages[i].id):undefined;let bytes=await buildPdf(workspace,ids);if(compress)bytes=await runNative({action:'compress',bytes,index:0}) as Uint8Array;await download(bytes,safeName(exportName||workspace.name)+'.pdf');setModal(null);if(exportScope==='all')setDirty(false);inform('PDF descargado con tus cambios.');}catch(e){setError(message(e));}finally{setBusy('');}}
-  async function pageImage(){if(!active||busy)return;setBusy('Creando imagen de la página');try{const bytes=await buildPdf(workspace,[active.id]),pdf=await getPdf({id:uid(),name:'Vista',bytes}),page=await pdf.getPage(1),viewport=page.getViewport({scale:1.5}),canvas=document.createElement('canvas');canvas.width=viewport.width;canvas.height=viewport.height;await page.render({canvas,canvasContext:canvas.getContext('2d')!,viewport}).promise;const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('No se pudo crear la imagen.');await download(new Uint8Array(await blob.arrayBuffer()),safeName(workspace.name)+`-pagina-${pageNumber}.png`,'image/png');setModal(null);}catch(e){setError(message(e));}finally{setBusy('');}}
-  async function imagesToPdf(files:FileList|null){if(!files?.length||busy)return;setBusy('Convirtiendo imágenes a PDF');try{const {PDFDocument}=await import('pdf-lib');const doc=await PDFDocument.create();for(const file of Array.from(files)){if(file.size>25*1024*1024)throw new Error('Usa imágenes de hasta 25 MB.');const url=URL.createObjectURL(file);try{const image=new Image();image.src=url;await image.decode();const canvas=document.createElement('canvas');const ratio=Math.min(1,3000/Math.max(image.naturalWidth,image.naturalHeight));canvas.width=Math.round(image.naturalWidth*ratio);canvas.height=Math.round(image.naturalHeight*ratio);canvas.getContext('2d')!.drawImage(image,0,0,canvas.width,canvas.height);const embedded=await doc.embedPng(canvas.toDataURL('image/png')),width=Math.min(595.28,embedded.width),height=width*embedded.height/embedded.width,page=doc.addPage([width,height]);page.drawImage(embedded,{x:0,y:0,width,height});}finally{URL.revokeObjectURL(url);}}const next=await appendPdf(state.current,await doc.save(),'Imágenes.pdf');commit(next);setActiveId(next.pages.at(-1)!.id);setModal(null);inform('Las imágenes se añadieron como páginas PDF.');}catch(e){setError(message(e));}finally{setBusy('');if(imagesPdfInput.current)imagesPdfInput.current.value='';}}
-  async function addGlobal(numbering=false){setBusy('Preparando páginas');try{const pages:Page[]=[];for(let i=0;i<workspace.pages.length;i++){const p=workspace.pages[i],s=workspace.sources.find(s=>s.id===p.sourceId)!;const pdf=await getPdf(s),page=await pdf.getPage(p.index+1),view=page.getViewport({scale:1,rotation:rotation(page.rotate+p.rotation)});pages.push({...p,marks:[...p.marks,{id:uid(),type:'text',x:numbering?view.width-70:40,y:numbering?view.height-35:view.height*.48,width:numbering?50:view.width-80,height:numbering?15:45,size:numbering?10:32,color:numbering?'#475569':color,text:numbering?`${i+1} / ${workspace.pages.length}`:text,font,bold,italic,opacity:numbering?1:.22,viewRotation:p.rotation}]});}commit({...workspace,pages});setModal(null);inform(numbering?'Numeración añadida a todas las páginas.':'Marca de agua añadida a todas las páginas.');}catch(e){setError(message(e));}finally{setBusy('');}}
-  async function eraseLocal(){setBusy('Borrando sesión local');setIsDemo(true);setWorkspace(emptyWorkspace());try{await clearSession();await clearNativeExports();await clearPdfCache();setWorkspace(emptyWorkspace());setHistory({past:[],future:[]});setIsDemo(true);setDirty(false);clearSelection();setLocalStatus('Sin documento guardado');setModal(null);inform('Sesión eliminada de este navegador.');}catch(e){setError(message(e));}finally{setBusy('');}}
-  const toolInfo=[...tools,...moreTools].find(t=>t.id===tool),hint=tool==='edit'?'Haz clic en una línea original para cambiar sus palabras':tool==='objects'?'Haz clic en una imagen original para moverla o eliminarla':tool==='text'?'Haz clic para colocar el texto':tool==='draw'?'Mantén presionado y dibuja':tool==='redact'?'Arrastra para eliminar texto, imágenes y gráficos del área':tool==='image'||tool==='signature'?'Haz clic para colocar tu elemento':tool==='select'?'Selecciona y mueve los elementos editables':'Arrastra sobre la página para dibujar el área';
-  const showText=tool==='text'||selected?.type==='text'||nativeSelected?.kind==='text';
-  const canStyle=showText||(!['select','edit','objects','image','signature'].includes(tool))|| (!!selected&&!['image','signature'].includes(selected.type));
-  const patchOr=(patch:Partial<Mark>,fallback:()=>void)=>selected?updateSelected(patch):fallback();
-  return <div className="app-shell">
-    <input ref={fileInput} type="file" accept="application/pdf,.pdf" multiple hidden onChange={e=>void openFiles(e.target.files)}/><input ref={appendInput} type="file" accept="application/pdf,.pdf" multiple hidden onChange={e=>void openFiles(e.target.files,true)}/><input ref={imageInput} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={e=>void loadImage(e.target.files?.[0])}/><input ref={imagesPdfInput} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden onChange={e=>void imagesToPdf(e.target.files)}/>
-    <header className="header"><a className="brand" href="./" aria-label="Prisma PDF, inicio"><img src="./logo.svg" alt=""/><span>prisma<span className="brand-pdf">PDF</span></span><span className="beta">STUDIO</span></a><div className="header-center"><LockKeyhole size={13}/><span>Tu espacio. Tus documentos.</span></div><div className="header-actions"><InstallApp/><Button title="Ayuda y privacidad" onClick={()=>setModal('help')}><CircleHelp size={18}/><span>Guía rápida</span></Button></div></header>
-    <div className="document-bar"><div className="document-info"><div className="file-symbol"><Layers3 size={21}/></div><div><h1>{workspace.name||'Mi documento'}<span>.pdf</span></h1><p>{isDemo&&workspace.pages.length?<span className="demo-badge">Documento de ejemplo</span>:<><span className="status-dot"/>{workspace.pages.length} páginas</>}<span className="dot-separator">·</span>{isDemo?'Prueba las herramientas':localStatus||'Solo en tu dispositivo'}</p></div></div><div className="document-actions"><Button disabled={!!busy} className="open-button" onClick={()=>fileInput.current?.click()}><FolderOpen size={17}/><span>Abrir PDF</span></Button><Button disabled={!active||!!busy} className="primary export-button" onClick={()=>beginExport()}><Download size={17}/><span>Descargar PDF</span></Button></div></div>
-    <div className="editor-toolbar"><div className="toolbar-left"><Button title="Mostrar u ocultar páginas" onClick={()=>setShowPages(!showPages)}><PanelLeftClose size={18}/></Button><div className="toolbar-divider"/><Button title="Deshacer (Ctrl+Z)" disabled={!history.past.length||!!busy} onClick={undo}><Undo2 size={18}/></Button><Button title="Rehacer (Ctrl+Shift+Z)" disabled={!history.future.length||!!busy} onClick={redo}><Redo2 size={18}/></Button></div><nav className="tools" aria-label="Herramientas de edición">{tools.map(t=><Button key={t.id} disabled={!active||!!busy} title={`${t.label} (${t.key})`} onClick={()=>chooseTool(t.id)} className={tool===t.id?'tool active':'tool'}><t.icon size={18}/><span>{t.label}</span></Button>)}<Button title="Más herramientas" className="tool" disabled={!!busy} onClick={()=>setModal('more')}><MoreHorizontal size={19}/><span>Más</span></Button></nav></div>
-    <div className={`editor-layout ${showPages?'':'pages-hidden'}`}>
-      {showPages&&<aside className="pages-panel"><div className="panel-title"><h2>Páginas <span>{workspace.pages.length}</span></h2><Button title="Unir otro PDF" disabled={!!busy} onClick={()=>appendInput.current?.click()}><Plus size={17}/></Button></div><div className="page-list">{workspace.pages.map((p,index)=>{const s=workspace.sources.find(v=>v.id===p.sourceId)!;return <button className={`page-thumbnail ${p.id===active?.id?'current':''}`} key={p.id} disabled={!!busy} onClick={()=>{setActiveId(p.id);clearSelection();setDraft(null);gesture.current=null;}}><div className="thumbnail-paper"><PageCanvas source={s} page={p} width={116}/>{p.marks.length>0&&<span className="thumbnail-edited"><PenLine size={11}/></span>}</div><div className="thumbnail-caption"><span>{String(index+1).padStart(2,'0')}</span><span>{p.id===active?.id?'ACTUAL':p.marks.length?'Editada':'Página'}</span></div></button>;})}</div><div className="pages-bottom"><Button disabled={!!busy} onClick={()=>appendInput.current?.click()}><Layers3 size={16}/>Unir documentos</Button><Button disabled={!!busy} onClick={()=>void blankPage()}><FilePlus2 size={16}/>Página en blanco</Button><p>Los PDF se unen en tu navegador.</p></div></aside>}
-      <main className="workspace" ref={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();void openFiles(Array.from(e.dataTransfer.files),!!active);}}><div className="workspace-top"><span><span className="live-dot"/>{inspecting?'DETECTANDO CONTENIDO…':'ESPACIO DE EDICIÓN'}</span><span>{active?`${Math.round(w)} × ${Math.round(h)} pt`:'Arrastra aquí tu PDF'}</span></div><div className="document-stage">{active&&source?<div className={`paper tool-cursor-${tool}`} style={{width:renderWidth,minHeight:h*scale}} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={()=>{gesture.current=null;setDraft(null);}}><PageCanvas source={source} page={active} width={renderWidth} onSize={(a,b)=>setDimensions([a,b])} onError={setError}/>{inspection?.objects.filter(o=>o.kind===(tool==='objects'?'image':'text')).map(o=><ObjectBox key={o.id} object={o} page={active} w={w} h={h} scale={scale} selected={nativeSelected?.id===o.id} onSelect={()=>selectNative(o)}/>)}{active.marks.filter(m=>m.id!==draft?.id).map(m=><MarkView key={m.id} mark={m} page={active} w={w} h={h} scale={scale} selected={m.id===selectedId} onDown={['select','edit','objects'].includes(tool)?e=>startMove(e,m):undefined}/>)}{draft&&<MarkView mark={draft} page={active} w={w} h={h} scale={scale} selected/>}</div>:<div className="welcome"><img src="./logo.svg" alt="Prisma PDF"/><span className="eyebrow">UNA NUEVA PERSPECTIVA</span><h2>Tu documento,<br/>a tu manera.</h2><p>Edita, organiza y une tus PDF.<br/>Todo queda en tu dispositivo.</p><Button className="primary" onClick={()=>fileInput.current?.click()}><FolderOpen size={18}/>Abrir mi PDF</Button><small>También puedes arrastrarlo aquí</small></div>}</div><div className="stage-bottom"><div className="page-navigation"><Button title="Página anterior" disabled={pageNumber<2||!!busy} onClick={()=>setActiveId(workspace.pages[pageNumber-2].id)}><ChevronLeft size={16}/></Button><span>{pageNumber} <span>/ {workspace.pages.length}</span></span><Button title="Página siguiente" disabled={pageNumber>=workspace.pages.length||!!busy} onClick={()=>setActiveId(workspace.pages[pageNumber].id)}><ChevronRight size={16}/></Button></div><div className="zoom-controls"><Button title="Reducir zoom" onClick={()=>{setFit(false);setZoom(Math.max(25,(fit?Math.round(scale*100):zoom)-10));}}><Minus size={16}/></Button><span>{Math.round(scale*100)}%</span><Button title="Ampliar zoom" onClick={()=>{setFit(false);setZoom(Math.min(200,(fit?Math.round(scale*100):zoom)+10));}}><Plus size={16}/></Button><Button title="Ajustar página" onClick={()=>setFit(true)}><Maximize2 size={16}/></Button></div></div></main>
-      <aside className="properties-panel"><div className="panel-title"><h2>{nativeSelected?'Contenido original':selected?'Tu elemento':'Hazlo tuyo'}</h2><Sparkles size={17}/></div><section className="property-section"><div className="section-label"><span>HERRAMIENTA</span><span className="shortcut">{toolInfo&&'key' in toolInfo?toolInfo.key:'+'}</span></div><h3>{nativeSelected?nativeSelected.kind==='text'?'Editar palabras':'Editar imagen':selected?selected.type==='text'?'Texto editable':'Elemento editable':toolInfo?.label}</h3><p className="tool-hint">{nativeSelected?.kind==='text'?'Cambia las palabras de esta línea y aplica la edición.':selected?'Arrastra este elemento o ajusta su posición.':hint}</p>
-        {tool==='edit'&&inspection&&<><label className="field-label">Buscar en esta página<div className="number-field"><Search size={14}/><input aria-label="Buscar texto en la página" value={find} onChange={e=>setFind(e.target.value)} placeholder="Una palabra…"/></div></label>{find&&<div className="search-results">{inspection.objects.filter(o=>o.kind==='text'&&o.text?.toLocaleLowerCase().includes(find.toLocaleLowerCase())).map(o=><button key={o.id} onClick={()=>selectNative(o)}>{o.text}</button>)}</div>}{!inspection.objects.some(o=>o.kind==='text')&&<p className="tool-hint">Esta página no contiene texto seleccionable. Si es un escaneo, puedes añadir texto o borrar por área. El reconocimiento OCR aún no está incluido.</p>}</>}
-        {showText&&<label className="field-label">{nativeSelected?'Texto original':'Texto'}<textarea aria-label={nativeSelected?'Editar palabras originales':'Texto del elemento'} value={selected?.text??text} onChange={e=>patchOr({text:e.target.value,height:(selected?.size??size)*1.25*e.target.value.split('\n').length},()=>setText(e.target.value))} rows={3}/></label>}
-        {canStyle&&<><label className="field-label">Color<div className="color-palette">{palette.map(c=><button key={c} type="button" aria-label={`Color ${c}`} style={{background:c}} className={(selected?.color??color)===c?'chosen':''} disabled={!!busy} onClick={()=>patchOr({color:c},()=>setColor(c))}>{(selected?.color??color)===c&&<Check size={13}/>}</button>)}<input aria-label="Color personalizado" type="color" value={selected?.color??color} disabled={!!busy} onChange={e=>patchOr({color:e.target.value},()=>setColor(e.target.value))}/></div></label><label className="field-label">{showText?'Tamaño':'Grosor'}<div className="number-field"><input aria-label="Tamaño del elemento" type="number" min={1} max={144} value={selected?.size??size} onChange={e=>{const n=Math.max(1,Math.min(144,Number(e.target.value)||1));patchOr({size:n},()=>setSize(n));}}/><span>pt</span></div></label></>}
-        {showText&&<><label className="field-label">Tipografía<select aria-label="Tipografía" value={selected?.font??font} onChange={e=>patchOr({font:e.target.value},()=>setFont(e.target.value))}><option value="Helvetica">Sans · Helvetica</option><option value="Times-Roman">Serif · Times</option><option value="Courier">Mono · Courier</option></select></label><div className="page-actions"><Button className={(selected?.bold??bold)?'active-subtle':''} onClick={()=>patchOr({bold:!(selected?.bold??bold)},()=>setBold(!bold))}><b>Negrita</b></Button><Button className={(selected?.italic??italic)?'active-subtle':''} onClick={()=>patchOr({italic:!(selected?.italic??italic)},()=>setItalic(!italic))}><i>Cursiva</i></Button></div></>}
-        {nativeSelected&&<div className="native-actions"><Button className="primary" disabled={!!busy||!nativeSelected.editable} onClick={()=>void applyNative()}>{nativeSelected.kind==='text'?<Check size={16}/>:<MousePointer2 size={16}/>} {nativeSelected.kind==='text'?'Aplicar edición':'Habilitar movimiento'}</Button><Button className="delete-element" disabled={!!busy||!nativeSelected.editable} onClick={()=>void applyNative(true)}><Trash2 size={15}/>Eliminar original</Button>{nativeSelected.kind==='text'&&<small>La fuente se aproxima con Helvetica, Times o Courier. La edición se realiza por línea; revisa los saltos y el espacio disponible.</small>}</div>}
-        {selected&&<><div className="position-fields">{(['x','y','width','height'] as const).map(key=><label className="field-label" key={key}>{({x:'Posición X',y:'Posición Y',width:'Ancho',height:'Alto'})[key]}<input aria-label={key==='width'?'Ancho del elemento':key==='height'?'Alto del elemento':`Posición ${key.toUpperCase()}`} type="number" value={Math.round(selected[key]*10)/10} step={1} onChange={e=>updateSelected({[key]:['width','height'].includes(key)?Math.max(1,Number(e.target.value)):Number(e.target.value)})}/></label>)}</div><label className="field-label">Opacidad<input aria-label="Opacidad del elemento" type="range" min={.05} max={1} step={.05} value={selected.opacity??1} onChange={e=>updateSelected({opacity:Number(e.target.value)})}/></label><div className="page-actions"><Button onClick={()=>changePage({...active,marks:[...active.marks.filter(m=>m.id!==selected.id),selected]})}>Al frente</Button><Button onClick={()=>changePage({...active,marks:[selected,...active.marks.filter(m=>m.id!==selected.id)]})}>Al fondo</Button></div><Button disabled={!!busy} className="delete-element" onClick={removeSelected}><Trash2 size={15}/>Eliminar elemento</Button></>}
-      </section><section className="property-section"><div className="section-label"><span>ESTA PÁGINA</span><span>{String(pageNumber).padStart(2,'0')}</span></div><div className="page-actions"><Button disabled={!active||!!busy} onClick={()=>{changePage({...active,rotation:rotation(active.rotation+90)});clearSelection();}}><RotateCw size={17}/>Girar</Button><Button disabled={!active||!!busy} onClick={()=>{const pages=[...workspace.pages];pages.splice(pageNumber,0,{...active,id:uid(),marks:active.marks.map(m=>({...m,id:uid()}))});commit({...workspace,pages});}}><Copy size={17}/>Duplicar</Button><Button disabled={pageNumber<2||!!busy} onClick={()=>reorder(-1)}><ArrowUp size={17}/>Subir</Button><Button disabled={!active||pageNumber===workspace.pages.length||!!busy} onClick={()=>reorder(1)}><ArrowDown size={17}/>Bajar</Button></div><Button disabled={workspace.pages.length<2||!!busy} className="remove-page" onClick={deletePage}><Trash2 size={15}/>Eliminar página</Button></section><div className="privacy-card"><div className="privacy-icon"><ShieldCheck size={21}/></div><h3>Solo en tu dispositivo.</h3><p>PDF y cambios se guardan en memoria y en IndexedDB, dentro de este navegador. No se envían al servidor.</p><div><span className="live-dot"/>GUARDADO LOCAL</div></div></aside>
-    </div><footer className="footer"><span><ShieldCheck size={13}/>Procesamiento local</span><span className="footer-hint">{hint}</span><span>PRISMA PDF <span className="footer-version">2.0</span></span></footer>
-    {(notice||error)&&<div className={`toast ${error?'error':''}`} role={error?'alert':'status'}>{error?<CircleHelp size={18}/>:<CheckCheck size={18}/>}<span>{error||notice}</span><Button title="Cerrar aviso" onClick={()=>{setError('');setNotice('');}}><X size={16}/></Button></div>}{busy&&<div className="busy-indicator" role="status"><LoaderCircle className="spinner" size={18}/>{busy}…</div>}
-    {modal==='signature'&&<Signature onClose={()=>setModal(null)} onSave={data=>{setModal(null);void loadImage(undefined,'signature',data);}}/>}
-    {modal==='export'&&<div className="modal-backdrop"><section className="modal export-modal" role="dialog" aria-modal="true" aria-labelledby="export-title"><div className="modal-heading"><span className="eyebrow">EL SIGUIENTE PASO</span><Button title="Cerrar descarga" disabled={!!busy} onClick={()=>setModal(null)}><X size={20}/></Button></div><div className="export-art"><img src="./logo.svg" alt=""/><Download size={24}/></div><h2 id="export-title">Listo para salir.</h2><p>Tu PDF se crea aquí mismo, con todos tus cambios.</p><label className="field-label">Nombre del archivo<div className="number-field filename-field"><input aria-label="Nombre del archivo" value={exportName} onChange={e=>setExportName(e.target.value)}/><span>.pdf</span></div></label><label className="field-label">Páginas<select aria-label="Páginas que se descargarán" value={exportScope} onChange={e=>setExportScope(e.target.value)}><option value="all">Todas las páginas ({workspace.pages.length})</option><option value="current">Solo la página actual ({pageNumber})</option><option value="range">Elegir páginas / dividir PDF</option></select></label>{exportScope==='range'&&<label className="field-label">Rango de páginas<input aria-label="Rango de páginas" value={range} placeholder="1-3, 5" onChange={e=>setRange(e.target.value)}/><small>Por ejemplo: 1-3, 5. Se conserva el orden del documento.</small></label>}<label className="checkbox-label"><input type="checkbox" checked={compress} onChange={e=>setCompress(e.target.checked)}/>Optimizar sin reducir la calidad</label><small>La reducción depende del PDF; un archivo ya optimizado puede conservar su tamaño.</small><Button className="primary export-final" disabled={!!busy} onClick={()=>void exportDocument()}><Download size={18}/>Descargar mi PDF</Button><small><LockKeyhole size={12}/>No se crea ninguna copia en el servidor.</small></section></div>}
-    {modal==='more'&&<div className="modal-backdrop"><section className="modal more-modal" role="dialog" aria-modal="true" aria-labelledby="more-title"><div className="modal-heading"><span className="eyebrow">TODAS TUS HERRAMIENTAS</span><Button title="Cerrar herramientas" disabled={!!busy} onClick={()=>setModal(null)}><X size={20}/></Button></div><h2 id="more-title">Dale forma al PDF.</h2><div className="more-grid">{moreTools.map(t=><Button key={t.id} disabled={!active||!!busy} onClick={()=>chooseTool(t.id)}><t.icon size={20}/>{t.label}</Button>)}<Button disabled={!!busy} onClick={()=>{setModal(null);appendInput.current?.click();}}><Layers3 size={20}/>Unir PDF</Button><Button disabled={!active||!!busy} onClick={()=>beginExport('range')}><Scissors size={20}/>Dividir / extraer</Button><Button disabled={!!busy} onClick={()=>imagesPdfInput.current?.click()}><FileImage size={20}/>Imágenes a PDF</Button><Button disabled={!active||!!busy} onClick={()=>void pageImage()}><Download size={20}/>Página a PNG</Button><Button disabled={!active||!!busy} onClick={()=>void addGlobal(true)}><FilePlus2 size={20}/>Numerar páginas</Button><Button disabled={!active||!!busy} onClick={()=>{setCompress(true);beginExport();}}><Download size={20}/>Optimizar PDF</Button></div><label className="field-label">Marca de agua: texto<input aria-label="Texto de marca de agua" value={text} onChange={e=>setText(e.target.value)}/></label><Button disabled={!active||!!busy||!text.trim()} onClick={()=>void addGlobal()}><Type size={16}/>Añadir a todas las páginas</Button><p className="help-limits">«Eliminar por área» borra el contenido real dentro del rectángulo. Usa Deshacer si necesitas recuperarlo. Revisa el resultado antes de compartirlo.</p></section></div>}
-    {modal==='help'&&<div className="modal-backdrop"><section className="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title"><div className="modal-heading"><span className="eyebrow">GUÍA Y PRIVACIDAD</span><Button title="Cerrar guía" disabled={!!busy} onClick={()=>setModal(null)}><X size={20}/></Button></div><h2 id="help-title">Tus archivos.<br/>Bajo tu control.</h2><ol><li><b>Edita las palabras originales.</b><span>Elige «Editar texto», selecciona una línea, cambia sus palabras y pulsa «Aplicar edición». Se elimina la línea anterior y se inserta tu versión.</span></li><li><b>Mueve las imágenes.</b><span>En «Imágenes originales», selecciona una imagen y habilita el movimiento. Ajusta posición y tamaño en el panel. También puedes añadir imágenes y firmas.</span></li><li><b>Organiza y descarga.</b><span>Une, gira, duplica, elimina y ordena páginas. En «Más» tienes formas, borrado real, numeración, conversión y optimización.</span></li></ol><div className="help-shortcuts"><span><kbd>Ctrl Z</kbd>Deshacer</span><span><kbd>Ctrl S</kbd>Descargar</span><span><kbd>Supr</kbd>Eliminar elemento</span><span><kbd>E</kbd>Editar texto</span></div><p className="help-limits">El servidor entrega la aplicación; nunca recibe tus PDF. La sesión se recupera desde IndexedDB en este dispositivo. La versión web guarda únicamente el código de la aplicación en caché para trabajar sin conexión. Borrar los datos del navegador borra esa copia: descarga tus resultados. No hay OCR para escaneos ni edición de formularios o firmas certificadas. El texto usa fuentes aproximadas; las imágenes originales se convierten en PNG al moverlas. Editar o unir páginas puede invalidar firmas digitales y perder formularios interactivos.</p><div className="help-links"><a href="./prisma-pdf-source.tar.gz" download>Código fuente (AGPL-3.0)</a><a href="https://github.com/OscarD0823/prisma-pdf" target="_blank" rel="noreferrer">GitHub</a><a href="./licencias.txt" target="_blank" rel="noreferrer">Licencias</a></div><Button className="delete-element" disabled={!!busy} onClick={()=>void eraseLocal()}><Trash2 size={16}/>Borrar sesión local y cerrar documento</Button></section></div>}
-  </div>;
+import { useEffect, useRef, useState } from "react";
+import { PDFDocument } from "pdf-lib";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowRight,
+  Check,
+  Copy,
+  Download,
+  FilePlus2,
+  FolderOpen,
+  Highlighter,
+  ImagePlus,
+  Layers3,
+  LoaderCircle,
+  LockKeyhole,
+  Minus,
+  MousePointer2,
+  PanelLeftClose,
+  PenLine,
+  Plus,
+  Redo2,
+  RotateCw,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  Type,
+  Undo2,
+  X,
+  ScanText,
+  Scissors,
+  Underline,
+  Strikethrough,
+  Square,
+  Circle,
+  Eraser,
+  Printer,
+  Save,
+  Bold,
+  Italic,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  List,
+  ListOrdered,
+  Table2,
+  IndentIncrease,
+  IndentDecrease,
+  Subscript,
+  Superscript,
+  Link2,
+  FileText,
+  BookOpen,
+  Maximize2,
+} from "lucide-react";
+import {
+  appendPdf,
+  buildPdf,
+  demoWorkspace,
+  emptyWorkspace,
+  fitPdfToLayout,
+  pageRange,
+  uid,
+  rotation,
+  turnPoint,
+  type Workspace,
+  type Page,
+  type Mark,
+  type Tool,
+} from "./pdf";
+import { clearPdfCache, getPdf, releaseUnusedSources } from "./renderer";
+import { runNative, type NativeObject } from "./native";
+import {
+  loadSession,
+  saveSession,
+  saveProject,
+  listProjects,
+  loadProject,
+  deleteProject,
+  type ProjectSummary,
+  pruneSources,
+} from "./storage";
+import { projectBytes, readProject } from "./projects";
+import {
+  defaultLayout,
+  pageSize,
+  buildFlowPdf,
+  plainText,
+  type PageLayout,
+} from "./flow";
+import { fontFamilies } from "./fonts";
+import { RichEditor, type RichEditorInstance } from "./LazyRichEditor";
+import { PageFrame } from "./PageFrame";
+import { Button, PageThumbnail, Signature } from "./components";
+import { download } from "./download";
+import { preparePrint, printDocument, type PrintPage } from "./printing";
+import { InstallApp } from "./InstallApp";
+import { formatRichNode, hasRichMark } from "./rich-format";
+const safeName = (s: string) =>
+  s.replace(/\.(pdf|prisma)$/i, "").replace(/[<>:"/\\|?*\x00-\x1f]/g, "-") ||
+  "Mi documento";
+const palette = [
+  "#20273a",
+  "#6554d8",
+  "#1c8ca0",
+  "#e05688",
+  "#ffdf64",
+  "#7fdaba",
+];
+const tools = [
+  { id: "select", icon: MousePointer2, label: "Seleccionar" },
+  { id: "edit", icon: ScanText, label: "Editar palabras" },
+  { id: "text", icon: Type, label: "Texto nuevo" },
+  { id: "highlight", icon: Highlighter, label: "Resaltar texto" },
+] as const;
+type Dialog =
+  | "export"
+  | "layout"
+  | "signature"
+  | "print"
+  | "help"
+  | "table"
+  | "link"
+  | null;
+export default function Studio() {
+  const [workspace, setWorkspace] = useState<Workspace>(emptyWorkspace),
+    state = useRef(workspace);
+  state.current = workspace;
+  const [home, setHome] = useState(true),
+    [projects, setProjects] = useState<ProjectSummary[]>([]),
+    [last, setLast] = useState<Workspace>(),
+    [ready, setReady] = useState(false);
+  const [activeId, setActiveId] = useState(""),
+    [selectedId, setSelectedId] = useState(""),
+    [editing, setEditing] = useState(""),
+    [tool, setTool] = useState<Tool>("select");
+  const [tab, setTab] = useState("Inicio"),
+    [view, setView] = useState<"write" | "pdf">("write"),
+    [sidebar, setSidebar] = useState(window.innerWidth > 850),
+    [zoom, setZoom] = useState(100),
+    [fit, setFit] = useState(true),
+    [stageWidth, setStageWidth] = useState(900);
+  const [editor, setEditor] = useState<RichEditorInstance | null>(null),
+    [tick, setTick] = useState(0),
+    [font, setFont] = useState("PrismaSans"),
+    [size, setSize] = useState(12),
+    [color, setColor] = useState("#20273a");
+  const [busy, setBusy] = useState(""),
+    [error, setError] = useState(""),
+    [notice, setNotice] = useState(""),
+    [saved, setSaved] = useState("Guardado local"),
+    [dialog, setDialog] = useState<Dialog>(null);
+  const [pending, setPending] = useState<{
+      data: string;
+      ratio: number;
+      type: "image" | "signature";
+    }>(),
+    [layout, setLayout] = useState<PageLayout>(defaultLayout),
+    [scope, setScope] = useState("all"),
+    [range, setRange] = useState("1"),
+    [compress, setCompress] = useState(false),
+    [exportName, setExportName] = useState("");
+  const [printPages, setPrintPages] = useState<PrintPage[]>([]),
+    [printCount, setPrintCount] = useState(0),
+    [printScope, setPrintScope] = useState("all"),
+    [printRange, setPrintRange] = useState("1"),
+    printBytes = useRef<Uint8Array>(new Uint8Array()),
+    [rows, setRows] = useState(3),
+    [cols, setCols] = useState(3),
+    [link, setLink] = useState("https://");
+  const [history, setHistory] = useState<{
+      past: Workspace[];
+      future: Workspace[];
+    }>({ past: [], future: [] }),
+    histories = useRef(history);
+  histories.current = history;
+  const stage = useRef<HTMLDivElement>(null),
+    openInput = useRef<HTMLInputElement>(null),
+    mergeInput = useRef<HTMLInputElement>(null),
+    imageInput = useRef<HTMLInputElement>(null),
+    imagesInput = useRef<HTMLInputElement>(null),
+    initialized = useRef(false),
+    flowJob = useRef(0),
+    scrollFrame = useRef(0);
+  const active =
+      workspace.pages.find((p) => p.id === activeId) ?? workspace.pages[0],
+    selected = workspace.pages
+      .flatMap((p) => p.marks)
+      .find((m) => m.id === selectedId),
+    writing = !!workspace.flow && view === "write";
+  const rich =
+    editor && !editor.isDestroyed && (writing || !!editing) ? editor : null;
+  const fail = (e: unknown) =>
+    setError(
+      e instanceof Error ? e.message : "No pudimos completar esta acción.",
+    );
+  const inform = (s: string) => {
+    setNotice(s);
+    setError("");
+  };
+  function commit(next: Workspace, remember = true) {
+    const previous = state.current;
+    if (remember)
+      setHistory((h) => ({
+        past: [...h.past, previous].slice(-30),
+        future: [],
+      }));
+    const clean = pruneSources(next);
+    state.current = clean;
+    setWorkspace(clean);
+    setSaved("Guardando…");
+  }
+  function changeMark(pageId: string, m: Mark) {
+    commit(
+      {
+        ...state.current,
+        pages: state.current.pages.map((p) =>
+          p.id === pageId
+            ? { ...p, marks: p.marks.map((a) => (a.id === m.id ? m : a)) }
+            : p,
+        ),
+      },
+      editing !== m.id,
+    );
+  }
+  function addMarks(pageId: string, marks: Mark[]) {
+    commit({
+      ...state.current,
+      pages: state.current.pages.map((p) =>
+        p.id === pageId ? { ...p, marks: [...p.marks, ...marks] } : p,
+      ),
+    });
+  }
+  function clear() {
+    setSelectedId("");
+    setEditing("");
+    setEditor(null);
+  }
+  function undo() {
+    if (rich?.can().undo()) {
+      rich.chain().focus().undo().run();
+      return;
+    }
+    const h = histories.current;
+    if (!h.past.length) return;
+    const previous = state.current;
+    commit(h.past.at(-1)!, false);
+    setHistory({ past: h.past.slice(0, -1), future: [previous, ...h.future] });
+    clear();
+  }
+  function redo() {
+    if (rich?.can().redo()) {
+      rich.chain().focus().redo().run();
+      return;
+    }
+    const h = histories.current;
+    if (!h.future.length) return;
+    const previous = state.current;
+    commit(h.future[0], false);
+    setHistory({ past: [...h.past, previous], future: h.future.slice(1) });
+    clear();
+  }
+  async function refresh() {
+    setProjects(await listProjects());
+  }
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    Promise.all([loadSession(), listProjects()])
+      .then(([s, p]) => {
+        setLast(s?.workspace);
+        setProjects(p);
+      })
+      .catch(() => setSaved("Guardado local no disponible"))
+      .finally(() => setReady(true));
+  }, []);
+  useEffect(() => {
+    if (home || !ready || (!workspace.pages.length && !workspace.flow)) return;
+    const timer = setTimeout(() => {
+      void saveSession(workspace)
+        .then(() => {
+          setSaved("Guardado en este dispositivo");
+          setLast(workspace);
+        })
+        .catch(() => setSaved("Sin espacio: guarda una copia .prisma"));
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [workspace, home, ready]);
+  useEffect(() => {
+    if (home || !stage.current) return;
+    const o = new ResizeObserver((es) =>
+      setStageWidth(es[0].contentRect.width),
+    );
+    o.observe(stage.current);
+    return () => o.disconnect();
+  }, [home]);
+  useEffect(() => {
+    const media = matchMedia("(max-width: 700px)");
+    const resize = () => setSidebar(!media.matches);
+    media.addEventListener("change", resize);
+    return () => media.removeEventListener("change", resize);
+  }, []);
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(""), 5000);
+    return () => clearTimeout(t);
+  }, [notice]);
+  useEffect(() => {
+    void releaseUnusedSources(workspace.sources.map((s) => s.id));
+  }, [workspace.sources]);
+  useEffect(() => {
+    stage.current?.scrollTo({ top: 0, left: 0 });
+  }, [view]);
+  useEffect(() => {
+    if (dialog !== "print") {
+      setPrintPages([]);
+      printBytes.current = new Uint8Array();
+    }
+  }, [dialog]);
+  useEffect(() => () => cancelAnimationFrame(scrollFrame.current), []);
+  useEffect(() => {
+    if (!workspace.flow) return;
+    const expected = ++flowJob.current,
+      flow = workspace.flow;
+    const t = setTimeout(() => {
+      buildFlowPdf(flow, state.current.name)
+        .then(async (bytes) => {
+          if (expected !== flowJob.current || state.current.flow !== flow)
+            return;
+          const doc = await PDFDocument.load(bytes),
+            sourceId = uid();
+          const next = {
+            ...state.current,
+            sources: [
+              { id: sourceId, name: state.current.name + ".pdf", bytes },
+            ],
+            pages: doc.getPages().map((_, index) => ({
+              id: state.current.pages[index]?.id ?? uid(),
+              sourceId,
+              index,
+              rotation: 0,
+              marks: [],
+            })),
+          };
+          state.current = next;
+          setWorkspace(next);
+          if (!activeId) setActiveId(next.pages[0].id);
+        })
+        .catch(fail);
+    }, 700);
+    return () => {
+      clearTimeout(t);
+      flowJob.current++;
+    };
+  }, [workspace.flow]);
+  useEffect(() => {
+    if (!rich) return;
+    const update = () => setTick((n) => n + 1);
+    rich.on("transaction", update);
+    return () => {
+      rich.off("transaction", update);
+    };
+  }, [rich]);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (busy) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        e.shiftKey ? void portable() : void saveNamed();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "p" && !home) {
+        e.preventDefault();
+        void beginPrint();
+        return;
+      }
+      if (dialog) {
+        if (e.key === "Escape") setDialog(null);
+        return;
+      }
+      if (
+        (e.target as HTMLElement).closest(
+          'input,textarea,select,[contenteditable="true"]',
+        )
+      )
+        return;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        e.shiftKey ? redo() : undo();
+      } else if (e.key === "Delete" && selected) removeSelected();
+      else if (e.key === "Escape") {
+        clear();
+        setTool("select");
+        setPending(undefined);
+      }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  });
+  useEffect(() => {
+    if (!dialog) return;
+    const prior = document.activeElement as HTMLElement,
+      el = document.querySelector<HTMLElement>('[role="dialog"]');
+    el?.querySelector<HTMLElement>("input,button")?.focus();
+    const trap = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !el) return;
+      const items = Array.from(
+        el.querySelectorAll<HTMLElement>(
+          "button:not(:disabled),input,select,textarea,a[href]",
+        ),
+      );
+      if (e.shiftKey && document.activeElement === items[0]) {
+        e.preventDefault();
+        items.at(-1)?.focus();
+      } else if (!e.shiftKey && document.activeElement === items.at(-1)) {
+        e.preventDefault();
+        items[0]?.focus();
+      }
+    };
+    window.addEventListener("keydown", trap);
+    return () => {
+      window.removeEventListener("keydown", trap);
+      prior?.focus();
+    };
+  }, [dialog]);
+  async function enter(next: Workspace) {
+    await clearPdfCache();
+    flowJob.current++;
+    state.current = next;
+    setWorkspace(next);
+    setActiveId(next.pages[0]?.id ?? "");
+    clear();
+    setHistory({ past: [], future: [] });
+    setTool("select");
+    setHome(false);
+    setView(next.flow ? "write" : "pdf");
+    setLayout(next.flow?.layout ?? defaultLayout());
+  }
+  async function newDocument() {
+    await enter({
+      ...emptyWorkspace(),
+      flow: {
+        content: { type: "doc", content: [{ type: "paragraph" }] },
+        layout: defaultLayout(),
+      },
+    });
+  }
+  async function openFiles(files: FileList | null, append = false) {
+    if (!files?.length) return;
+    setBusy(append ? "Uniendo PDF…" : "Abriendo documento…");
+    try {
+      let next = append ? state.current : emptyWorkspace();
+      if (append && next.flow)
+        next = await appendPdf(
+          emptyWorkspace(),
+          await buildPdf(next),
+          next.name + ".pdf",
+        );
+      let total = next.sources.reduce((n, s) => n + s.bytes.length, 0);
+      for (const f of Array.from(files)) {
+        if (/\.prisma$/i.test(f.name)) {
+          if (append || files.length > 1)
+            throw new Error("Abre un solo proyecto .prisma.");
+          next = await readProject(new Uint8Array(await f.arrayBuffer()));
+          break;
+        }
+        if (!/\.pdf$/i.test(f.name) && f.type !== "application/pdf")
+          throw new Error("Selecciona un PDF o un proyecto .prisma.");
+        total += f.size;
+        if (total > 100 * 1024 * 1024)
+          throw new Error("Usa documentos de hasta 100 MB en total.");
+        next = await appendPdf(
+          next,
+          new Uint8Array(await f.arrayBuffer()),
+          f.name,
+        );
+      }
+      if (append) {
+        commit(next);
+        setView("pdf");
+      } else await enter(next);
+      inform("Documento abierto en tu dispositivo.");
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+      if (openInput.current) openInput.current.value = "";
+      if (mergeInput.current) mergeInput.current.value = "";
+    }
+  }
+  async function saveNamed() {
+    if (home || busy) return;
+    try {
+      const id = await saveProject(state.current);
+      commit({ ...state.current, projectId: id }, false);
+      await refresh();
+      inform("Proyecto guardado en tu biblioteca local.");
+    } catch (e) {
+      fail(e);
+    }
+  }
+  async function portable() {
+    if (home) return;
+    try {
+      await download(
+        projectBytes(state.current),
+        safeName(state.current.name) + ".prisma",
+        "application/json",
+      );
+      inform("Copia editable guardada con el documento y sus cambios.");
+    } catch (e) {
+      fail(e);
+    }
+  }
+  async function normalizeImage(f: File) {
+    if (f.size > 25 * 1024 * 1024)
+      throw new Error("Usa una imagen de hasta 25 MB.");
+    const url = URL.createObjectURL(f);
+    try {
+      const image = new Image();
+      image.src = url;
+      await image.decode();
+      const c = document.createElement("canvas"),
+        r = Math.min(
+          1,
+          2400 / Math.max(image.naturalWidth, image.naturalHeight),
+        );
+      c.width = Math.max(1, Math.round(image.naturalWidth * r));
+      c.height = Math.max(1, Math.round(image.naturalHeight * r));
+      c.getContext("2d")!.drawImage(image, 0, 0, c.width, c.height);
+      return {
+        data: c.toDataURL("image/png"),
+        ratio: c.width / c.height,
+        type: "image" as const,
+      };
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+  async function loadImage(f?: File) {
+    if (!f) return;
+    try {
+      const img = await normalizeImage(f);
+      if (writing && rich)
+        rich
+          .chain()
+          .focus()
+          .setImage({ src: img.data, width: 240, height: 240 / img.ratio })
+          .run();
+      else {
+        setPending(img);
+        setTool("image");
+        clear();
+        inform("Haz clic en una página para colocar la imagen.");
+      }
+    } catch (e) {
+      fail(e);
+    } finally {
+      if (imageInput.current) imageInput.current.value = "";
+    }
+  }
+  function choose(next: Tool) {
+    clear();
+    setPending(undefined);
+    setTool(next);
+    if (next === "highlight") setColor("#ffdf64");
+    if (
+      [
+        "draw",
+        "rectangle",
+        "ellipse",
+        "arrow",
+        "underline",
+        "strikeout",
+      ].includes(next)
+    )
+      setSize(2);
+  }
+  function select(id: string, edit = false) {
+    if (edit && editing !== id)
+      setHistory((h) => ({
+        past: [...h.past, state.current].slice(-30),
+        future: [],
+      }));
+    setSelectedId(id);
+    setEditing(edit ? id : "");
+    if (!edit) setEditor(null);
+  }
+  function place(p: Page, x: number, y: number) {
+    let m: Mark = {
+      id: uid(),
+      type: "text",
+      x,
+      y,
+      width: 220,
+      height: size * 1.3,
+      color,
+      size: Math.max(8, size),
+      font,
+      viewRotation: p.rotation,
+    };
+    if (tool === "text") {
+      m.text = "";
+      addMarks(p.id, [m]);
+      select(m.id, true);
+      setTool("select");
+    } else if (pending) {
+      m = {
+        ...m,
+        type: pending.type,
+        data: pending.data,
+        width: 180,
+        height: 180 / pending.ratio,
+      };
+      addMarks(p.id, [m]);
+      select(m.id);
+      setPending(undefined);
+      setTool("select");
+    }
+  }
+  async function promote(p: Page, o: NativeObject) {
+    if (busy) return;
+    const s = state.current.sources.find((s) => s.id === p.sourceId);
+    if (!s) return;
+    setBusy(
+      o.kind === "text" ? "Preparando texto editable…" : "Preparando imagen…",
+    );
+    try {
+      const viewport = (
+        await (await getPdf(s)).getPage(p.index + 1)
+      ).getViewport({ scale: 1 });
+      const bytes = (await runNative({
+          action: "remove",
+          bytes: s.bytes,
+          index: p.index,
+          objectId: o.id,
+        })) as Uint8Array,
+        id = uid(),
+        m: Mark = {
+          id: uid(),
+          type: o.kind === "text" ? "text" : "image",
+          x: o.x,
+          y: o.kind === "text" ? (o.baseline ?? o.y + o.size) - o.size : o.y,
+          width:
+            o.kind === "text"
+              ? Math.max(o.width, viewport.width - o.x - 40)
+              : o.width,
+          height: o.kind === "text" ? o.size * 1.3 : o.height,
+          size: o.size || 12,
+          color: o.color,
+          font:
+            o.font === "Helvetica"
+              ? "PrismaSans"
+              : o.font === "Times-Roman"
+                ? "PrismaSerif"
+                : "PrismaMono",
+          bold: o.bold,
+          italic: o.italic,
+          text: o.text,
+          data: o.data,
+          viewRotation: 0,
+        };
+      commit({
+        ...state.current,
+        sources: [...state.current.sources, { id, name: s.name, bytes }],
+        pages: state.current.pages.map((a) =>
+          a.id === p.id
+            ? { ...a, sourceId: id, index: 0, marks: [...a.marks, m] }
+            : a,
+        ),
+      });
+      setActiveId(p.id);
+      setTool("select");
+      select(m.id, o.kind === "text");
+      setFont(m.font!);
+      setSize(m.size);
+      setColor(m.color);
+      inform(
+        o.kind === "text"
+          ? "Escribe directamente sobre el documento."
+          : "Arrastra la imagen o su esquina para cambiar el tamaño.",
+      );
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+    }
+  }
+  async function redact(p: Page, r: [number, number, number, number]) {
+    setBusy("Eliminando contenido…");
+    try {
+      const s = state.current.sources.find((s) => s.id === p.sourceId)!,
+        pg = await (await getPdf(s)).getPage(p.index + 1),
+        v = pg.getViewport({
+          scale: 1,
+          rotation: rotation(pg.rotate + p.rotation),
+        }),
+        a = turnPoint(r[0], r[1], v.width, v.height, rotation(-p.rotation)),
+        b = turnPoint(r[2], r[3], v.width, v.height, rotation(-p.rotation));
+      const rect: [number, number, number, number] = [
+          Math.min(a[0], b[0]),
+          Math.min(a[1], b[1]),
+          Math.max(a[0], b[0]),
+          Math.max(a[1], b[1]),
+        ],
+        bytes = (await runNative({
+          action: "redact",
+          bytes: s.bytes,
+          index: p.index,
+          rect,
+        })) as Uint8Array,
+        id = uid();
+      const marks = p.marks.filter((m) => {
+        const delta = rotation(p.rotation - m.viewRotation),
+          [bw, bh] = delta % 180 ? [v.height, v.width] : [v.width, v.height],
+          a = turnPoint(m.x, m.y, bw, bh, delta),
+          b = turnPoint(m.x + m.width, m.y + m.height, bw, bh, delta);
+        return (
+          Math.max(a[0], b[0]) < r[0] ||
+          Math.min(a[0], b[0]) > r[2] ||
+          Math.max(a[1], b[1]) < r[1] ||
+          Math.min(a[1], b[1]) > r[3]
+        );
+      });
+      commit({
+        ...state.current,
+        sources: [...state.current.sources, { id, name: s.name, bytes }],
+        pages: state.current.pages.map((a) =>
+          a.id === p.id ? { ...a, sourceId: id, index: 0, marks } : a,
+        ),
+      });
+      inform("Contenido eliminado. Revisa el resultado antes de compartirlo.");
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+    }
+  }
+  function removeSelected() {
+    commit({
+      ...state.current,
+      pages: state.current.pages.map((p) => ({
+        ...p,
+        marks: p.marks.filter((m) => m.id !== selectedId),
+      })),
+    });
+    clear();
+  }
+  function format(cmd: string, value?: string) {
+    if (rich) {
+      const c = rich.chain().focus();
+      switch (cmd) {
+        case "bold":
+          c.toggleBold().run();
+          break;
+        case "italic":
+          c.toggleItalic().run();
+          break;
+        case "underline":
+          c.toggleUnderline().run();
+          break;
+        case "strike":
+          c.toggleStrike().run();
+          break;
+        case "font":
+          c.setFontFamily(value!).run();
+          setFont(value!);
+          break;
+        case "size":
+          c.setFontSize(value + "pt").run();
+          setSize(Number(value));
+          break;
+        case "color":
+          c.setColor(value!).run();
+          setColor(value!);
+          break;
+        case "highlight":
+          c.setBackgroundColor(value ?? "#ffdf64").run();
+          break;
+        case "align":
+          c.setTextAlign(value!).run();
+          break;
+        case "bullet":
+          c.toggleBulletList().run();
+          break;
+        case "ordered":
+          c.toggleOrderedList().run();
+          break;
+        case "heading":
+          value === "0"
+            ? c.setParagraph().run()
+            : c.toggleHeading({ level: Number(value) as 1 | 2 | 3 }).run();
+          break;
+        case "spacing":
+          c.updateAttributes(
+            rich.isActive("heading") ? "heading" : "paragraph",
+            { lineHeight: value },
+          ).run();
+          break;
+        case "superscript":
+          c.toggleSuperscript().run();
+          break;
+        case "subscript":
+          c.toggleSubscript().run();
+          break;
+        case "clear":
+          c.unsetAllMarks().clearNodes().run();
+          break;
+        case "indent":
+        case "outdent": {
+          const t = rich.isActive("heading") ? "heading" : "paragraph",
+            i = Number(rich.getAttributes(t).indent) || 0;
+          c.updateAttributes(t, {
+            indent: Math.max(0, Math.min(8, i + (cmd === "indent" ? 1 : -1))),
+          }).run();
+          break;
+        }
+      }
+      setTick((v) => v + 1);
+      return;
+    }
+    if (cmd === "font") setFont(value!);
+    if (cmd === "size") setSize(Number(value));
+    if (cmd === "color") setColor(value!);
+    if (!selected) return;
+    if (selected.richText) {
+      for (const p of workspace.pages)
+        if (p.marks.some((m) => m.id === selectedId))
+          changeMark(p.id, {
+            ...selected,
+            richText: formatRichNode(selected.richText, cmd, value),
+          });
+      return;
+    }
+    const patch: Partial<Mark> =
+      cmd === "font"
+        ? { font: value }
+        : cmd === "size"
+          ? { size: Number(value) }
+          : cmd === "color"
+            ? { color: value }
+            : cmd === "bold"
+              ? { bold: !selected.bold }
+              : cmd === "italic"
+                ? { italic: !selected.italic }
+                : cmd === "underline"
+                  ? { underline: !selected.underline }
+                  : cmd === "strike"
+                    ? { strike: !selected.strike }
+                    : cmd === "align"
+                      ? { align: value }
+                      : cmd === "spacing"
+                        ? { lineHeight: Number(value) }
+                        : {};
+    for (const p of workspace.pages)
+      if (p.marks.some((m) => m.id === selectedId))
+        changeMark(p.id, { ...selected, ...patch });
+  }
+  function beginExport() {
+    setExportName(workspace.name);
+    setScope("all");
+    setDialog("export");
+  }
+  async function exportPdf() {
+    setBusy("Preparando PDF…");
+    try {
+      const ids =
+        scope === "current" && active
+          ? [active.id]
+          : scope === "range"
+            ? pageRange(range, state.current.pages.length).map(
+                (i) => state.current.pages[i].id,
+              )
+            : undefined;
+      let bytes = await buildPdf(state.current, ids);
+      if (compress)
+        bytes = (await runNative({
+          action: "compress",
+          bytes,
+          index: 0,
+        })) as Uint8Array;
+      await download(bytes, safeName(exportName) + ".pdf");
+      setDialog(null);
+      inform("PDF guardado con tus cambios.");
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+    }
+  }
+  async function beginPrint() {
+    setBusy("Preparando impresión…");
+    try {
+      const bytes = await buildPdf(state.current);
+      printBytes.current = bytes;
+      setPrintCount((await PDFDocument.load(bytes)).getPageCount());
+      setPrintScope("all");
+      setPrintPages(await preparePrint(bytes, true));
+      setDialog("print");
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+    }
+  }
+  async function print() {
+    setBusy("Abriendo impresión…");
+    try {
+      let bytes = printBytes.current,
+        count = printCount;
+      if (printScope === "range") {
+        const indices = pageRange(printRange, printCount),
+          source = await PDFDocument.load(bytes),
+          result = await PDFDocument.create();
+        for (const page of await result.copyPages(source, indices))
+          result.addPage(page);
+        bytes = await result.save();
+        count = indices.length;
+      }
+      await printDocument(bytes, printPages, state.current.name, count);
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+    }
+  }
+  async function applyLayout() {
+    setBusy("Aplicando diseño…");
+    try {
+      if (state.current.flow)
+        commit({ ...state.current, flow: { ...state.current.flow, layout } });
+      else commit(await fitPdfToLayout(state.current, layout));
+      setDialog(null);
+      inform("Diseño y márgenes actualizados.");
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+    }
+  }
+  async function blank() {
+    if (writing && rich) {
+      rich.chain().focus().insertContent({ type: "pageBreak" }).run();
+      return;
+    }
+    setBusy("Añadiendo página…");
+    try {
+      const d = await PDFDocument.create();
+      d.addPage(pageSize(layout));
+      const next = await appendPdf(
+        state.current,
+        await d.save(),
+        "Página nueva.pdf",
+      );
+      commit({ ...next, name: state.current.name });
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+    }
+  }
+  function pageAction(cmd: string) {
+    if (!active || workspace.flow) return;
+    const pages = [...workspace.pages],
+      i = pages.indexOf(active);
+    if (cmd === "rotate")
+      pages[i] = { ...active, rotation: rotation(active.rotation + 90) };
+    if (cmd === "copy")
+      pages.splice(i + 1, 0, {
+        ...active,
+        id: uid(),
+        marks: active.marks.map((m) => ({ ...m, id: uid() })),
+      });
+    if (cmd === "delete") {
+      if (pages.length < 2) return;
+      pages.splice(i, 1);
+      setActiveId(pages[Math.min(i, pages.length - 1)].id);
+    }
+    if (cmd === "up" && i > 0)
+      [pages[i], pages[i - 1]] = [pages[i - 1], pages[i]];
+    if (cmd === "down" && i < pages.length - 1)
+      [pages[i], pages[i + 1]] = [pages[i + 1], pages[i]];
+    commit({ ...workspace, pages });
+  }
+  async function imagesToPdf(files: FileList | null) {
+    if (!files?.length) return;
+    setBusy("Creando PDF de imágenes…");
+    try {
+      const d = await PDFDocument.create();
+      for (const f of Array.from(files)) {
+        const a = await normalizeImage(f),
+          img = await d.embedPng(a.data),
+          w = Math.min(img.width, 595),
+          h = w / a.ratio;
+        d.addPage([w, h]).drawImage(img, { x: 0, y: 0, width: w, height: h });
+      }
+      commit(await appendPdf(state.current, await d.save(), "Imágenes.pdf"));
+      setView("pdf");
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+      if (imagesInput.current) imagesInput.current.value = "";
+    }
+  }
+  async function numbering() {
+    if (workspace.flow) {
+      commit({
+        ...workspace,
+        flow: {
+          ...workspace.flow,
+          layout: {
+            ...workspace.flow.layout,
+            numbering: !workspace.flow.layout.numbering,
+          },
+        },
+      });
+      return;
+    }
+    setBusy("Numerando páginas…");
+    try {
+      const pages: Page[] = [];
+      for (const [i, p] of workspace.pages.entries()) {
+        const s = workspace.sources.find((s) => s.id === p.sourceId)!,
+          pg = await (await getPdf(s)).getPage(p.index + 1),
+          v = pg.getViewport({
+            scale: 1,
+            rotation: rotation(pg.rotate + p.rotation),
+          });
+        pages.push({
+          ...p,
+          marks: [
+            ...p.marks,
+            {
+              id: uid(),
+              type: "text",
+              x: v.width - 78,
+              y: v.height - 32,
+              width: 62,
+              height: 15,
+              size: 9,
+              color: "#74788b",
+              font: "PrismaSans",
+              text: `${i + 1} / ${workspace.pages.length}`,
+              viewRotation: p.rotation,
+            },
+          ],
+        });
+      }
+      commit({ ...workspace, pages });
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+    }
+  }
+  function trackPage() {
+    if (writing || !stage.current) return;
+    if (scrollFrame.current) return;
+    scrollFrame.current = requestAnimationFrame(() => {
+      scrollFrame.current = 0;
+      if (!stage.current) return;
+      const top = stage.current.getBoundingClientRect().top + 80;
+      let closest: HTMLElement | null = null;
+      let distance = Infinity;
+      for (const el of stage.current.querySelectorAll<HTMLElement>(
+        ".page-section",
+      )) {
+        const rect = el.getBoundingClientRect();
+        const d =
+          rect.top <= top && rect.bottom > top ? 0 : Math.abs(rect.top - top);
+        if (d < distance) {
+          distance = d;
+          closest = el;
+        }
+      }
+      if (closest) setActiveId(closest.id.slice(5));
+    });
+  }
+  const rw = fit
+      ? Math.min(800, Math.max(240, stageWidth - 72))
+      : (595.28 * zoom) / 100,
+    sf = rich?.getAttributes("textStyle").fontFamily ?? selected?.font ?? font,
+    ss =
+      parseFloat(rich?.getAttributes("textStyle").fontSize ?? "") ||
+      selected?.size ||
+      size;
+  const icon = (
+    label: string,
+    Icon: React.ComponentType<{ size?: number }>,
+    fn: () => void,
+    disabled = false,
+    on = false,
+  ) => (
+    <Button
+      title={label}
+      disabled={disabled}
+      className={on ? "active" : ""}
+      onClick={fn}
+    >
+      <Icon size={17} />
+    </Button>
+  );
+  return (
+    <div className={home ? "app home-app" : "app studio-app"}>
+      <input
+        ref={openInput}
+        hidden
+        type="file"
+        accept=".pdf,.prisma,application/pdf"
+        multiple
+        onChange={(e) => void openFiles(e.target.files)}
+      />
+      <input
+        ref={mergeInput}
+        hidden
+        type="file"
+        accept=".pdf,application/pdf"
+        multiple
+        onChange={(e) => void openFiles(e.target.files, true)}
+      />
+      <input
+        ref={imageInput}
+        hidden
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        onChange={(e) => void loadImage(e.target.files?.[0])}
+      />
+      <input
+        ref={imagesInput}
+        hidden
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        multiple
+        onChange={(e) => void imagesToPdf(e.target.files)}
+      />
+      {home ? (
+        <>
+          <header className="home-header">
+            <a href="#" className="brand" onClick={(e) => e.preventDefault()}>
+              <img src="./logo.svg" alt="Prisma PDF" />
+              <span>
+                Prisma <b>PDF</b>
+              </span>
+            </a>
+            <div>
+              <span className="private-badge">
+                <LockKeyhole size={14} />
+                100 % local
+              </span>
+              <InstallApp />
+            </div>
+          </header>
+          <main className="home-main">
+            <section className="hero">
+              <div className="hero-copy">
+                <span className="eyebrow">
+                  <span className="live-dot" /> UN ESPACIO PARA TUS IDEAS
+                </span>
+                <h1>
+                  De documento
+                  <br />a <span>posibilidad.</span>
+                </h1>
+                <p>
+                  Escribe desde cero, transforma tus PDF y continúa cuando
+                  quieras. Tu trabajo se queda contigo.
+                </p>
+                <div className="hero-actions">
+                  <Button
+                    className="primary"
+                    onClick={() => void newDocument()}
+                  >
+                    <Plus size={19} />
+                    Crear documento
+                    <ArrowRight size={18} />
+                  </Button>
+                  <Button onClick={() => openInput.current?.click()}>
+                    <FolderOpen size={18} />
+                    Abrir PDF o proyecto
+                  </Button>
+                </div>
+                <div className="hero-trust">
+                  <ShieldCheck size={17} />
+                  <span>Sin cuentas. Sin subir tus archivos.</span>
+                </div>
+              </div>
+              <div className="hero-art" aria-hidden="true">
+                <div className="orb orb-one" />
+                <div className="orb orb-two" />
+                <div className="floating-doc">
+                  <div className="doc-brand">
+                    <img src="./logo.svg" />
+                    <span>PRISMA STUDIO</span>
+                    <span>01</span>
+                  </div>
+                  <div className="art-pill">IDEAS QUE TOMAN FORMA</div>
+                  <h3>
+                    Todo empieza
+                    <br />
+                    con una página.
+                  </h3>
+                  <div className="art-line long" />
+                  <div className="art-line" />
+                  <div className="art-highlight">
+                    Tu próxima gran idea, aquí.
+                  </div>
+                  <div className="art-columns">
+                    <div />
+                    <div />
+                    <div />
+                  </div>
+                  <div className="art-footer">
+                    CREADO POR TI <Sparkles size={16} />
+                  </div>
+                </div>
+                <div className="floating-chip chip-one">
+                  <Type size={17} />
+                  Diseña cada palabra
+                </div>
+                <div className="floating-chip chip-two">
+                  <Check size={17} />
+                  Solo en tu dispositivo
+                </div>
+                <div className="floating-cursor">
+                  <MousePointer2 size={26} />
+                  <span>Tú</span>
+                </div>
+              </div>
+            </section>
+            <section className="start-grid">
+              <Button className="start-card" onClick={() => void newDocument()}>
+                <div className="card-icon violet">
+                  <FilePlus2 />
+                </div>
+                <div>
+                  <h3>Una página en blanco</h3>
+                  <p>Texto, tablas, imágenes y tu estilo.</p>
+                </div>
+                <ArrowRight size={18} />
+              </Button>
+              <Button
+                className="start-card"
+                onClick={() => openInput.current?.click()}
+              >
+                <div className="card-icon blue">
+                  <ScanText />
+                </div>
+                <div>
+                  <h3>Dale otra vida a un PDF</h3>
+                  <p>Edita palabras y mueve imágenes.</p>
+                </div>
+                <ArrowRight size={18} />
+              </Button>
+              <Button
+                className="start-card"
+                disabled={!last}
+                onClick={() => last && void enter(last)}
+              >
+                <div className="card-icon rose">
+                  <BookOpen />
+                </div>
+                <div>
+                  <h3>Continúa donde quedaste</h3>
+                  <p>{last?.name ?? "Tu última sesión aparecerá aquí."}</p>
+                </div>
+                <ArrowRight size={18} />
+              </Button>
+            </section>
+            <section className="project-library">
+              <div className="section-heading">
+                <div>
+                  <span className="eyebrow">TU BIBLIOTECA LOCAL</span>
+                  <h2>Trabajo que sigue contigo.</h2>
+                </div>
+                <Button onClick={() => void demoWorkspace().then(enter)}>
+                  <Sparkles size={16} />
+                  Explorar un ejemplo
+                </Button>
+              </div>
+              {projects.length ? (
+                <div className="project-grid">
+                  {projects.map((p) => (
+                    <article className="project-card" key={p.id}>
+                      <Button
+                        className="project-open"
+                        onClick={() => {
+                          setBusy("Abriendo proyecto…");
+                          void loadProject(p.id)
+                            .then(enter)
+                            .catch(fail)
+                            .finally(() => setBusy(""));
+                        }}
+                      >
+                        <FileText size={32} />
+                        <h3>{p.name}</h3>
+                        <p>
+                          {p.pageCount} páginas ·{" "}
+                          {new Date(p.updatedAt).toLocaleDateString("es-CO")}
+                        </p>
+                      </Button>
+                      <Button
+                        title={"Eliminar proyecto " + p.name}
+                        onClick={() =>
+                          void deleteProject(p.id).then(refresh).catch(fail)
+                        }
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="library-empty">
+                  <Layers3 size={25} />
+                  <p>
+                    Guarda un proyecto desde el editor para verlo aquí.
+                    <small>
+                      También puedes llevarte una copia .prisma y abrirla en
+                      otro dispositivo.
+                    </small>
+                  </p>
+                </div>
+              )}
+            </section>
+          </main>
+          <footer className="home-footer">
+            <span>Prisma PDF 3.0 · Hecho para crear.</span>
+            <a
+              href="https://github.com/OscarD0823/prisma-pdf"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Código abierto
+              <ArrowRight size={13} />
+            </a>
+          </footer>
+        </>
+      ) : (
+        <>
+          <header className="editor-header">
+            <div className="editor-identity">
+              <Button
+                title="Volver al inicio"
+                onClick={() => {
+                  void saveSession(state.current).catch(fail);
+                  setLast(state.current);
+                  setHome(true);
+                  clear();
+                  void refresh();
+                }}
+              >
+                <img src="./logo.svg" alt="Prisma PDF" />
+              </Button>
+              <div>
+                <input
+                  aria-label="Nombre del documento"
+                  value={workspace.name}
+                  onChange={(e) =>
+                    commit({ ...workspace, name: e.target.value }, false)
+                  }
+                />
+                <span>
+                  <Check size={12} />
+                  {saved}
+                </span>
+              </div>
+            </div>
+            <div className="header-actions">
+              {icon("Deshacer", Undo2, undo)}
+              {icon("Rehacer", Redo2, redo)}
+              <span className="header-divider" />
+              {icon("Guardar proyecto", Save, () => void saveNamed())}
+              {icon("Imprimir", Printer, () => void beginPrint())}
+              <InstallApp />
+              <Button className="primary" onClick={beginExport}>
+                <Download size={16} />
+                <span>Guardar PDF</span>
+              </Button>
+            </div>
+          </header>
+          <nav className="ribbon-tabs">
+            <div>
+              {["Inicio", "Insertar", "Diseño", "Páginas"].map((t) => (
+                <Button
+                  key={t}
+                  className={tab === t ? "active" : ""}
+                  onClick={() => setTab(t)}
+                >
+                  {t}
+                </Button>
+              ))}
+            </div>
+            <div>
+              {workspace.flow && (
+                <div className="view-switch">
+                  <Button
+                    className={view === "write" ? "active" : ""}
+                    onClick={() => {
+                      setView("write");
+                      clear();
+                    }}
+                  >
+                    Escribir
+                  </Button>
+                  <Button
+                    className={view === "pdf" ? "active" : ""}
+                    onClick={() => {
+                      setView("pdf");
+                      clear();
+                    }}
+                  >
+                    Vista PDF
+                  </Button>
+                </div>
+              )}
+              <span className="privacy-label">
+                <LockKeyhole size={12} />
+                Tus archivos no salen de aquí
+              </span>
+            </div>
+          </nav>
+          <div
+            className="ribbon"
+            role="toolbar"
+            aria-label="Herramientas del documento"
+            data-format-tick={tick}
+          >
+            {tab === "Inicio" ? (
+              <>
+                {!workspace.flow && (
+                  <div className="ribbon-group tools-group">
+                    <div className="tool-buttons">
+                      {tools.map((t) => (
+                        <Button
+                          key={t.id}
+                          title={t.label}
+                          className={tool === t.id ? "active" : ""}
+                          onClick={() => choose(t.id)}
+                        >
+                          <t.icon size={20} />
+                          <span>{t.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+                    <small>Editar documento</small>
+                  </div>
+                )}
+                <div className="ribbon-group font-group">
+                  <div className="ribbon-row">
+                    <select
+                      aria-label="Tipo de letra"
+                      value={sf}
+                      onChange={(e) => format("font", e.target.value)}
+                    >
+                      {fontFamilies.map((f) => (
+                        <option key={f.value} value={f.value}>
+                          {f.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      aria-label="Tamaño de letra"
+                      type="number"
+                      min="6"
+                      max="144"
+                      key={ss}
+                      defaultValue={ss}
+                      onBlur={(e) =>
+                        format(
+                          "size",
+                          String(
+                            Math.max(
+                              6,
+                              Math.min(144, Number(e.target.value) || 12),
+                            ),
+                          ),
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="ribbon-row">
+                    {icon(
+                      "Negrita",
+                      Bold,
+                      () => format("bold"),
+                      false,
+                      rich?.isActive("bold") ??
+                        (selected?.richText
+                          ? hasRichMark(selected.richText, "bold")
+                          : selected?.bold),
+                    )}
+                    {icon(
+                      "Cursiva",
+                      Italic,
+                      () => format("italic"),
+                      false,
+                      rich?.isActive("italic") ??
+                        (selected?.richText
+                          ? hasRichMark(selected.richText, "italic")
+                          : selected?.italic),
+                    )}
+                    {icon(
+                      "Subrayado",
+                      Underline,
+                      () => format("underline"),
+                      false,
+                      rich?.isActive("underline") ??
+                        (selected?.richText
+                          ? hasRichMark(selected.richText, "underline")
+                          : selected?.underline),
+                    )}
+                    {icon(
+                      "Tachado",
+                      Strikethrough,
+                      () => format("strike"),
+                      false,
+                      rich?.isActive("strike") ??
+                        (selected?.richText
+                          ? hasRichMark(selected.richText, "strike")
+                          : selected?.strike),
+                    )}
+                    <label className="color-control">
+                      <span>A</span>
+                      <input
+                        aria-label="Color de texto"
+                        type="color"
+                        value={color}
+                        onChange={(e) => format("color", e.target.value)}
+                      />
+                    </label>
+                    {icon("Color de resaltado", Highlighter, () =>
+                      rich ? format("highlight") : choose("highlight"),
+                    )}
+                  </div>
+                  <small>Tipografía</small>
+                </div>
+                <div className="ribbon-group paragraph-group">
+                  <div className="ribbon-row">
+                    {icon("Alinear izquierda", AlignLeft, () =>
+                      format("align", "left"),
+                    )}
+                    {icon("Centrar", AlignCenter, () =>
+                      format("align", "center"),
+                    )}
+                    {icon("Alinear derecha", AlignRight, () =>
+                      format("align", "right"),
+                    )}
+                    {icon("Justificar", AlignJustify, () =>
+                      format("align", "justify"),
+                    )}
+                    {icon(
+                      "Lista con viñetas",
+                      List,
+                      () => format("bullet"),
+                      !rich || !writing,
+                    )}
+                    {icon(
+                      "Lista numerada",
+                      ListOrdered,
+                      () => format("ordered"),
+                      !rich || !writing,
+                    )}
+                  </div>
+                  <div className="ribbon-row">
+                    {icon(
+                      "Reducir sangría",
+                      IndentDecrease,
+                      () => format("outdent"),
+                      !rich,
+                    )}
+                    {icon(
+                      "Aumentar sangría",
+                      IndentIncrease,
+                      () => format("indent"),
+                      !rich,
+                    )}
+                    <select
+                      aria-label="Interlineado"
+                      onChange={(e) => format("spacing", e.target.value)}
+                      defaultValue="1.45"
+                    >
+                      {["1", "1.25", "1.45", "1.5", "2"].map((s) => (
+                        <option key={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <small>Párrafo</small>
+                </div>
+                <div className="ribbon-group">
+                  <select
+                    aria-label="Estilo de párrafo"
+                    disabled={!rich || !writing}
+                    onChange={(e) => format("heading", e.target.value)}
+                    defaultValue="0"
+                  >
+                    <option value="0">Normal</option>
+                    <option value="1">Título</option>
+                    <option value="2">Subtítulo</option>
+                    <option value="3">Encabezado</option>
+                  </select>
+                  <div className="ribbon-row">
+                    {icon(
+                      "Superíndice",
+                      Superscript,
+                      () => format("superscript"),
+                      !rich,
+                    )}
+                    {icon(
+                      "Subíndice",
+                      Subscript,
+                      () => format("subscript"),
+                      !rich,
+                    )}
+                    {icon(
+                      "Borrar formato",
+                      Eraser,
+                      () => format("clear"),
+                      !rich,
+                    )}
+                  </div>
+                  <small>Estilos</small>
+                </div>
+              </>
+            ) : tab === "Insertar" ? (
+              <>
+                <div className="ribbon-group">
+                  <div className="large-tools">
+                    <Button onClick={() => imageInput.current?.click()}>
+                      <ImagePlus />
+                      <span>Imagen</span>
+                    </Button>
+                    <Button onClick={() => setDialog("signature")}>
+                      <PenLine />
+                      <span>Firma</span>
+                    </Button>
+                    <Button
+                      disabled={!rich || !writing}
+                      onClick={() => setDialog("table")}
+                    >
+                      <Table2 />
+                      <span>Tabla</span>
+                    </Button>
+                    <Button
+                      disabled={!rich || !writing}
+                      onClick={() => setDialog("link")}
+                    >
+                      <Link2 />
+                      <span>Enlace</span>
+                    </Button>
+                    <Button onClick={() => void blank()}>
+                      <FilePlus2 />
+                      <span>
+                        {writing ? "Salto de página" : "Página en blanco"}
+                      </span>
+                    </Button>
+                  </div>
+                  <small>Elementos</small>
+                </div>
+                {rich?.isActive("table") && (
+                  <div className="ribbon-group">
+                    <div className="ribbon-row">
+                      <Button
+                        onClick={() => rich.chain().focus().addRowAfter().run()}
+                      >
+                        + Fila
+                      </Button>
+                      <Button
+                        onClick={() =>
+                          rich.chain().focus().addColumnAfter().run()
+                        }
+                      >
+                        + Columna
+                      </Button>
+                      <Button
+                        onClick={() =>
+                          rich.chain().focus().mergeOrSplit().run()
+                        }
+                      >
+                        Unir / separar
+                      </Button>
+                    </div>
+                    <div className="ribbon-row">
+                      <Button
+                        onClick={() => rich.chain().focus().deleteRow().run()}
+                      >
+                        Quitar fila
+                      </Button>
+                      <Button
+                        onClick={() =>
+                          rich.chain().focus().deleteColumn().run()
+                        }
+                      >
+                        Quitar columna
+                      </Button>
+                      <Button
+                        onClick={() => rich.chain().focus().deleteTable().run()}
+                      >
+                        Quitar tabla
+                      </Button>
+                    </div>
+                    <small>Tabla seleccionada</small>
+                  </div>
+                )}
+                {!workspace.flow && (
+                  <div className="ribbon-group">
+                    <div className="large-tools">
+                      {[
+                        {
+                          id: "objects",
+                          icon: ImagePlus,
+                          label: "Imágenes originales",
+                        },
+                        { id: "rectangle", icon: Square, label: "Rectángulo" },
+                        { id: "ellipse", icon: Circle, label: "Elipse" },
+                        { id: "arrow", icon: ArrowRight, label: "Flecha" },
+                        { id: "draw", icon: PenLine, label: "Dibujo" },
+                        { id: "redact", icon: Eraser, label: "Borrar área" },
+                      ].map((t) => (
+                        <Button
+                          key={t.id}
+                          className={tool === t.id ? "active" : ""}
+                          onClick={() => choose(t.id as Tool)}
+                        >
+                          <t.icon />
+                          <span>{t.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+                    <small>Objetos y formas</small>
+                  </div>
+                )}
+              </>
+            ) : tab === "Diseño" ? (
+              <>
+                <div className="ribbon-group">
+                  <div className="large-tools">
+                    <Button
+                      onClick={() => {
+                        setLayout(workspace.flow?.layout ?? layout);
+                        setDialog("layout");
+                      }}
+                    >
+                      <Maximize2 />
+                      <span>Márgenes y tamaño</span>
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setLayout(workspace.flow?.layout ?? layout);
+                        setDialog("layout");
+                      }}
+                    >
+                      <FileText />
+                      <span>Encabezado y pie</span>
+                    </Button>
+                    <Button onClick={() => void numbering()}>
+                      <ListOrdered />
+                      <span>Numeración</span>
+                    </Button>
+                  </div>
+                  <small>Diseño de página</small>
+                </div>
+                <div className="ribbon-group">
+                  <div className="palette">
+                    {palette.map((c) => (
+                      <button
+                        key={c}
+                        aria-label={"Usar color " + c}
+                        style={{ background: c }}
+                        onClick={() => {
+                          setColor(c);
+                          if (rich) format("color", c);
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <small>Colores del documento</small>
+                </div>
+                <p className="ribbon-note">
+                  {workspace.flow
+                    ? "El texto continúa en nuevas páginas según tus márgenes."
+                    : "Los márgenes ajustan la página completa y conservan el diseño del PDF."}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="ribbon-group">
+                  <div className="large-tools">
+                    <Button onClick={() => mergeInput.current?.click()}>
+                      <Layers3 />
+                      <span>Unir PDF</span>
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setScope("range");
+                        setExportName(workspace.name);
+                        setDialog("export");
+                      }}
+                    >
+                      <Scissors />
+                      <span>Extraer páginas</span>
+                    </Button>
+                    <Button
+                      disabled={!!workspace.flow}
+                      onClick={() => imagesInput.current?.click()}
+                    >
+                      <ImagePlus />
+                      <span>Imágenes a PDF</span>
+                    </Button>
+                  </div>
+                  <small>Organizar</small>
+                </div>
+                <div className="ribbon-group">
+                  <div className="large-tools">
+                    <Button
+                      disabled={!!workspace.flow}
+                      onClick={() => pageAction("rotate")}
+                    >
+                      <RotateCw />
+                      <span>Girar</span>
+                    </Button>
+                    <Button
+                      disabled={!!workspace.flow}
+                      onClick={() => pageAction("copy")}
+                    >
+                      <Copy />
+                      <span>Duplicar</span>
+                    </Button>
+                    <Button
+                      disabled={!!workspace.flow || workspace.pages.length < 2}
+                      onClick={() => pageAction("delete")}
+                    >
+                      <Trash2 />
+                      <span>Eliminar</span>
+                    </Button>
+                  </div>
+                  <small>Página actual</small>
+                </div>
+                <div className="ribbon-group">
+                  <div className="ribbon-row">
+                    {icon(
+                      "Subir página",
+                      ArrowUp,
+                      () => pageAction("up"),
+                      !!workspace.flow,
+                    )}
+                    {icon(
+                      "Bajar página",
+                      ArrowDown,
+                      () => pageAction("down"),
+                      !!workspace.flow,
+                    )}
+                  </div>
+                  <Button onClick={() => void portable()}>
+                    <Save size={16} />
+                    Copia editable
+                  </Button>
+                  <small>Continuar después</small>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="workspace">
+            <aside className={`pages-sidebar ${sidebar ? "" : "collapsed"}`}>
+              <div className="sidebar-title">
+                <span>
+                  Páginas <b>{workspace.pages.length}</b>
+                </span>
+                {icon("Ocultar páginas", PanelLeftClose, () =>
+                  setSidebar(false),
+                )}
+              </div>
+              <div className="page-list">
+                {workspace.pages.map((p, i) => (
+                  <button
+                    key={p.id}
+                    className={active?.id === p.id ? "active" : ""}
+                    aria-label={"Ir a la página " + (i + 1)}
+                    onClick={() => {
+                      setActiveId(p.id);
+                      if (workspace.flow) setView("pdf");
+                      setTimeout(
+                        () =>
+                          document
+                            .getElementById("page-" + p.id)
+                            ?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "start",
+                            }),
+                        0,
+                      );
+                    }}
+                  >
+                    <div className="thumbnail">
+                      <PageThumbnail
+                        source={
+                          workspace.sources.find((s) => s.id === p.sourceId)!
+                        }
+                        page={p}
+                        width={112}
+                      />
+                    </div>
+                    <span>{i + 1}</span>
+                  </button>
+                ))}
+              </div>
+              <Button
+                className="sidebar-open"
+                title="Mostrar páginas"
+                onClick={() => setSidebar(true)}
+              >
+                <Layers3 size={18} />
+              </Button>
+            </aside>
+            <main
+              ref={stage}
+              className="document-stage"
+              onScroll={trackPage}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) clear();
+              }}
+            >
+              <div className="stage-topline">
+                <span>
+                  {writing
+                    ? "DOCUMENTO DE TEXTO"
+                    : tool === "edit"
+                      ? "HAZ CLIC EN UNA LÍNEA PARA EDITARLA"
+                      : tool === "highlight"
+                        ? "SELECCIONA LAS PALABRAS PARA RESALTAR"
+                        : pending
+                          ? "HAZ CLIC PARA COLOCAR TU ELEMENTO"
+                          : "TU DOCUMENTO, PÁGINA A PÁGINA"}
+                </span>
+                <span>
+                  {writing
+                    ? plainText(workspace.flow?.content)
+                        .trim()
+                        .split(/\s+/)
+                        .filter(Boolean).length + " palabras"
+                    : workspace.pages.length + " páginas"}
+                </span>
+              </div>
+              {writing && workspace.flow ? (
+                <div
+                  className="flow-paper"
+                  style={{
+                    width: (pageSize(workspace.flow.layout)[0] * 4) / 3,
+                    zoom: rw / ((pageSize(workspace.flow.layout)[0] * 4) / 3),
+                    minHeight: (pageSize(workspace.flow.layout)[1] * 4) / 3,
+                    padding: `${workspace.flow.layout.top}mm ${workspace.flow.layout.right}mm ${workspace.flow.layout.bottom}mm ${workspace.flow.layout.left}mm`,
+                  }}
+                >
+                  <div className="paper-ruler" />
+                  <RichEditor
+                    autoFocus
+                    content={workspace.flow.content}
+                    onFocus={setEditor}
+                    onChange={(content) =>
+                      commit(
+                        {
+                          ...state.current,
+                          flow: { ...state.current.flow!, content },
+                        },
+                        false,
+                      )
+                    }
+                  />
+                </div>
+              ) : (
+                <div className="continuous-pages">
+                  {workspace.pages.map((p, i) => (
+                    <PageFrame
+                      key={p.id}
+                      page={p}
+                      source={
+                        workspace.sources.find((s) => s.id === p.sourceId)!
+                      }
+                      number={i + 1}
+                      width={rw}
+                      tool={tool}
+                      color={color}
+                      size={size}
+                      selected={selectedId}
+                      editing={editing}
+                      readonly={!!workspace.flow}
+                      onActive={() => setActiveId(p.id)}
+                      onSelect={select}
+                      onEditor={setEditor}
+                      onMark={(m) => changeMark(p.id, m)}
+                      onAdd={(m) => addMarks(p.id, [m])}
+                      onNative={(o) => promote(p, o)}
+                      onArea={(r) => void redact(p, r)}
+                      onHighlight={(ms) => addMarks(p.id, ms)}
+                      onError={fail}
+                      onPlace={(x, y) => place(p, x, y)}
+                    />
+                  ))}
+                </div>
+              )}
+            </main>
+          </div>
+          <footer className="editor-status">
+            <span>
+              <span className="live-dot" />
+              {writing
+                ? "Modo escritura"
+                : `Página ${Math.max(1, workspace.pages.indexOf(active) + 1)} de ${workspace.pages.length}`}
+            </span>
+            {selected && (
+              <div className="selection-toolbar">
+                <span>
+                  {selected.type === "text" ? "Texto" : "Elemento"} seleccionado
+                </span>
+                {selected.type === "text" && (
+                  <Button onClick={() => select(selected.id, true)}>
+                    <Type size={13} />
+                    Editar
+                  </Button>
+                )}
+                {icon("Eliminar elemento", Trash2, removeSelected)}
+                <label>
+                  Ancho
+                  <input
+                    type="number"
+                    aria-label="Ancho del elemento"
+                    value={Math.round(selected.width)}
+                    min="20"
+                    onChange={(e) => {
+                      for (const p of workspace.pages)
+                        if (p.marks.some((m) => m.id === selectedId))
+                          changeMark(p.id, {
+                            ...selected,
+                            width: Math.max(20, Number(e.target.value)),
+                            height: ["image", "signature"].includes(
+                              selected.type,
+                            )
+                              ? (Math.max(20, Number(e.target.value)) *
+                                  selected.height) /
+                                selected.width
+                              : selected.height,
+                          });
+                    }}
+                  />
+                </label>
+              </div>
+            )}
+            <div>
+              {icon("Alejar", Minus, () => {
+                setFit(false);
+                setZoom((z) => Math.max(30, z - 10));
+              })}
+              <Button onClick={() => setFit((f) => !f)}>
+                {fit ? "Ajustar" : zoom + " %"}
+              </Button>
+              {icon("Acercar", Plus, () => {
+                setFit(false);
+                setZoom((z) => Math.min(200, z + 10));
+              })}
+              <Button onClick={() => setDialog("help")}>Ayuda</Button>
+            </div>
+          </footer>
+        </>
+      )}
+      {notice && (
+        <div className="toast success" role="status">
+          <Check size={17} />
+          {notice}
+          <Button title="Cerrar aviso" onClick={() => setNotice("")}>
+            <X size={15} />
+          </Button>
+        </div>
+      )}
+      {error && (
+        <div className="toast error" role="alert">
+          {error}
+          <Button title="Cerrar error" onClick={() => setError("")}>
+            <X size={15} />
+          </Button>
+        </div>
+      )}
+      {busy && (
+        <div className="busy-overlay" role="status">
+          <LoaderCircle className="spin" />
+          {busy}
+        </div>
+      )}
+      {dialog === "signature" && (
+        <Signature
+          onClose={() => setDialog(null)}
+          onSave={(data) => {
+            setDialog(null);
+            const img = new Image();
+            img.src = data;
+            img.onload = () => {
+              if (writing && rich)
+                rich
+                  .chain()
+                  .focus()
+                  .setImage({
+                    src: data,
+                    width: 180,
+                    height: (180 * img.height) / img.width,
+                  })
+                  .run();
+              else {
+                setPending({
+                  data,
+                  ratio: img.width / img.height,
+                  type: "signature",
+                });
+                setTool("signature");
+              }
+            };
+          }}
+        />
+      )}
+      {dialog && dialog !== "signature" && (
+        <div className="modal-backdrop">
+          <section
+            className={`modal ${dialog === "print" ? "print-modal" : ""}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dialog-title"
+          >
+            <div className="modal-heading">
+              <span className="eyebrow">PRISMA PDF</span>
+              <Button title="Cerrar ventana" onClick={() => setDialog(null)}>
+                <X size={20} />
+              </Button>
+            </div>
+            {dialog === "export" ? (
+              <>
+                <h2 id="dialog-title">Tu documento, listo.</h2>
+                <p>Guarda un PDF con todos tus cambios.</p>
+                <label className="field">
+                  Nombre
+                  <input
+                    value={exportName}
+                    onChange={(e) => setExportName(e.target.value)}
+                  />
+                </label>
+                <label className="field">
+                  Páginas
+                  <select
+                    value={scope}
+                    onChange={(e) => setScope(e.target.value)}
+                  >
+                    <option value="all">Todo el documento</option>
+                    <option value="current">Página actual</option>
+                    <option value="range">Un rango de páginas</option>
+                  </select>
+                </label>
+                {scope === "range" && (
+                  <label className="field">
+                    Rango
+                    <input
+                      placeholder="1-3, 5"
+                      value={range}
+                      onChange={(e) => setRange(e.target.value)}
+                    />
+                  </label>
+                )}
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={compress}
+                    onChange={(e) => setCompress(e.target.checked)}
+                  />
+                  Optimizar tamaño
+                </label>
+                <div className="modal-actions">
+                  <Button onClick={() => void portable()}>
+                    <Save size={16} />
+                    Copia editable .prisma
+                  </Button>
+                  <Button className="primary" onClick={() => void exportPdf()}>
+                    <Download size={16} />
+                    Guardar PDF
+                  </Button>
+                </div>
+              </>
+            ) : dialog === "layout" ? (
+              <>
+                <h2 id="dialog-title">Espacio para tus ideas.</h2>
+                <p>
+                  {workspace.flow
+                    ? "El texto se redistribuye según los márgenes."
+                    : "Se ajusta la página completa al área útil, conservando su diseño."}
+                </p>
+                <div className="field-grid">
+                  <label className="field">
+                    Tamaño
+                    <select
+                      value={layout.format}
+                      onChange={(e) =>
+                        setLayout({
+                          ...layout,
+                          format: e.target.value as PageLayout["format"],
+                        })
+                      }
+                    >
+                      <option value="a4">A4</option>
+                      <option value="letter">Carta</option>
+                      <option value="legal">Oficio</option>
+                    </select>
+                  </label>
+                  <label className="field">
+                    Orientación
+                    <select
+                      value={layout.orientation}
+                      onChange={(e) =>
+                        setLayout({
+                          ...layout,
+                          orientation: e.target
+                            .value as PageLayout["orientation"],
+                        })
+                      }
+                    >
+                      <option value="portrait">Vertical</option>
+                      <option value="landscape">Horizontal</option>
+                    </select>
+                  </label>
+                  {(["top", "bottom", "left", "right"] as const).map((k, i) => (
+                    <label className="field" key={k}>
+                      {["Superior", "Inferior", "Izquierdo", "Derecho"][i]} (mm)
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={layout[k]}
+                        onChange={(e) =>
+                          setLayout({
+                            ...layout,
+                            [k]: Math.max(
+                              0,
+                              Math.min(100, Number(e.target.value)),
+                            ),
+                          })
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+                {workspace.flow && (
+                  <>
+                    <label className="field">
+                      Encabezado
+                      <input
+                        value={layout.header}
+                        onChange={(e) =>
+                          setLayout({ ...layout, header: e.target.value })
+                        }
+                      />
+                    </label>
+                    <label className="field">
+                      Pie de página
+                      <input
+                        value={layout.footer}
+                        onChange={(e) =>
+                          setLayout({ ...layout, footer: e.target.value })
+                        }
+                      />
+                    </label>
+                    <label className="checkbox">
+                      <input
+                        type="checkbox"
+                        checked={layout.numbering}
+                        onChange={(e) =>
+                          setLayout({ ...layout, numbering: e.target.checked })
+                        }
+                      />
+                      Numerar páginas
+                    </label>
+                  </>
+                )}
+                <div className="modal-actions">
+                  <Button
+                    className="primary"
+                    onClick={() => void applyLayout()}
+                  >
+                    Aplicar diseño
+                    <Check size={16} />
+                  </Button>
+                </div>
+              </>
+            ) : dialog === "print" ? (
+              <>
+                <h2 id="dialog-title">Vista de impresión.</h2>
+                <p>
+                  {printCount} páginas con tus cambios. Abre el diálogo del
+                  dispositivo para elegir la impresora.
+                </p>
+                <label className="field">
+                  Páginas para imprimir
+                  <select
+                    value={printScope}
+                    onChange={(e) => setPrintScope(e.target.value)}
+                  >
+                    <option value="all">Todo el documento</option>
+                    <option value="range">Un rango de páginas</option>
+                  </select>
+                </label>
+                {printScope === "range" && (
+                  <label className="field">
+                    Rango de impresión
+                    <input
+                      placeholder="1-3, 5"
+                      value={printRange}
+                      onChange={(e) => setPrintRange(e.target.value)}
+                    />
+                  </label>
+                )}
+                {printCount > 3 && (
+                  <p className="print-note">
+                    La vista muestra las primeras 3 páginas. Se imprimirá la
+                    selección indicada.
+                  </p>
+                )}
+                <div className="print-preview">
+                  {printPages.map((p, i) => (
+                    <img
+                      key={i}
+                      src={p.data}
+                      loading="lazy"
+                      decoding="async"
+                      alt={"Vista de impresión, página " + (i + 1)}
+                    />
+                  ))}
+                </div>
+                <div className="modal-actions">
+                  <Button onClick={() => setDialog(null)}>
+                    Volver al documento
+                  </Button>
+                  <Button className="primary" onClick={() => void print()}>
+                    <Printer size={17} />
+                    Imprimir
+                  </Button>
+                </div>
+              </>
+            ) : dialog === "table" ? (
+              <>
+                <h2 id="dialog-title">Ordena tus ideas.</h2>
+                <div className="field-grid">
+                  <label className="field">
+                    Filas
+                    <input
+                      type="number"
+                      min="1"
+                      max="30"
+                      value={rows}
+                      onChange={(e) =>
+                        setRows(
+                          Math.max(1, Math.min(30, Number(e.target.value))),
+                        )
+                      }
+                    />
+                  </label>
+                  <label className="field">
+                    Columnas
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={cols}
+                      onChange={(e) =>
+                        setCols(
+                          Math.max(1, Math.min(12, Number(e.target.value))),
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+                <div className="modal-actions">
+                  <Button
+                    className="primary"
+                    onClick={() => {
+                      rich
+                        ?.chain()
+                        .focus()
+                        .insertTable({ rows, cols, withHeaderRow: true })
+                        .run();
+                      setDialog(null);
+                    }}
+                  >
+                    Insertar tabla
+                  </Button>
+                </div>
+              </>
+            ) : dialog === "link" ? (
+              <>
+                <h2 id="dialog-title">Conecta una idea.</h2>
+                <label className="field">
+                  Dirección
+                  <input
+                    value={link}
+                    onChange={(e) => setLink(e.target.value)}
+                  />
+                </label>
+                <div className="modal-actions">
+                  <Button
+                    className="primary"
+                    onClick={() => {
+                      if (!/^(https?:\/\/|mailto:)/i.test(link)) {
+                        fail(new Error("Usa https://, http:// o mailto:."));
+                        return;
+                      }
+                      rich?.chain().focus().setLink({ href: link }).run();
+                      setDialog(null);
+                    }}
+                  >
+                    Aplicar enlace
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 id="dialog-title">Un poco de orientación.</h2>
+                <p>
+                  <b>PDF cargado:</b> haz clic en Editar palabras y selecciona
+                  una línea. Escribe directamente sobre la página. Selecciona
+                  imágenes para moverlas y cambia su tamaño desde la esquina.
+                </p>
+                <p>
+                  <b>Resaltar:</b> arrastra sobre el texto para seleccionar
+                  palabras. El resaltado sigue las líneas del PDF.
+                </p>
+                <p>
+                  <b>Documento nuevo:</b> escribe con formato, listas, tablas e
+                  imágenes. Vista PDF muestra las páginas finales.
+                </p>
+                <p>
+                  <b>Continuar después:</b> la última sesión se guarda
+                  automáticamente. Guarda proyectos en la biblioteca o una copia
+                  .prisma para abrirla en otro dispositivo.
+                </p>
+                <p>
+                  <b>Atajos:</b> Ctrl+S guarda el proyecto; Ctrl+Mayús+S guarda
+                  una copia editable; Ctrl+P imprime. Las letras normales
+                  escriben.
+                </p>
+                <small>
+                  Los PDF escaneados requieren OCR para convertirse en texto. Al
+                  sustituir palabras se usan tipografías locales equivalentes.
+                  Los datos locales se borran al limpiar los datos del
+                  navegador.
+                </small>
+              </>
+            )}
+          </section>
+        </div>
+      )}
+    </div>
+  );
 }

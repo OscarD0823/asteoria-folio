@@ -1,0 +1,60 @@
+@font-face {
+  font-family: PrismaSans;
+  src: url("./LiberationSans-Regular.ttf");
+}
+@font-face {
+  font-family: PrismaSans;
+  src: url("./LiberationSans-Bold.ttf");
+  font-weight: 700;
+}
+@font-face {
+  font-family: PrismaSans;
+  src: url("./LiberationSans-Italic.ttf");
+  font-style: italic;
+}
+@font-face {
+  font-family: PrismaSans;
+  src: url("./LiberationSans-BoldItalic.ttf");
+  font-style: italic;
+  font-weight: 700;
+}
+@font-face {
+  font-family: PrismaSerif;
+  src: url("./LiberationSerif-Regular.ttf");
+}
+@font-face {
+  font-family: PrismaSerif;
+  src: url("./LiberationSerif-Bold.ttf");
+  font-weight: 700;
+}
+@font-face {
+  font-family: PrismaSerif;
+  src: url("./LiberationSerif-Italic.ttf");
+  font-style: italic;
+}
+@font-face {
+  font-family: PrismaSerif;
+  src: url("./LiberationSerif-BoldItalic.ttf");
+  font-style: italic;
+  font-weight: 700;
+}
+@font-face {
+  font-family: PrismaMono;
+  src: url("./LiberationMono-Regular.ttf");
+}
+@font-face {
+  font-family: PrismaMono;
+  src: url("./LiberationMono-Bold.ttf");
+  font-weight: 700;
+}
+@font-face {
+  font-family: PrismaMono;
+  src: url("./LiberationMono-Italic.ttf");
+  font-style: italic;
+}
+@font-face {
+  font-family: PrismaMono;
+  src: url("./LiberationMono-BoldItalic.ttf");
+  font-style: italic;
+  font-weight: 700;
+}

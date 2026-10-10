@@ -1,4 +1,4 @@
-Prisma PDF 2.0 — Copyright (C) 2026 Prisma PDF contributors.
+Prisma PDF 3.0 — Copyright (C) 2026 Prisma PDF contributors.
 Software libre bajo GNU Affero General Public License, version 3 o posterior.
 Sin garantia. Licencia completa: ./LICENSE.txt
 Codigo fuente de esta version: ./prisma-pdf-source.tar.gz
@@ -16,5 +16,9 @@ pdf-lib — MIT — https://github.com/Hopding/pdf-lib
 PDF.js — Apache-2.0 — https://github.com/mozilla/pdf.js
 React — MIT — https://github.com/facebook/react
 Lucide — ISC — https://github.com/lucide-icons/lucide
+Tiptap — MIT — https://github.com/ueberdosis/tiptap
+Liberation Fonts 2.1.5 — SIL Open Font License 1.1.
+Fuentes locales incluidas sin modificaciones; licencia y autores en ./fonts/.
+Fuente: https://github.com/liberationfonts/liberation-fonts/releases/tag/2.1.5
 Dependencias y versiones exactas en el archivo pnpm-lock.yaml del codigo fuente.
 Licencias completas de las dependencias: ./third-party/<nombre>-LICENSE.txt
