@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
-import { PluginKey } from "@tiptap/pm/state";
+import { PluginKey, type Transaction } from "@tiptap/pm/state";
 import {
   canonicalWord,
   spellingWords,
@@ -78,12 +78,15 @@ export function SpellingReview({
         }
       }, 450);
     };
+    const changed = ({ transaction }: { transaction: Transaction }) => {
+      if (transaction.docChanged) scan();
+    };
     scan();
-    editor.on("update", scan);
+    editor.on("transaction", changed);
     return () => {
       ++revision.current;
       clearTimeout(timer);
-      editor.off("update", scan);
+      editor.off("transaction", changed);
     };
   }, [editor, accepted, ignored, refresh]);
   useEffect(() => {
