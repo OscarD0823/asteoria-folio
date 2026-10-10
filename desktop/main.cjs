@@ -22,9 +22,11 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 let window;
+const writer = require("../package.json").prismaProduct === "writer";
+if (writer) app.setName("Prisma Writer");
 const smoke = process.argv.includes("--smoke-test");
 app.whenReady().then(() => {
-  const root = path.resolve(__dirname, "../dist");
+  const root = path.resolve(__dirname, writer ? "../dist-writer" : "../dist");
   protocol.handle("prisma", (request) => {
     const url = new URL(request.url);
     if (url.host !== "app") return new Response("Not found", { status: 404 });
@@ -42,7 +44,7 @@ app.whenReady().then(() => {
     minWidth: 760,
     minHeight: 600,
     backgroundColor: "#f7f8fc",
-    title: "Prisma PDF",
+    title: writer ? "Prisma Writer" : "Prisma PDF",
     icon: path.join(root, "icons/prisma-512.png"),
     autoHideMenuBar: true,
     webPreferences: {
@@ -134,8 +136,7 @@ app.whenReady().then(() => {
   }
   window.webContents.setWindowOpenHandler(({ url }) => {
     // Explicit links open in the system browser; files and executable schemes are denied.
-    if (/^https?:\/\//i.test(url))
-      void shell.openExternal(url);
+    if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
     return { action: "deny" };
   });
   window.webContents.on("will-navigate", (event, url) => {

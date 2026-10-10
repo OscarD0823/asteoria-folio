@@ -24,6 +24,9 @@ import {
   CommentRangeEnd,
   CommentReference,
   ColumnBreak,
+  TableOfContents,
+  TabStopType,
+  LeaderType,
   type ParagraphChild,
   type ISectionOptions,
 } from "docx";
@@ -258,8 +261,8 @@ export async function exportDocx(
     layout: PageLayout,
     depth = 0,
     listPrefix = "",
-  ): Promise<(Paragraph | Table)[]> => {
-    const children: (Paragraph | Table)[] = [];
+  ): Promise<(Paragraph | Table | TableOfContents)[]> => {
+    const children: (Paragraph | Table | TableOfContents)[] = [];
     for (const node of withCaptions(parent, normalized)) {
       const a = node.attrs ?? {};
       if (
@@ -291,8 +294,33 @@ export async function exportDocx(
                     HeadingLevel.HEADING_3,
                     HeadingLevel.HEADING_4,
                     HeadingLevel.HEADING_5,
-                  ][Math.min(4, Number(a.level || 1) - 1)]
+                    HeadingLevel.HEADING_6,
+                  ][Math.min(5, Number(a.level || 1) - 1)]
                 : undefined,
+            ...(a.indexEntry
+              ? {
+                  tabStops: [
+                    {
+                      type: TabStopType.RIGHT,
+                      position: Math.round(
+                        (pageSize(layout)[0] - mm(layout.left + layout.right)) *
+                          20,
+                      ),
+                      leader:
+                        a.indexLeader === "none"
+                          ? LeaderType.NONE
+                          : a.indexLeader === "line"
+                            ? LeaderType.UNDERSCORE
+                            : a.indexLeader === "dashes"
+                              ? LeaderType.HYPHEN
+                              : LeaderType.DOT,
+                    },
+                  ],
+                  indent: {
+                    left: Math.max(0, Number(a.indexLevel || 1) - 1) * 360,
+                  },
+                }
+              : {}),
             spacing: {
               before: Math.round(Number(a.spaceBefore || 0) * 20),
               after: Math.round(Number(a.spaceAfter ?? 7) * 20),
@@ -322,7 +350,12 @@ export async function exportDocx(
               academic = a.tableStyle === "academic";
             cells.push(
               new TableCell({
-                children: content.length ? content : [new Paragraph("")],
+                children: content.length
+                  ? content.filter(
+                      (child): child is Paragraph | Table =>
+                        !(child instanceof TableOfContents),
+                    )
+                  : [new Paragraph("")],
                 columnSpan: Number(cell.attrs?.colspan) || 1,
                 rowSpan: Number(cell.attrs?.rowspan) || 1,
                 borders: academic
@@ -407,10 +440,37 @@ export async function exportDocx(
         children.push(
           new Paragraph({
             text: String(a.title || "Índice"),
-            heading: HeadingLevel.HEADING_1,
+            alignment:
+              normalized.academicStyle === "apa"
+                ? AlignmentType.CENTER
+                : AlignmentType.LEFT,
           }),
         );
-        children.push(...(await blocks(node, layout, depth)));
+        if (a.kind === "contents")
+          children.push(
+            new TableOfContents(String(a.title || "Tabla de contenido"), {
+              hyperlink: true,
+              headingStyleRange:
+                "1-" + Math.max(1, Math.min(6, Number(a.levels) || 3)),
+              beginDirty: true,
+              cachedEntries: (
+                (a.entries as {
+                  label: string;
+                  level?: number;
+                  page?: number;
+                  targetId: string;
+                }[]) || []
+              ).map((entry) => ({
+                title: entry.label,
+                level: entry.level || 1,
+                ...(a.pageNumbers !== false && entry.page
+                  ? { page: entry.page }
+                  : {}),
+                href: bookmark(entry.targetId),
+              })),
+            }),
+          );
+        else children.push(...(await blocks(node, layout, depth)));
       } else if (node.type === "bulletList" || node.type === "orderedList") {
         let i = Number(a.start) || 1;
         for (const item of node.content ?? []) {
@@ -572,6 +632,30 @@ export async function exportDocx(
     evenAndOddHeaderAndFooters: infos.some((s) => s.layout.oddEven),
     features: { updateFields: true },
     styles: {
+      paragraphStyles: Array.from({ length: 6 }, (_, i) => ({
+        id: "TOC" + (i + 1),
+        name: "toc " + (i + 1),
+        basedOn: "Normal",
+        paragraph: {
+          indent: { left: i * 360 },
+          spacing: {
+            before: 0,
+            after: 0,
+            line: normalized.academicStyle === "apa" ? 480 : 280,
+          },
+          tabStops: [
+            {
+              type: TabStopType.RIGHT,
+              position: Math.round(
+                (pageSize(flow.layout)[0] -
+                  mm(flow.layout.left + flow.layout.right)) *
+                  20,
+              ),
+              leader: LeaderType.DOT,
+            },
+          ],
+        },
+      })),
       default: {
         document: {
           run: {

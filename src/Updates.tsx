@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import { RefreshCw, X, Download } from "lucide-react";
-import appPackage from "../package.json";
+import { product } from "./product";
 import {
   checkRelease,
   newerVersion,
@@ -14,7 +14,7 @@ const nativeLinks = registerPlugin<{
 }>("PrismaUpdates");
 const readAutomatic = () => {
   try {
-    return localStorage.getItem("prisma-auto-update") !== "off";
+    return localStorage.getItem(product.id + "-auto-update") !== "off";
   } catch {
     return true;
   }
@@ -49,12 +49,15 @@ export function Updates({
       setRelease(r);
       if (manual)
         setStatus(
-          newerVersion(r.version, appPackage.version)
+          newerVersion(r.version, product.version)
             ? "Hay una versión nueva."
             : "Tienes la versión más reciente.",
         );
       try {
-        localStorage.setItem("prisma-update-checked", String(Date.now()));
+        localStorage.setItem(
+          product.id + "-update-checked",
+          String(Date.now()),
+        );
       } catch {}
       if (
         "serviceWorker" in navigator &&
@@ -81,7 +84,8 @@ export function Updates({
     const maybe = () => {
       let last = 0;
       try {
-        last = Number(localStorage.getItem("prisma-update-checked")) || 0;
+        last =
+          Number(localStorage.getItem(product.id + "-update-checked")) || 0;
       } catch {}
       if (Date.now() - last > 24 * 60 * 60 * 1000) void check();
     };
@@ -134,7 +138,7 @@ export function Updates({
   }, [open]);
   const native =
       Capacitor.isNativePlatform() || location.protocol === "prisma:",
-    newer = release && newerVersion(release.version, appPackage.version);
+    newer = release && newerVersion(release.version, product.version);
   const install = async () => {
     try {
       if (native && release) {
@@ -228,7 +232,9 @@ export function Updates({
             >
               <header>
                 <div>
-                  <small>PRISMA PDF · {appPackage.version}</small>
+                  <small>
+                    {product.name.toUpperCase()} · {product.version}
+                  </small>
                   <h2 id="update-title">Tu aplicación al día</h2>
                 </div>
                 <button
@@ -260,7 +266,7 @@ export function Updates({
                     setAutomatic(e.target.checked);
                     try {
                       localStorage.setItem(
-                        "prisma-auto-update",
+                        product.id + "-auto-update",
                         e.target.checked ? "on" : "off",
                       );
                     } catch {}
@@ -302,7 +308,13 @@ export function Updates({
                   </button>
                 )}
                 <a
-                  href={release?.releaseUrl ?? releaseBase + "latest"}
+                  href={
+                    release?.releaseUrl ??
+                    releaseBase +
+                      (product.writer
+                        ? "tag/writer-v" + product.version
+                        : "latest")
+                  }
                   target="_blank"
                   rel="noreferrer"
                 >

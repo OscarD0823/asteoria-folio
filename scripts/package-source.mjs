@@ -7,6 +7,7 @@ const files = [
   "README.md",
   "README-academic.md",
   "README-word.md",
+  "README-writer.md",
   "package.json",
   "pnpm-lock.yaml",
   "pnpm-workspace.yaml",
@@ -19,6 +20,7 @@ const files = [
   "desktop",
   "capacitor.config.ts",
   "electron-builder.yml",
+  "electron-builder-writer.yml",
   ".github",
   "android",
   "public/logo.svg",
@@ -28,6 +30,10 @@ const files = [
   "public/licencias.txt",
   "public/version.json",
   "public/third-party",
+  "public/spelling",
+  "public/unicode",
+  "public/writer-logo.svg",
+  "public/writer-icons",
 ];
 const excludes = [
   "scripts/__pycache__",

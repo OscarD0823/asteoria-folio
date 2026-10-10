@@ -1,5 +1,6 @@
 import type { RichNode } from "./flow";
 import { academicPlainText } from "./academic";
+import { graphemeCount } from "./characters";
 export function textStatistics(text: string) {
   const numbers = Array.from(
     text.matchAll(/(?<![\p{L}\d])[-+]?\d+(?:[.,]\d+)*(?![\p{L}\d])/gu),
@@ -17,6 +18,7 @@ export function textStatistics(text: string) {
   return {
     words: (text.match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu) ?? []).length,
     characters: Array.from(text).length,
+    graphemes: graphemeCount(text),
     withoutSpaces: Array.from(text.replace(/\s/g, "")).length,
     numbers: numbers.length,
     sum: numbers.reduce((a, b) => a + b, 0),

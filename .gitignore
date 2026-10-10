@@ -1,11 +1,14 @@
 node_modules/
 dist/
+dist-writer/
+dist-site/
 .openai/
 public/pdfjs/
 public/engine/
 qa/
 *.log
 release/
+release-writer/
 .gradle/
 *.p12
 *.jks

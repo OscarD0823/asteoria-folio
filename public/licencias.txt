@@ -1,4 +1,4 @@
-Prisma PDF 5.0 — Copyright (C) 2026 Prisma PDF contributors.
+Prisma PDF 6.0 / Prisma Writer 1.0 — Copyright (C) 2026 Prisma contributors.
 Software libre bajo GNU Affero General Public License, version 3 o posterior.
 Sin garantia. Licencia completa: ./LICENSE.txt
 Codigo fuente de esta version: ./prisma-pdf-source.tar.gz
@@ -96,3 +96,10 @@ Estilos y localizaciones Citation Style Language — CC BY-SA 3.0; ./third-party
 50 familias nuevas, 171 archivos: ./fonts/EXTRA-CATALOG.md y ./fonts/EXTRA-catalog.json.
   Archivos originales, versiones, derivaciones y licencias: ./fonts/<familia>/SOURCE.json y LICENSE.txt.
   SIL OFL 1.1, Apache 2.0 o GUST Font License según cada familia.
+
+Revisión de escritura — recursos locales:
+Typo.js 1.3.2 — BSD-3-Clause; ./third-party/typo-js-LICENSE.txt.
+dictionary-es 4.0.0 — diccionario español Hunspell, GPL/LGPL/MPL;
+  licencia íntegra: ./spelling/LICENSE.txt; https://github.com/wooorm/dictionaries.
+UnicodeData 18.0.0 — Unicode License V3; ./unicode/LICENSE.txt y SOURCE.json.
+  https://www.unicode.org/Public/18.0.0/ucd/UnicodeData.txt

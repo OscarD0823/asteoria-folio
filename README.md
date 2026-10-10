@@ -1,8 +1,9 @@
-# Prisma PDF 5.0
+# Prisma PDF 6.0 y Prisma Writer 1.0
 
 Editor de PDF y creador de documentos en español. Web, PWA, Android y Windows; todos procesan los documentos en el dispositivo.
 
 - [Abrir editor](https://oscard0823.github.io/prisma-pdf/)
+- [Abrir Prisma Writer](https://oscard0823.github.io/prisma-pdf/writer/) · [Guía y compatibilidad](README-writer.md)
 - [Descargar APK y EXE](https://github.com/OscarD0823/prisma-pdf/releases/latest)
 
 ## Crear y editar
@@ -23,13 +24,13 @@ Los documentos nuevos y la escritura flexible admiten tablas con celdas unidas, 
 
 **Referencias** ofrece 14 estilos académicos más Libre: APA 7, IEEE, ISO 690, MLA 9, Chicago autor–fecha/Turabian, Harvard, Vancouver, ACS, ABNT, ACM, AMA, CSE, Nature y Science. APA, IEEE, MLA, Chicago y ABNT también aplican una base de presentación a todo el documento y sus secciones. Los demás modifican citas y bibliografía manteniendo la disposición. Se crean índices de contenido, figuras, tablas y apéndices, títulos numerados y notas de procedencia. La biblioteca bibliográfica permite introducir una URL o datos manuales, crear una cita con localizador de página, generar referencias y localizar sus apariciones. La URL aporta el dominio y la dirección: el autor, título y fecha se completan manualmente para no inventarlos. Consulta [alcance, variantes y fuentes oficiales](README-academic.md).
 
-**Revisar** incluye corrección ortográfica del navegador, autocorrección local de errores comunes y contadores de palabras, caracteres y números; la selección numérica muestra su suma. **Buscar y reemplazar** sustituye una coincidencia o todas, distingue mayúsculas o palabras completas, conserva el formato y permite deshacer. **Vista** muestra espacios, tabulaciones y marcas de párrafo sin alterar el PDF exportado. El panel de navegación busca en todo el documento y muestra páginas, títulos, figuras, tablas, apéndices, secciones y comentarios.
+**Revisar → Ortografía** abre un panel con diccionario español local, sugerencias, omisiones y diccionario personal. El texto revisado no se envía a ningún servidor. También incluye autocorrección local y contadores de palabras, caracteres y números; la selección numérica muestra su suma. **Buscar y reemplazar** sustituye una coincidencia o todas, distingue mayúsculas o palabras completas, conserva el formato y permite deshacer. **Inspector de caracteres** muestra códigos, frecuencias, invisibles, grupos de emoji y cobertura de la fuente. **Vista** muestra espacios, tabulaciones y marcas de párrafo sin alterar el PDF exportado. El panel de navegación busca en todo el documento y muestra páginas, títulos, figuras, tablas, apéndices, secciones y comentarios.
 
 ## Exportaciones
 
 **Exportar** permite elegir PDF, Word DOCX, HTML, Markdown, TXT y PNG. Varias páginas PNG se descargan en un ZIP. PDF y PNG admiten rangos; los otros formatos exportan el documento completo. Todos se generan en el dispositivo.
 
-DOCX conserva texto y tablas editables, estilos, vínculos, comentarios, secciones, encabezados, numeración y fuentes incrustadas. Ecuaciones, formas y gráficos se exportan como imágenes. Los índices son una copia del contenido generado y las viñetas/números se exportan como texto; no son campos dinámicos ni listas nativas de Word. HTML incorpora fuentes e imágenes para lectura sin conexión, con un diseño continuo. Markdown y TXT priorizan el contenido. Para reproducir el diseño final utiliza PDF. Convertir un PDF de posiciones fijas a DOCX requiere revisar el orden de lectura y los saltos; no incluye OCR ni garantiza reconstruir cada tabla original.
+DOCX conserva texto y tablas editables, estilos, vínculos, comentarios, secciones, encabezados, numeración y fuentes incrustadas. Ecuaciones, formas y gráficos se exportan como imágenes. La tabla de contenido incluye un campo TOC actualizable en Word, niveles, entradas y páginas; los demás índices son una copia del contenido generado. Las viñetas/números se exportan como texto. HTML incorpora fuentes e imágenes para lectura sin conexión, con un diseño continuo. Markdown y TXT priorizan el contenido. Para reproducir el diseño final utiliza PDF. También se pueden abrir DOCX y TXT localmente; los objetos avanzados de Word requieren revisión. Convertir un PDF de posiciones fijas a DOCX requiere revisar el orden de lectura y los saltos; no incluye OCR ni garantiza reconstruir cada tabla original.
 
 En PDF cargados, cambiar márgenes ajusta la página completa al área útil conservando su diseño. Unir PDF convierte un documento de texto en PDF antes de añadir otros archivos. Las páginas PDF admiten extracción por rangos, reordenar, girar, duplicar, eliminar, numeración y conversión de imágenes a páginas. Una página en blanco puede ir arriba, abajo o al final; hereda las marcas de agua del proyecto, artefactos PDF identificados como marca de agua o textos grandes reconocidos como «BORRADOR»/«CONFIDENCIAL». Marcas no identificadas o integradas en un escaneo requieren añadirlas manualmente. Optimizar aplica compresión sin pérdida; no garantiza que todos los archivos reduzcan su tamaño.
 

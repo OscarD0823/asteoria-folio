@@ -1,7 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Prisma PDF</string>
-    <string name="title_activity_main">Prisma PDF</string>
     <string name="package_name">com.oscard.prismapdf</string>
     <string name="custom_url_scheme">com.oscard.prismapdf</string>
 </resources>

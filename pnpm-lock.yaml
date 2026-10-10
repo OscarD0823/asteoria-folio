@@ -63,6 +63,9 @@ importers:
       citeproc:
         specifier: 2.4.63
         version: 2.4.63
+      dictionary-es:
+        specifier: 4.0.0
+        version: 4.0.0
       docx:
         specifier: 9.9.0
         version: 9.9.0
@@ -93,6 +96,9 @@ importers:
       regenerator-runtime:
         specifier: 0.14.1
         version: 0.14.1
+      typo-js:
+        specifier: 1.3.2
+        version: 1.3.2
     devDependencies:
       '@capacitor/cli':
         specifier: 8.5.3
@@ -112,6 +118,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.6.0
         version: 4.7.0(supports-color@7.2.0)(vite@7.3.7(@types/node@22.20.5)(jiti@2.7.0)(tsx@4.23.15))
+      '@xmldom/xmldom':
+        specifier: 0.9.12
+        version: 0.9.12
       electron:
         specifier: 44.7.0
         version: 44.7.0(supports-color@7.2.0)
@@ -1295,6 +1304,9 @@ packages:
   detect-node@2.1.0:
     resolution: {integrity: sha512-T0NIuQpnTvFDATNuHN5roPwSBG83rFsuO+MXXH9/3N1eFbn4wcPjttvjMLEPWJ0RGUYgQE7cGgS3tNxbqCGM7g==}
 
+  dictionary-es@4.0.0:
+    resolution: {integrity: sha512-8J3IYdaHYmkojxqhB+DneQpek6N/s3MwbVk3bPNGQSTBT5kxJtmbuiT0LSDP0Al6K9Vevo1sjspG8AGP9Yvxiw==}
+
   dir-compare@4.2.0:
     resolution: {integrity: sha512-2xMCmOoMrdQIPHdsTawECdNPwlVFB9zGcz3kuhmBO6U3oU+UQjsue0i8ayLKpgBcm+hcXPMVSGUN9d+pvJ6+VQ==}
 
@@ -2230,6 +2242,9 @@ packages:
     resolution: {integrity: sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==}
     engines: {node: '>=14.17'}
     hasBin: true
+
+  typo-js@1.3.2:
+    resolution: {integrity: sha512-Z1YkJ7IIYNrFeOxAlHUercY4Q2I+PhYD/3VkWpJGy/Oqudy3bFpNcQxnv6Oa9fTSXCHPGz1eDoX1bZYm2Z891A==}
 
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
@@ -3613,6 +3628,8 @@ snapshots:
   detect-node@2.1.0:
     optional: true
 
+  dictionary-es@4.0.0: {}
+
   dir-compare@4.2.0:
     dependencies:
       minimatch: 3.1.5
@@ -4671,6 +4688,8 @@ snapshots:
     optional: true
 
   typescript@5.8.3: {}
+
+  typo-js@1.3.2: {}
 
   undici-types@6.21.0: {}
 

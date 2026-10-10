@@ -1,4 +1,4 @@
-param([string]$SigningDirectory = (Join-Path $PSScriptRoot '..\..\.prisma-signing'))
+param([string]$SigningDirectory = (Join-Path $PSScriptRoot '..\..\.prisma-signing'), [ValidateSet('pdf','writer')][string]$Product='pdf')
 $ErrorActionPreference='Stop'
 $prismaRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $prismaKeys=[IO.Path]::GetFullPath($SigningDirectory)
@@ -22,5 +22,5 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo crear la clave de firma' }
   }
   Push-Location (Join-Path $prismaRoot 'android')
-  try { & .\gradlew.bat assembleRelease --no-daemon; if ($LASTEXITCODE -ne 0) { throw 'Error de compilación de Android' } } finally { Pop-Location }
+  try { $prismaBuildTask = if ($Product -eq 'writer') { 'assembleWriterRelease' } else { 'assemblePdfRelease' }; & .\gradlew.bat $prismaBuildTask --no-daemon; if ($LASTEXITCODE -ne 0) { throw 'Error de compilación de Android' } } finally { Pop-Location }
 } finally { Remove-Item Env:PRISMA_KEY_PASSWORD -ErrorAction SilentlyContinue; Remove-Item Env:PRISMA_KEYSTORE_FILE -ErrorAction SilentlyContinue }

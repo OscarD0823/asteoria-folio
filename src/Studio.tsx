@@ -82,13 +82,7 @@ import {
   pruneSources,
 } from "./storage";
 import { projectBytes, readProject, validateLayout } from "./projects";
-import {
-  defaultLayout,
-  pageSize,
-  buildFlowPdf,
-  plainText,
-  type PageLayout,
-} from "./flow";
+import { defaultLayout, pageSize, plainText, type PageLayout } from "./flow";
 import { renderFlow } from "./flow-renderer";
 import { DocumentNavigation } from "./DocumentNavigation";
 import { blankWithWatermarks, watermarkCandidate } from "./watermarks";
@@ -107,6 +101,11 @@ import {
   mountLocalFonts,
 } from "./local-fonts";
 import { RichEditor, type RichEditorInstance } from "./LazyRichEditor";
+import { SpellingReview } from "./SpellingReview";
+import { CharacterInspector } from "./CharacterInspector";
+import { product } from "./product";
+import { importDocx, importText } from "./document-import";
+import { writerExample } from "./writer-example";
 import { PageFrame } from "./PageFrame";
 import { Button, PageThumbnail, Signature } from "./components";
 import { download } from "./download";
@@ -157,6 +156,11 @@ export default function Studio() {
     [showRuler, setShowRuler] = useState(true),
     [navigation, setNavigation] = useState(false),
     [searchQuery, setSearchQuery] = useState("");
+  const [reviewPanel, setReviewPanel] = useState<
+    "" | "spelling" | "characters"
+  >("");
+  const [writingPages, setWritingPages] = useState(1);
+  const [writingActivePage, setWritingActivePage] = useState(0);
   const [tab, setTab] = useState("Inicio"),
     [view, setView] = useState<"write" | "pdf">("write"),
     [sidebar, setSidebar] = useState(window.innerWidth > 850),
@@ -165,7 +169,7 @@ export default function Studio() {
     [stageWidth, setStageWidth] = useState(900);
   const [editor, setEditor] = useState<RichEditorInstance | null>(null),
     [tick, setTick] = useState(0),
-    [font, setFont] = useState("PrismaSans"),
+    [font, setFont] = useState(product.writer ? "Carlito" : "PrismaSans"),
     [size, setSize] = useState(12),
     [color, setColor] = useState("#20273a");
   const [busy, setBusy] = useState(""),
@@ -183,7 +187,9 @@ export default function Studio() {
     [range, setRange] = useState("1"),
     [compress, setCompress] = useState(false),
     [exportName, setExportName] = useState("");
-  const [exportFormat, setExportFormat] = useState("pdf");
+  const [exportFormat, setExportFormat] = useState(
+    product.writer ? "docx" : "pdf",
+  );
   const [printPages, setPrintPages] = useState<PrintPage[]>([]),
     [printCount, setPrintCount] = useState(0),
     [printScope, setPrintScope] = useState("all"),
@@ -519,6 +525,8 @@ export default function Studio() {
     state.current = next;
     setWorkspace(next);
     setActiveId(next.pages[0]?.id ?? "");
+    setWritingPages(1);
+    setWritingActivePage(0);
     clear();
     setHistory({ past: [], future: [] });
     setTool("select");
@@ -530,7 +538,18 @@ export default function Studio() {
     await enter({
       ...emptyWorkspace(),
       flow: {
-        content: { type: "doc", content: [{ type: "paragraph" }] },
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "paragraph",
+              attrs: {
+                fontFamily: product.writer ? "Carlito" : "PrismaSans",
+                fontSize: 12,
+              },
+            },
+          ],
+        },
         layout: defaultLayout(),
       },
     });
@@ -548,6 +567,22 @@ export default function Studio() {
         );
       let total = next.sources.reduce((n, s) => n + s.bytes.length, 0);
       for (const f of Array.from(files)) {
+        if (/\.(docx|txt)$/i.test(f.name)) {
+          if (append || files.length !== 1)
+            throw new Error("Abre un solo documento DOCX o TXT.");
+          const imported = /\.docx$/i.test(f.name)
+            ? importDocx(new Uint8Array(await f.arrayBuffer()))
+            : { flow: importText(await f.text()), warnings: [] };
+          const name = f.name.replace(/\.[^.]+$/, "");
+          next = { ...emptyWorkspace(), name, flow: imported.flow };
+          await enter(next);
+          inform(
+            imported.warnings.length
+              ? "Documento importado. " + imported.warnings.join(" ")
+              : "Documento importado y listo para escribir.",
+          );
+          return;
+        }
         if (/\.prisma$/i.test(f.name)) {
           if (append || files.length > 1)
             throw new Error("Abre un solo proyecto .prisma.");
@@ -555,7 +590,9 @@ export default function Studio() {
           break;
         }
         if (!/\.pdf$/i.test(f.name) && f.type !== "application/pdf")
-          throw new Error("Selecciona un PDF o un proyecto .prisma.");
+          throw new Error(
+            "Selecciona un PDF, DOCX, TXT o un proyecto .prisma.",
+          );
         total += f.size;
         if (total > 100 * 1024 * 1024)
           throw new Error("Usa documentos de hasta 100 MB en total.");
@@ -751,7 +788,11 @@ export default function Studio() {
     }
   }
   async function flexibleDocument() {
-    if (busy || state.current.flow) return;
+    if (busy) return;
+    if (state.current.flow) {
+      setView("write");
+      return;
+    }
     setBusy("Organizando el PDF como documento editable…");
     try {
       const content: RichNode[] = [];
@@ -1485,11 +1526,31 @@ export default function Studio() {
     }
   }
   function trackPage() {
-    if (writing || !stage.current) return;
+    if (!stage.current) return;
     if (scrollFrame.current) return;
     scrollFrame.current = requestAnimationFrame(() => {
       scrollFrame.current = 0;
       if (!stage.current) return;
+      if (writing) {
+        const paper = stage.current.querySelector<HTMLElement>(".paged-paper");
+        if (!paper) return;
+        const rect = paper.getBoundingClientRect();
+        const scale = rect.width / paper.offsetWidth;
+        const stride = ((pageSize(currentLayout)[1] * 4) / 3 + 28) * scale;
+        setWritingActivePage(
+          Math.max(
+            0,
+            Math.min(
+              writingPages - 1,
+              Math.floor(
+                (stage.current.getBoundingClientRect().top + 80 - rect.top) /
+                  stride,
+              ),
+            ),
+          ),
+        );
+        return;
+      }
       const top = stage.current.getBoundingClientRect().top + 80;
       let closest: HTMLElement | null = null;
       let distance = Infinity;
@@ -1545,12 +1606,17 @@ export default function Studio() {
     </Button>
   );
   return (
-    <div className={home ? "app home-app" : "app studio-app"}>
+    <div
+      className={
+        (home ? "app home-app" : "app studio-app") +
+        (product.writer ? " writer-app" : "")
+      }
+    >
       <input
         ref={openInput}
         hidden
         type="file"
-        accept=".pdf,.prisma,application/pdf"
+        accept=".pdf,.docx,.txt,.prisma,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         multiple
         onChange={(e) => void openFiles(e.target.files)}
       />
@@ -1581,9 +1647,9 @@ export default function Studio() {
         <>
           <header className="home-header">
             <a href="#" className="brand" onClick={(e) => e.preventDefault()}>
-              <img src="./logo.svg" alt="Prisma PDF" />
+              <img src="./logo.svg" alt={product.name} />
               <span>
-                Prisma <b>PDF</b>
+                Prisma <b>{product.writer ? "Writer" : "PDF"}</b>
               </span>
             </a>
             <div>
@@ -1605,12 +1671,20 @@ export default function Studio() {
                   <span className="live-dot" /> UN ESPACIO PARA TUS IDEAS
                 </span>
                 <h1>
-                  De documento
-                  <br />a <span>posibilidad.</span>
+                  {product.writer ? "Tus palabras." : "De documento"}
+                  <br />
+                  {product.writer ? (
+                    <span>Tu próxima idea.</span>
+                  ) : (
+                    <>
+                      a <span>posibilidad.</span>
+                    </>
+                  )}
                 </h1>
                 <p>
-                  Escribe desde cero, transforma tus PDF y continúa cuando
-                  quieras. Tu trabajo se queda contigo.
+                  {product.writer
+                    ? "Un espacio para escribir, dar formato y presentar tus trabajos. Abre documentos de Word y guarda todo en tu dispositivo."
+                    : "Escribe desde cero, transforma tus PDF y continúa cuando quieras. Tu trabajo se queda contigo."}
                 </p>
                 <div className="hero-actions">
                   <Button
@@ -1623,7 +1697,9 @@ export default function Studio() {
                   </Button>
                   <Button onClick={() => openInput.current?.click()}>
                     <FolderOpen size={18} />
-                    Abrir PDF o proyecto
+                    {product.writer
+                      ? "Abrir documento"
+                      : "Abrir PDF o documento"}
                   </Button>
                 </div>
                 <div className="hero-trust">
@@ -1693,8 +1769,16 @@ export default function Studio() {
                   <ScanText />
                 </div>
                 <div>
-                  <h3>Dale otra vida a un PDF</h3>
-                  <p>Edita palabras y mueve imágenes.</p>
+                  <h3>
+                    {product.writer
+                      ? "Continúa un documento de Word"
+                      : "Dale otra vida a un PDF"}
+                  </h3>
+                  <p>
+                    {product.writer
+                      ? "Importa DOCX y exporta a Word o PDF."
+                      : "Edita palabras y mueve imágenes."}
+                  </p>
                 </div>
                 <ArrowRight size={18} />
               </Button>
@@ -1719,7 +1803,17 @@ export default function Studio() {
                   <span className="eyebrow">TU BIBLIOTECA LOCAL</span>
                   <h2>Trabajo que sigue contigo.</h2>
                 </div>
-                <Button onClick={() => void demoWorkspace().then(enter)}>
+                <Button
+                  onClick={() =>
+                    void (product.writer
+                      ? enter({
+                          ...emptyWorkspace(),
+                          name: "Mi primer documento",
+                          flow: writerExample(),
+                        })
+                      : demoWorkspace().then(enter))
+                  }
+                >
                   <Sparkles size={16} />
                   Explorar un ejemplo
                 </Button>
@@ -1771,7 +1865,19 @@ export default function Studio() {
             </section>
           </main>
           <footer className="home-footer">
-            <span>Prisma PDF 5.0 · Hecho para crear.</span>
+            <span>
+              {product.name} {product.version} · Hecho para crear.
+            </span>
+            <a
+              href={
+                product.writer
+                  ? "https://oscard0823.github.io/prisma-pdf/"
+                  : "https://oscard0823.github.io/prisma-pdf/writer/"
+              }
+            >
+              {product.writer ? "Abrir Prisma PDF" : "Abrir Prisma Writer"}{" "}
+              <ArrowRight size={13} />
+            </a>
             <a
               href="https://github.com/OscarD0823/prisma-pdf"
               target="_blank"
@@ -1796,7 +1902,7 @@ export default function Studio() {
                   void refresh();
                 }}
               >
-                <img src="./logo.svg" alt="Prisma PDF" />
+                <img src="./logo.svg" alt={product.name} />
               </Button>
               <div>
                 <input
@@ -1901,6 +2007,7 @@ export default function Studio() {
             role="toolbar"
             aria-label="Herramientas del documento"
             data-format-tick={tick}
+            data-tab={tab}
           >
             {["Inicio", "Insertar", "Diseño", "Páginas"].includes(tab) &&
               (tab === "Inicio" ? (
@@ -2096,17 +2203,19 @@ export default function Studio() {
                     <small>Párrafo</small>
                   </div>
                   <div className="ribbon-group">
-                    <select
-                      aria-label="Estilo de párrafo"
-                      disabled={!rich || !writing}
-                      onChange={(e) => format("heading", e.target.value)}
-                      defaultValue="0"
-                    >
-                      <option value="0">Normal</option>
-                      <option value="1">Título</option>
-                      <option value="2">Subtítulo</option>
-                      <option value="3">Encabezado</option>
-                    </select>
+                    {!writing && (
+                      <select
+                        aria-label="Estilo de párrafo"
+                        disabled={!rich || !writing}
+                        onChange={(e) => format("heading", e.target.value)}
+                        defaultValue="0"
+                      >
+                        <option value="0">Normal</option>
+                        <option value="1">Título</option>
+                        <option value="2">Subtítulo</option>
+                        <option value="3">Encabezado</option>
+                      </select>
+                    )}
                     <div className="ribbon-row">
                       {icon(
                         "Superíndice",
@@ -2127,7 +2236,7 @@ export default function Studio() {
                         !rich,
                       )}
                     </div>
-                    <small>Estilos</small>
+                    <small>Efectos</small>
                   </div>
                 </>
               ) : tab === "Insertar" ? (
@@ -2395,6 +2504,7 @@ export default function Studio() {
                 setNavigation(true);
                 setSidebar(true);
               }}
+              onReview={setReviewPanel}
               onLocate={(blockId) => {
                 setView("write");
                 setTimeout(
@@ -2462,6 +2572,15 @@ export default function Studio() {
                     className={active?.id === p.id ? "active" : ""}
                     aria-label={"Ir a la página " + (i + 1)}
                     onClick={() => {
+                      if (writing) {
+                        document
+                          .getElementById("writing-page-" + i)
+                          ?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          });
+                        return;
+                      }
                       setActiveId(p.id);
                       if (workspace.flow) setView("pdf");
                       setTimeout(
@@ -2526,14 +2645,87 @@ export default function Studio() {
               </div>
               {writing && workspace.flow ? (
                 <div
-                  className="flow-paper"
+                  className="flow-paper paged-paper"
                   style={{
                     width: (pageSize(currentLayout)[0] * 4) / 3,
                     zoom: rw / ((pageSize(currentLayout)[0] * 4) / 3),
                     minHeight: (pageSize(currentLayout)[1] * 4) / 3,
+                    height:
+                      writingPages *
+                        ((pageSize(currentLayout)[1] * 4) / 3 + 28) -
+                      28,
                     padding: `${currentLayout.top}mm ${currentLayout.right}mm ${currentLayout.bottom}mm ${currentLayout.left}mm`,
                   }}
                 >
+                  <div className="writing-page-backgrounds" aria-hidden="true">
+                    {Array.from({ length: writingPages }, (_, i) => (
+                      <div
+                        key={i}
+                        id={"writing-page-" + i}
+                        className="writing-page-sheet"
+                        style={{
+                          top: i * ((pageSize(currentLayout)[1] * 4) / 3 + 28),
+                          height: (pageSize(currentLayout)[1] * 4) / 3,
+                        }}
+                      >
+                        <span
+                          className="writing-page-header"
+                          style={{
+                            left: currentLayout.left + "mm",
+                            right: currentLayout.right + "mm",
+                          }}
+                        >
+                          {currentLayout.differentFirst && i === 0
+                            ? currentLayout.headerFirst
+                            : currentLayout.oddEven && i % 2 === 1
+                              ? (currentLayout.headerEven ??
+                                currentLayout.header)
+                              : currentLayout.header}
+                        </span>
+                        <span
+                          className="writing-page-footer"
+                          style={{
+                            left: currentLayout.left + "mm",
+                            right: currentLayout.right + "mm",
+                          }}
+                        >
+                          {currentLayout.differentFirst && i === 0
+                            ? currentLayout.footerFirst
+                            : currentLayout.oddEven && i % 2 === 1
+                              ? (currentLayout.footerEven ??
+                                currentLayout.footer)
+                              : currentLayout.footer}
+                        </span>
+                        {currentLayout.numbering && (
+                          <span
+                            className={
+                              "writing-page-number " +
+                              (currentLayout.pageNumberPosition ??
+                                "footer-right")
+                            }
+                          >
+                            {i + (currentLayout.pageNumberStart ?? 1)}
+                          </span>
+                        )}
+                        {currentLayout.watermark?.text && (
+                          <div
+                            className="flow-watermark"
+                            style={{
+                              color: currentLayout.watermark.color,
+                              opacity: currentLayout.watermark.opacity,
+                              transform: `translate(-50%,-50%) rotate(${-currentLayout.watermark.angle}deg)`,
+                              fontSize: currentLayout.watermark.size + "pt",
+                            }}
+                          >
+                            {currentLayout.watermark.text}
+                          </div>
+                        )}
+                        <span className="writing-page-label">
+                          Página {i + 1}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                   {showRuler && (
                     <DocumentRuler
                       layout={currentLayout}
@@ -2563,21 +2755,28 @@ export default function Studio() {
                     />
                   )}
                   {showRuler && (
-                    <VerticalDocumentRuler
-                      layout={currentLayout}
-                      onChange={(next) =>
-                        void updateDocumentLayout(next).catch(fail)
-                      }
-                    />
-                  )}
-                  {showRuler && (
-                    <VerticalDocumentRuler
-                      side="right"
-                      layout={currentLayout}
-                      onChange={(next) =>
-                        void updateDocumentLayout(next).catch(fail)
-                      }
-                    />
+                    <div
+                      className="writing-rulers"
+                      style={{
+                        top:
+                          writingActivePage *
+                          ((pageSize(currentLayout)[1] * 4) / 3 + 28),
+                      }}
+                    >
+                      <VerticalDocumentRuler
+                        layout={currentLayout}
+                        onChange={(next) =>
+                          void updateDocumentLayout(next).catch(fail)
+                        }
+                      />
+                      <VerticalDocumentRuler
+                        side="right"
+                        layout={currentLayout}
+                        onChange={(next) =>
+                          void updateDocumentLayout(next).catch(fail)
+                        }
+                      />
+                    </div>
                   )}
                   {currentSection && (
                     <div className="active-section-label">
@@ -2588,21 +2787,10 @@ export default function Studio() {
                       · {currentLayout.columns || 1} columna(s)
                     </div>
                   )}
-                  {workspace.flow.layout.watermark?.text && (
-                    <div
-                      className="flow-watermark"
-                      style={{
-                        color: workspace.flow.layout.watermark.color,
-                        opacity: workspace.flow.layout.watermark.opacity,
-                        transform: `translate(-50%,-50%) rotate(${-workspace.flow.layout.watermark.angle}deg)`,
-                        fontSize: workspace.flow.layout.watermark.size + "pt",
-                      }}
-                    >
-                      {workspace.flow.layout.watermark.text}
-                    </div>
-                  )}
                   <RichEditor
                     autoFocus
+                    pageLayout={currentLayout}
+                    onPages={setWritingPages}
                     showMarks={showMarks}
                     autoCorrect={autoCorrect}
                     searchQuery={searchQuery}
@@ -2700,6 +2888,22 @@ export default function Studio() {
                 </div>
               )}
             </main>
+            {reviewPanel === "spelling" && (
+              <SpellingReview
+                editor={workspace.flow ? rich : null}
+                onClose={() => setReviewPanel("")}
+                onConvert={flexibleDocument}
+              />
+            )}
+            {reviewPanel === "characters" && (
+              <CharacterInspector
+                editor={workspace.flow ? rich : null}
+                fonts={workspace.fonts ?? []}
+                family={sf}
+                onClose={() => setReviewPanel("")}
+                onConvert={flexibleDocument}
+              />
+            )}
           </div>
           <footer className="editor-status">
             <span>

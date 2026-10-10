@@ -1103,11 +1103,17 @@ export function normalizeAcademicDocument(
             title: ref.title,
             path: [],
           }))
-        : entries[kind];
+        : entries[kind].filter(
+            (entry) =>
+              kind !== "contents" ||
+              (entry.level ?? 1) <=
+                Math.max(1, Math.min(6, Number(node.attrs?.levels) || 3)),
+          );
     node.attrs = {
       ...node.attrs,
       kind,
       title: indexTitles[kind],
+      academicStyle: style,
       entries: list.map(({ path: _path, ...entry }) => entry),
     };
     node.content = list.map((entry) => {
@@ -1116,7 +1122,7 @@ export function normalizeAcademicDocument(
         targetId: entry.targetId,
         textAlign: "left",
         firstLineIndent: 0,
-        lineHeight: style === "apa" ? 2 : 1,
+        lineHeight: style === "apa" ? 2 : kind === "references" ? 1 : 1.45,
         spaceBefore: 0,
         spaceAfter: 0,
         ...(academicPresets[style].fontFamily
@@ -1131,8 +1137,19 @@ export function normalizeAcademicDocument(
       };
       if (kind !== "references")
         return paragraph(
-          entry.label + (entry.page ? ` … ${entry.page}` : ""),
-          attrs,
+          entry.label +
+            (node.attrs?.pageNumbers !== false && entry.page
+              ? `\t${entry.page}`
+              : ""),
+          {
+            ...attrs,
+            indexEntry: true,
+            indexLevel: entry.level || 1,
+            indexLeader: node.attrs?.leader ?? "dots",
+            indexPage:
+              node.attrs?.pageNumbers !== false ? (entry.page ?? null) : null,
+            indexLabel: entry.label,
+          },
         );
       const match = byId.get(entry.id)!;
       return {

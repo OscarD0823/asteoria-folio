@@ -1,13 +1,13 @@
 {
-  "version": "5.0.0",
-  "releaseUrl": "https://github.com/OscarD0823/prisma-pdf/releases/tag/v5.0.0",
-  "androidUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v5.0.0/Prisma-PDF-5.0.0-Android.apk",
-  "windowsUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v5.0.0/Prisma-PDF-5.0.0-Windows-Setup.exe",
+  "version": "6.0.0",
+  "releaseUrl": "https://github.com/OscarD0823/prisma-pdf/releases/tag/v6.0.0",
+  "androidUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.0.0/Prisma-PDF-6.0.0-Android.apk",
+  "windowsUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.0.0/Prisma-PDF-6.0.0-Windows-Setup.exe",
   "features": [
-    "Biblioteca de 81 familias tipográficas e importación de fuentes personales",
-    "Reglas laterales y secciones con diseño independiente",
-    "Más estilos bibliográficos, citas y búsqueda con reemplazo",
-    "Exportación a Word, HTML, Markdown, TXT e imágenes",
+    "Biblioteca de fuentes con favoritas, texto de muestra y vistas de lista o tarjetas",
+    "Galería de estilos, índices con relleno y numeración alineada",
+    "Revisor ortográfico de español e inspector Unicode locales",
+    "Escritura con separación de páginas e importación de DOCX",
     "Comprobación de actualizaciones sin enviar documentos"
   ]
 }

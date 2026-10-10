@@ -1,0 +1,702 @@
+import { unzipSync, strFromU8 } from "fflate";
+import {
+  defaultLayout,
+  plainText,
+  type FlowDocument,
+  type RichNode,
+  type PageLayout,
+} from "./flow";
+import { fontFamilies } from "./fonts";
+import { encodeFont } from "./local-fonts";
+import { normalizeAcademicDocument } from "./academic";
+const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+  R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+const children = (el?: Element | null) =>
+  el
+    ? Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1)
+    : [];
+const direct = (el: Element | null | undefined, tag: string) =>
+  children(el).find((n) => n.localName === tag);
+const all = (el: Element | Document, tag: string) =>
+  Array.from(el.getElementsByTagNameNS("*", tag));
+const val = (el?: Element | null, name = "val") =>
+  el?.getAttributeNS(W, name) ?? el?.getAttribute("w:" + name) ?? "";
+const yes = (el?: Element) => !!el && !["0", "false", "off"].includes(val(el));
+function parseXml(text: string) {
+  if (/<!DOCTYPE|<!ENTITY/i.test(text))
+    throw new Error("El DOCX contiene una definición XML no admitida.");
+  const xml = new DOMParser().parseFromString(text, "application/xml");
+  if (xml.getElementsByTagName("parsererror").length)
+    throw new Error("No se pudo leer la estructura del DOCX.");
+  return xml;
+}
+function partPath(source: string, target: string) {
+  if (/^[a-z]+:/i.test(target)) return "";
+  const parts = (
+      target.startsWith("/")
+        ? target.slice(1)
+        : source.slice(0, source.lastIndexOf("/") + 1) + target
+    ).split("/"),
+    clean: string[] = [];
+  for (const part of parts) {
+    if (part === "..") {
+      if (!clean.length) return "";
+      clean.pop();
+    } else if (part && part !== ".") clean.push(part);
+  }
+  return clean.join("/");
+}
+export function importText(text: string): FlowDocument {
+  if (text.length > 5_000_000)
+    throw new Error(
+      "El documento de texto supera el límite de 5 millones de caracteres.",
+    );
+  return {
+    layout: defaultLayout(),
+    academicStyle: "free",
+    references: [],
+    content: normalizeAcademicDocument(
+      {
+        type: "doc",
+        content: text
+          .replace(/\r\n?/g, "\n")
+          .split("\n")
+          .map((line) => ({
+            type: "paragraph",
+            ...(line ? { content: [{ type: "text", text: line }] } : {}),
+          })),
+      },
+      [],
+      "free",
+    ),
+  };
+}
+/** Parse OOXML locally. No remote relationships, embedded programs or macros are executed. */
+export function importDocx(bytes: Uint8Array): {
+  flow: FlowDocument;
+  warnings: string[];
+} {
+  if (bytes.length > 100 * 1024 * 1024)
+    throw new Error("Elige un DOCX de hasta 100 MB.");
+  let expanded = 0;
+  const parts = unzipSync(bytes, {
+    filter(file) {
+      expanded += file.originalSize;
+      if (expanded > 160 * 1024 * 1024)
+        throw new Error("El DOCX descomprimido supera los 160 MB.");
+      return /^(word\/(?:document|styles|numbering|comments|footnotes|endnotes|header\d+|footer\d+)\.xml|word\/_rels\/document\.xml\.rels|word\/media\/.+)$/.test(
+        file.name,
+      );
+    },
+  });
+  if (!parts["word/document.xml"])
+    throw new Error("El archivo no es un documento DOCX válido.");
+  const xml = (path: string) =>
+    parts[path] ? parseXml(strFromU8(parts[path])) : null;
+  const document = xml("word/document.xml")!,
+    body = all(document, "body")[0];
+  if (!body) throw new Error("No se encontró el contenido del DOCX.");
+  const warnings = new Set<string>(),
+    substitutions = new Set<string>();
+  const relationships = new Map<
+    string,
+    { target: string; external: boolean }
+  >();
+  const relDoc = xml("word/_rels/document.xml.rels");
+  if (relDoc)
+    for (const rel of all(relDoc, "Relationship"))
+      relationships.set(rel.getAttribute("Id")!, {
+        target: rel.getAttribute("Target")!,
+        external: rel.getAttribute("TargetMode") === "External",
+      });
+  const styles = new Map<string, Element>(),
+    styleDoc = xml("word/styles.xml");
+  if (styleDoc)
+    for (const style of all(styleDoc, "style"))
+      styles.set(val(style, "styleId"), style);
+  const defaults = styleDoc && all(styleDoc, "docDefaults")[0];
+  function styleChain(
+    id: string,
+    type: "pPr" | "rPr",
+    visited = new Set<string>(),
+  ): Element[] {
+    if (visited.has(id) || visited.size > 20) return [];
+    visited.add(id);
+    const style = styles.get(id);
+    if (!style) return [];
+    const inherited = styleChain(val(direct(style, "basedOn")), type, visited),
+      current = direct(style, type);
+    return current ? [...inherited, current] : inherited;
+  }
+  const defaultParagraph = styles.size
+    ? [...styles.values()].find(
+        (s) => val(s, "type") === "paragraph" && val(s, "default") === "1",
+      )
+    : undefined;
+  function fontValue(label: string) {
+    const known = fontFamilies.find(
+      (f) =>
+        f.label.toLowerCase() === label.toLowerCase() ||
+        f.value.toLowerCase() === label.toLowerCase(),
+    );
+    if (known) return known.value;
+    const replacements: Record<string, string> = {
+      arial: "Arimo",
+      calibri: "Carlito",
+      aptos: "Carlito",
+      "times new roman": "PrismaSerif",
+      georgia: "Gelasio",
+      "courier new": "PrismaMono",
+      cambria: "PrismaSerif",
+      "cambria math": "STIXTwoText",
+    };
+    if (label) substitutions.add(label);
+    return replacements[label.toLowerCase()] ?? "PrismaSans";
+  }
+  function runFormat(elements: Element[]): NonNullable<RichNode["marks"]> {
+    const flags = new Map<string, boolean>(),
+      attrs: Record<string, unknown> = {};
+    for (const props of elements)
+      for (const item of children(props)) {
+        if (["b", "i", "strike", "u"].includes(item.localName))
+          flags.set(
+            item.localName,
+            item.localName === "u" ? val(item) !== "none" : yes(item),
+          );
+        if (item.localName === "rFonts")
+          attrs.fontFamily = fontValue(
+            val(item, "ascii") || val(item, "hAnsi") || "Calibri",
+          );
+        if (item.localName === "sz")
+          attrs.fontSize = Number(val(item)) / 2 + "pt";
+        if (item.localName === "color" && /^[a-f0-9]{6}$/i.test(val(item)))
+          attrs.color = "#" + val(item);
+        if (item.localName === "highlight") {
+          const colors: Record<string, string> = {
+            yellow: "#fff070",
+            green: "#9dedaa",
+            cyan: "#83e7f1",
+            magenta: "#f2a3ee",
+            blue: "#90b5ff",
+            red: "#ff9999",
+          };
+          if (colors[val(item)]) attrs.backgroundColor = colors[val(item)];
+        }
+        if (
+          item.localName === "shd" &&
+          /^[a-f0-9]{6}$/i.test(val(item, "fill"))
+        )
+          attrs.backgroundColor = "#" + val(item, "fill");
+        if (item.localName === "vertAlign")
+          flags.set(
+            val(item) === "superscript" ? "superscript" : "subscript",
+            true,
+          );
+      }
+    const types: Record<string, string> = {
+      b: "bold",
+      i: "italic",
+      strike: "strike",
+      u: "underline",
+      superscript: "superscript",
+      subscript: "subscript",
+    };
+    return [
+      ...[...flags]
+        .filter(([, enabled]) => enabled)
+        .map(([flag]) => ({ type: types[flag] })),
+      ...(Object.keys(attrs).length ? [{ type: "textStyle", attrs }] : []),
+    ];
+  }
+  const commentDoc = xml("word/comments.xml"),
+    comments = new Map<string, Record<string, unknown>>();
+  if (commentDoc)
+    for (const c of all(commentDoc, "comment"))
+      comments.set(val(c, "id"), {
+        id: crypto.randomUUID(),
+        author: val(c, "author"),
+        date: val(c, "date"),
+        text: all(c, "t")
+          .map((t) => t.textContent)
+          .join(" "),
+      });
+  const defaultRuns = defaults ? all(defaults, "rPr") : [];
+  const numbering = new Map<
+    string,
+    { kind: string; start: number; style: string }
+  >();
+  const numDoc = xml("word/numbering.xml");
+  if (numDoc) {
+    const abstract = new Map(
+      all(numDoc, "abstractNum").map((n) => [val(n, "abstractNumId"), n]),
+    );
+    for (const num of all(numDoc, "num")) {
+      const source = abstract.get(val(direct(num, "abstractNumId")));
+      if (!source) continue;
+      for (const level of children(source).filter((n) => n.localName === "lvl"))
+        numbering.set(val(num, "numId") + ":" + val(level, "ilvl"), {
+          kind:
+            val(direct(level, "numFmt")) === "bullet"
+              ? "bulletList"
+              : "orderedList",
+          start: Number(val(direct(level, "start"))) || 1,
+          style: val(direct(level, "numFmt")),
+        });
+    }
+  }
+  const lists = new WeakMap<
+    RichNode,
+    { key: string; level: number; kind: string; start: number; style: string }
+  >();
+  function inline(
+    parent: Element,
+    inherited: ReturnType<typeof runFormat>,
+    activeComments: string[] = [],
+  ): { content: RichNode[]; images: RichNode[]; pageBreak: boolean } {
+    const content: RichNode[] = [],
+      images: RichNode[] = [];
+    let pageBreak = false;
+    for (const child of children(parent)) {
+      if (child.localName === "commentRangeStart") {
+        activeComments.push(val(child, "id"));
+        continue;
+      }
+      if (child.localName === "commentRangeEnd") {
+        const i = activeComments.indexOf(val(child, "id"));
+        if (i >= 0) activeComments.splice(i, 1);
+        continue;
+      }
+      if (child.localName === "hyperlink") {
+        const rel = relationships.get(child.getAttributeNS(R, "id") || ""),
+          link =
+            rel?.external && /^(https?:\/\/|mailto:)/i.test(rel.target)
+              ? rel.target
+              : "";
+        const result = inline(
+          child,
+          [
+            ...inherited,
+            ...(link ? [{ type: "link", attrs: { href: link } }] : []),
+          ],
+          activeComments,
+        );
+        content.push(...result.content);
+        images.push(...result.images);
+        continue;
+      }
+      if (["ins", "smartTag", "sdtContent"].includes(child.localName)) {
+        const result = inline(child, inherited, activeComments);
+        content.push(...result.content);
+        images.push(...result.images);
+        pageBreak ||= result.pageBreak;
+        continue;
+      }
+      if (child.localName !== "r") continue;
+      const props = direct(child, "rPr"),
+        style = val(direct(props, "rStyle"));
+      const own = runFormat([
+        ...styleChain(style, "rPr"),
+        ...(props ? [props] : []),
+      ]);
+      const markMap = new Map([...inherited, ...own].map((m) => [m.type, m]));
+      const inheritedText = inherited.find(
+          (m) => m.type === "textStyle",
+        )?.attrs,
+        ownText = own.find((m) => m.type === "textStyle")?.attrs;
+      if (inheritedText || ownText)
+        markMap.set("textStyle", {
+          type: "textStyle",
+          attrs: { ...inheritedText, ...ownText },
+        });
+      for (const id of activeComments) {
+        const attrs = comments.get(id);
+        if (attrs) markMap.set("comment", { type: "comment", attrs });
+      }
+      const marks = [...markMap.values()];
+      for (const prop of children(props)) {
+        const type = (
+          {
+            b: "bold",
+            i: "italic",
+            strike: "strike",
+            u: "underline",
+          } as Record<string, string>
+        )[prop.localName];
+        if (
+          type &&
+          (!yes(prop) || (prop.localName === "u" && val(prop) === "none"))
+        ) {
+          const index = marks.findIndex((mark) => mark.type === type);
+          if (index >= 0) marks.splice(index, 1);
+        }
+      }
+      for (const item of children(child)) {
+        if (item.localName === "t" && item.textContent)
+          content.push({
+            type: "text",
+            text: item.textContent,
+            ...(marks.length ? { marks } : {}),
+          });
+        if (item.localName === "tab")
+          content.push({
+            type: "text",
+            text: "\t",
+            ...(marks.length ? { marks } : {}),
+          });
+        if (item.localName === "br" || item.localName === "cr") {
+          if (val(item, "type") === "page") pageBreak = true;
+          else content.push({ type: "hardBreak" });
+        }
+        if (item.localName === "drawing" || item.localName === "pict") {
+          const blip = all(item, "blip")[0],
+            rel = relationships.get(blip?.getAttributeNS(R, "embed") || ""),
+            path =
+              rel && !rel.external
+                ? partPath("word/document.xml", rel.target)
+                : "",
+            data = parts[path];
+          if (data && /\.(png|jpe?g)$/i.test(path)) {
+            const extent = all(item, "extent")[0],
+              width = Number(extent?.getAttribute("cx")) / 9525;
+            images.push({
+              type: "image",
+              attrs: {
+                id: crypto.randomUUID(),
+                src:
+                  "data:image/" +
+                  (/\.png$/i.test(path) ? "png" : "jpeg") +
+                  ";base64," +
+                  encodeFont(data),
+                width: Math.max(24, Math.min(1600, width || 400)),
+                alt: all(item, "docPr")[0]?.getAttribute("descr") || "",
+              },
+            });
+          } else
+            warnings.add(
+              "Algunas formas, gráficos o imágenes de formatos especiales necesitan revisión después de importar.",
+            );
+        }
+      }
+    }
+    return { content, images, pageBreak };
+  }
+  function paragraph(el: Element): RichNode[] {
+    const directProps = direct(el, "pPr"),
+      styleId =
+        val(direct(directProps, "pStyle")) || val(defaultParagraph, "styleId"),
+      props = [
+        ...styleChain(styleId, "pPr"),
+        ...(directProps ? [directProps] : []),
+      ];
+    const runs = [...defaultRuns, ...styleChain(styleId, "rPr")],
+      attrs: Record<string, unknown> = { id: crypto.randomUUID() };
+    let level = /(?:heading|t[íi]tulo)([1-6])/i.exec(styleId)?.[1],
+      list:
+        | {
+            key: string;
+            level: number;
+            kind: string;
+            start: number;
+            style: string;
+          }
+        | undefined;
+    for (const p of props)
+      for (const item of children(p)) {
+        if (item.localName === "outlineLvl" && Number(val(item)) < 6)
+          level = String(Number(val(item)) + 1);
+        if (item.localName === "jc")
+          attrs.textAlign = val(item) === "both" ? "justify" : val(item);
+        if (item.localName === "spacing") {
+          if (val(item, "before"))
+            attrs.spaceBefore = Number(val(item, "before")) / 20;
+          if (val(item, "after"))
+            attrs.spaceAfter = Number(val(item, "after")) / 20;
+          if (
+            val(item, "line") &&
+            (!val(item, "lineRule") || val(item, "lineRule") === "auto")
+          )
+            attrs.lineHeight = Number(val(item, "line")) / 240;
+        }
+        if (item.localName === "ind") {
+          attrs.indent = Number(val(item, "left") || val(item, "start")) / 360;
+          attrs.firstLineIndent = Number(val(item, "firstLine")) / 20;
+          attrs.hangingIndent = Number(val(item, "hanging")) / 20;
+        }
+        if (item.localName === "pageBreakBefore") attrs.breakBefore = yes(item);
+        if (item.localName === "numPr") {
+          const key = val(direct(item, "numId")),
+            depth = Number(val(direct(item, "ilvl"))) || 0,
+            info = numbering.get(key + ":" + depth);
+          if (info) list = { key, level: depth, ...info };
+        }
+      }
+    const inherited = runFormat(runs),
+      textStyle = inherited.find((m) => m.type === "textStyle")?.attrs;
+    if (textStyle?.fontFamily) attrs.fontFamily = textStyle.fontFamily;
+    if (textStyle?.fontSize)
+      attrs.fontSize = parseFloat(String(textStyle.fontSize));
+    const result = inline(el, inherited),
+      node: RichNode = {
+        type: level ? "heading" : "paragraph",
+        attrs: { ...attrs, ...(level ? { level: Number(level) } : {}) },
+        content: result.content,
+      };
+    if (list) lists.set(node, list);
+    return [
+      node,
+      ...result.images,
+      ...(result.pageBreak ? [{ type: "pageBreak" }] : []),
+    ];
+  }
+  function table(el: Element): RichNode {
+    const active = new Map<number, RichNode>(),
+      grid = all(direct(el, "tblGrid") || el, "gridCol").map((c) =>
+        Math.round(Number(val(c, "w")) / 15),
+      );
+    const rows: RichNode[] = [];
+    for (const row of children(el).filter((n) => n.localName === "tr")) {
+      const cells: RichNode[] = [];
+      let column = 0;
+      for (const cell of children(row).filter((n) => n.localName === "tc")) {
+        const props = direct(cell, "tcPr"),
+          colspan = Number(val(direct(props, "gridSpan"))) || 1,
+          merge = direct(props, "vMerge");
+        if (merge && val(merge) !== "restart" && active.has(column)) {
+          const prior = active.get(column)!;
+          prior.attrs!.rowspan = Number(prior.attrs!.rowspan) + 1;
+          column += colspan;
+          continue;
+        }
+        const content = blocks(cell);
+        const node: RichNode = {
+          type: direct(direct(row, "trPr"), "tblHeader")
+            ? "tableHeader"
+            : "tableCell",
+          attrs: {
+            colspan,
+            rowspan: 1,
+            ...(grid.length
+              ? { colwidth: grid.slice(column, column + colspan) }
+              : {}),
+          },
+          content: content.length ? content : [{ type: "paragraph" }],
+        };
+        if (merge) active.set(column, node);
+        else active.delete(column);
+        cells.push(node);
+        column += colspan;
+      }
+      rows.push({ type: "tableRow", content: cells });
+    }
+    return { type: "table", attrs: { id: crypto.randomUUID() }, content: rows };
+  }
+  function blocks(el: Element): RichNode[] {
+    const result: RichNode[] = [];
+    let lastList: RichNode | undefined,
+      lastKey = "";
+    for (const child of children(el)) {
+      let nodes: RichNode[] = [];
+      if (child.localName === "p") nodes = paragraph(child);
+      else if (child.localName === "tbl") nodes = [table(child)];
+      else if (child.localName === "sdt") {
+        const instruction = all(child, "instrText")
+          .map((n) => n.textContent)
+          .join("");
+        if (/\bTOC\b/.test(instruction))
+          nodes = [
+            {
+              type: "generatedIndex",
+              attrs: {
+                id: crypto.randomUUID(),
+                kind: "contents",
+                levels: Number(instruction.match(/\\o\s+"1-(\d)"/)?.[1]) || 3,
+                leader: "dots",
+                pageNumbers: true,
+              },
+              content: [],
+            },
+          ];
+        else {
+          const content = direct(child, "sdtContent");
+          if (content) nodes = blocks(content);
+        }
+      }
+      for (const node of nodes) {
+        const list = lists.get(node);
+        if (list) {
+          if (
+            !lastList ||
+            lastKey !== list.key ||
+            lastList.type !== list.kind
+          ) {
+            lastList = {
+              type: list.kind,
+              attrs: {
+                start: list.start,
+                listStyle:
+                  list.style === "lowerLetter"
+                    ? "lower-alpha"
+                    : list.style === "upperRoman"
+                      ? "upper-roman"
+                      : list.kind === "bulletList"
+                        ? "disc"
+                        : "decimal",
+              },
+              content: [],
+            };
+            result.push(lastList);
+            lastKey = list.key;
+          }
+          lastList.content!.push({ type: "listItem", content: [node] });
+        } else {
+          lastList = undefined;
+          result.push(node);
+        }
+      }
+    }
+    return result;
+  }
+  function layoutFor(el?: Element): PageLayout {
+    const layout = defaultLayout();
+    if (!el) return layout;
+    const size = direct(el, "pgSz"),
+      width = Number(val(size, "w")) / 20,
+      height = Number(val(size, "h")) / 20;
+    if (width && height) {
+      layout.format = "custom";
+      layout.orientation =
+        val(size, "orient") === "landscape" ? "landscape" : "portrait";
+      layout.customWidth =
+        ((layout.orientation === "landscape" ? height : width) * 25.4) / 72;
+      layout.customHeight =
+        ((layout.orientation === "landscape" ? width : height) * 25.4) / 72;
+    }
+    const margins = direct(el, "pgMar");
+    for (const side of ["top", "bottom", "left", "right"] as const)
+      if (val(margins, side))
+        layout[side] = Math.max(
+          0,
+          Math.min(100, ((Number(val(margins, side)) / 20) * 25.4) / 72),
+        );
+    layout.columns = Math.max(
+      1,
+      Math.min(3, Number(val(direct(el, "cols"), "num")) || 1),
+    );
+    layout.differentFirst = !!direct(el, "titlePg");
+    for (const ref of children(el).filter(
+      (n) =>
+        n.localName === "headerReference" || n.localName === "footerReference",
+    )) {
+      const rel = relationships.get(ref.getAttributeNS(R, "id") || ""),
+        part =
+          rel && !rel.external
+            ? xml(partPath("word/document.xml", rel.target))
+            : null;
+      const text = part
+          ? all(part, "t")
+              .map((t) => t.textContent)
+              .join(" ")
+          : "",
+        kind = ref.localName === "headerReference" ? "header" : "footer",
+        type = val(ref, "type");
+      if (type === "first")
+        layout[kind === "header" ? "headerFirst" : "footerFirst"] = text;
+      else if (type === "even") {
+        layout.oddEven = true;
+        layout[kind === "header" ? "headerEven" : "footerEven"] = text;
+      } else layout[kind] = text;
+    }
+    return layout;
+  }
+  const sections = children(body).flatMap((el) =>
+      el.localName === "p"
+        ? [direct(direct(el, "pPr"), "sectPr")].filter((n): n is Element => !!n)
+        : el.localName === "sectPr"
+          ? [el]
+          : [],
+    ),
+    layouts = sections.map(layoutFor);
+  const content: RichNode[] = [];
+  let section = 0;
+  for (const el of children(body)) {
+    if (el.localName === "sectPr") continue;
+    const converted = blocks({ childNodes: [el] } as unknown as Element);
+    // Word stores the TOC heading beside its field; the index view supplies it.
+    const previous = content.at(-1);
+    if (
+      converted[0]?.type === "generatedIndex" &&
+      previous?.type === "paragraph" &&
+      /^(tabla de contenido|table of contents|contenido|contents|índice)$/i.test(
+        plainText(previous).trim(),
+      )
+    ) {
+      converted[0].attrs = {
+        ...converted[0].attrs,
+        title: plainText(previous).trim(),
+      };
+      content.pop();
+    }
+    content.push(...converted);
+    if (el.localName === "p" && direct(direct(el, "pPr"), "sectPr")) {
+      section++;
+      content.push({
+        type: "sectionBreak",
+        attrs: {
+          id: crypto.randomUUID(),
+          title: "Sección " + (section + 1),
+          kind:
+            val(direct(sections[section], "type")) === "continuous"
+              ? "continuous"
+              : "nextPage",
+          layout: layouts[section] ?? defaultLayout(),
+          linkToPrevious: true,
+          restartNumbering: false,
+        },
+      });
+    }
+  }
+  // Rebuild adjacent lists across top-level paragraphs.
+  const merged: RichNode[] = [];
+  for (const node of content) {
+    const prior = merged.at(-1);
+    if (
+      prior &&
+      ["bulletList", "orderedList"].includes(node.type || "") &&
+      prior.type === node.type &&
+      prior.attrs?.listStyle === node.attrs?.listStyle
+    )
+      prior.content!.push(...node.content!);
+    else merged.push(node);
+  }
+  if (substitutions.size)
+    warnings.add(
+      "Fuentes sustituidas por alternativas locales: " +
+        [...substitutions].join(", ") +
+        ". Puedes importar los archivos TTF/OTF originales.",
+    );
+  if (
+    all(document, "footnoteReference").length ||
+    all(document, "endnoteReference").length
+  )
+    warnings.add(
+      "Las notas al pie o finales requieren revisión; conserva el DOCX original como referencia.",
+    );
+  if (all(document, "del").length || all(document, "ins").length)
+    warnings.add(
+      "Se importó la versión visible del texto con cambios aceptados; el historial de cambios de Word no se conserva.",
+    );
+  const flow: FlowDocument = {
+    layout: layouts[0] ?? defaultLayout(),
+    academicStyle: "free",
+    references: [],
+    content: normalizeAcademicDocument(
+      {
+        type: "doc",
+        content: merged.length ? merged : [{ type: "paragraph" }],
+      },
+      [],
+      "free",
+    ),
+  };
+  return { flow, warnings: [...warnings] };
+}

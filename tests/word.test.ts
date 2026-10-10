@@ -121,7 +121,14 @@ test("APA export positions captions, notes and page numbers, links citations to 
     doc = await PDFDocument.load(result.bytes);
   const objects = (await inspect(result.bytes)).objects,
     text = objects.map((o) => o.text).join("\n");
-  assert.match(text, /Introducción … 1/);
+  const indexTitle = objects.find((o) => o.text === "Introducción")!;
+  const indexPage = objects.find(
+    (o) => o.text === "1" && Math.abs(o.y - indexTitle.y) < 3,
+  )!;
+  assert.ok(
+    indexPage && indexPage.x > indexTitle.x + indexTitle.width,
+    "The index page number is aligned to the right of its title",
+  );
   assert.match(text, /Contreras-Mendoza, 2026/);
   assert.ok(result.pageMap["reference-ref-demo"] >= 2);
   const label = objects.find((o) => o.text === "Figura 1")!,
@@ -129,7 +136,7 @@ test("APA export positions captions, notes and page numbers, links citations to 
     note = objects.find((o) => o.text?.includes("Adaptado de"))!;
   assert.ok(label.y < image.y);
   assert.ok(note.y > image.y + image.height);
-  const pageNumber = objects.find((o) => o.text === "1")!;
+  const pageNumber = objects.find((o) => o.text === "1" && o.y < 60)!;
   assert.ok(pageNumber.y < 60);
   assert.ok(doc.catalog.get(PDFName.of("Names")));
   assert.ok(doc.getPage(0).node.Annots()?.size());

@@ -1,5 +1,6 @@
 import type { Workspace } from "./pdf";
-const DB = "prisma-pdf-local-v2";
+import { product } from "./product";
+const DB = product.writer ? "prisma-writer-local-v1" : "prisma-pdf-local-v2";
 let queue: Promise<void> = Promise.resolve();
 let generation = 0;
 export type LocalSession = {

@@ -7,6 +7,41 @@ import { correctWord } from "./document-tools";
 import { sectionKinds, type SectionKind } from "./sections";
 import { defaultLayout } from "./flow";
 import { validateLayout } from "./projects";
+import { formattingCharacter } from "./characters";
+import { spellingKey } from "./SpellingReview";
+import type { WordLocation } from "./spelling";
+export const SpellingMarks = Extension.create({
+  name: "spellingMarks",
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: spellingKey,
+        state: {
+          init: () => DecorationSet.empty,
+          apply(tr, previous) {
+            const words = tr.getMeta(spellingKey) as WordLocation[] | undefined;
+            return words
+              ? DecorationSet.create(
+                  tr.doc,
+                  words.map((w) =>
+                    Decoration.inline(w.from, w.to, {
+                      class: "spelling-error",
+                      title: "Posible error ortográfico",
+                    }),
+                  ),
+                )
+              : previous.map(tr.mapping, tr.doc);
+          },
+        },
+        props: {
+          decorations(state) {
+            return spellingKey.getState(state);
+          },
+        },
+      }),
+    ];
+  },
+});
 const attributes = (defaults: Record<string, unknown>) =>
   Object.fromEntries(
     Object.entries(defaults).map(([key, value]) => [key, { default: value }]),
@@ -85,7 +120,16 @@ export const GeneratedIndex = Node.create({
   content: "paragraph*",
   defining: true,
   addAttributes: () =>
-    attributes({ id: "", kind: "contents", entries: [], title: "" }),
+    attributes({
+      id: "",
+      kind: "contents",
+      entries: [],
+      title: "",
+      levels: 3,
+      leader: "dots",
+      pageNumbers: true,
+      academicStyle: "free",
+    }),
   parseHTML: () => [{ tag: "section[data-generated-index]" }],
   renderHTML: ({ HTMLAttributes }) => [
     "section",
@@ -96,6 +140,75 @@ export const GeneratedIndex = Node.create({
     }),
     0,
   ],
+  addNodeView() {
+    return ({ node }) => {
+      const dom = document.createElement("section");
+      dom.className = "generated-index index-paper";
+      dom.dataset.generatedIndex = "true";
+      dom.id = "block-" + node.attrs.id;
+      dom.contentEditable = "false";
+      const first = node.firstChild;
+      if (first?.attrs.fontFamily)
+        dom.style.fontFamily = String(first.attrs.fontFamily);
+      if (first?.attrs.fontSize)
+        dom.style.fontSize = first.attrs.fontSize + "pt";
+      if (first?.attrs.lineHeight)
+        dom.style.lineHeight = String(first.attrs.lineHeight);
+      const title = document.createElement("h2");
+      title.className = "index-heading";
+      if (node.attrs.academicStyle === "apa") {
+        title.style.fontSize = "12pt";
+        title.style.textAlign = "center";
+      }
+      title.textContent = node.attrs.title || "Tabla de contenido";
+      dom.append(title);
+      if (node.attrs.kind === "references") {
+        const contentDOM = document.createElement("div");
+        dom.append(contentDOM);
+        return { dom, contentDOM };
+      }
+      const entries = node.attrs.entries as {
+        label: string;
+        targetId: string;
+        page?: number;
+        level?: number;
+      }[];
+      for (const entry of entries) {
+        const row = document.createElement("a");
+        row.className = "index-entry";
+        row.href = "#block-" + entry.targetId;
+        row.style.paddingLeft = `${Math.max(0, (entry.level || 1) - 1) * 18}pt`;
+        const text = document.createElement("span");
+        text.className = "index-entry-text";
+        text.textContent = entry.label;
+        row.append(text);
+        if (node.attrs.pageNumbers) {
+          const leader = document.createElement("span");
+          leader.className = "index-leader leader-" + node.attrs.leader;
+          leader.setAttribute("aria-hidden", "true");
+          const page = document.createElement("span");
+          page.className = "index-entry-page";
+          page.textContent = String(entry.page || "—");
+          row.append(leader, page);
+        }
+        row.addEventListener("click", (e) => {
+          e.preventDefault();
+          document
+            .getElementById("block-" + entry.targetId)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+        dom.append(row);
+      }
+      if (!entries.length) {
+        const empty = document.createElement("p");
+        empty.className = "index-empty";
+        empty.textContent =
+          "Aplica estilos de título al documento. El índice se actualizará automáticamente.";
+        dom.append(empty);
+      }
+      return { dom, ignoreMutation: () => true };
+    };
+  },
 });
 export const SectionBreak = Node.create({
   name: "sectionBreak",
@@ -281,6 +394,18 @@ export const DocumentAttributes = Extension.create({
       {
         types: ["paragraph", "heading", "caption", "appendix"],
         attributes: {
+          paragraphStyle: {
+            default: null,
+            renderHTML: (a) =>
+              a.paragraphStyle
+                ? { "data-paragraph-style": a.paragraphStyle }
+                : {},
+          },
+          indexEntry: { default: false },
+          indexLevel: { default: 1 },
+          indexLeader: { default: "dots" },
+          indexPage: { default: null },
+          indexLabel: { default: "" },
           fontFamily: {
             default: null,
             renderHTML: (a) =>
@@ -477,15 +602,18 @@ export const FormattingMarks = Extension.create({
                 Array.from(n.text ?? "").forEach((char) => {
                   const i = offset;
                   offset += char.length;
-                  if (char === " " || char === "\t" || char === "\u00a0")
+                  const info = formattingCharacter(char);
+                  if (info)
                     dec.push(
                       Decoration.widget(
                         pos + i,
                         () => {
                           const span = document.createElement("span");
                           span.className = "formatting-mark";
-                          span.textContent =
-                            char === "\t" ? "→" : char === "\u00a0" ? "°" : "·";
+                          span.textContent = info.mark;
+                          span.title = info.name;
+                          if (info.mark.length > 1)
+                            span.classList.add("unicode-formatting-mark");
                           span.setAttribute("aria-hidden", "true");
                           return span;
                         },

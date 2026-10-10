@@ -557,6 +557,82 @@ async function buildFlowPass(
     defaults: TextDefaults = {},
   ) {
     const level = Number(n.attrs?.level) || 1;
+    if (n.attrs?.indexEntry) {
+      const pad = Math.max(0, Number(n.attrs.indexLevel || 1) - 1) * 18;
+      const size = Number(n.attrs.fontSize) || 12,
+        label = String(n.attrs.indexLabel || plainText(n)),
+        number = n.attrs.indexPage ? String(n.attrs.indexPage) : "";
+      const font = await getFont(
+        String(n.attrs.fontFamily || "PrismaSans"),
+        false,
+        false,
+        label + number,
+      );
+      const reserve = number ? font.widthOfTextAtSize(number, size) + 20 : 0;
+      const lines = await linesFor(
+        {
+          ...n,
+          content: [
+            {
+              type: "text",
+              text: label,
+              marks: [
+                { type: "textStyle", attrs: { color: "#20273a" } },
+                {
+                  type: "link",
+                  attrs: { href: "#" + String(n.attrs.targetId) },
+                },
+              ],
+            },
+          ],
+        },
+        width - pad - reserve,
+        getFont,
+        {
+          font: String(n.attrs.fontFamily || "PrismaSans"),
+          size,
+          color: "#20273a",
+        },
+      );
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // Keep TOC hyperlinks active while using the document's print typography.
+        for (const run of line.runs) {
+          run.style.color = "#20273a";
+          run.style.underline = false;
+        }
+        room(line.height);
+        if (i === 0) anchor(n);
+        drawLine(page, line, left + pad, y, width - pad - reserve, "left");
+        if (i === lines.length - 1 && number) {
+          const nx = left + width - font.widthOfTextAtSize(number, size),
+            baseline = ph - y - line.size;
+          page.drawText(number, {
+            x: nx,
+            y: baseline,
+            font,
+            size,
+            color: color("#20273a"),
+          });
+          const start = left + pad + line.width + 6,
+            end = nx - 6,
+            leader = n.attrs.indexLeader;
+          if (end > start && leader !== "none")
+            page.drawLine({
+              start: { x: start, y: baseline + size * 0.12 },
+              end: { x: end, y: baseline + size * 0.12 },
+              thickness: 0.65,
+              color: color("#606878"),
+              ...(leader === "line"
+                ? {}
+                : { dashArray: leader === "dashes" ? [4, 3] : [1, 2] }),
+            });
+        }
+        y += line.height;
+        maxY = Math.max(maxY, y);
+      }
+      return;
+    }
     const heading = n.type === "heading";
     const effective = {
       font: "PrismaSans",
@@ -678,6 +754,7 @@ async function buildFlowPass(
         attrs: {
           level: 1,
           fontSize: flow.academicStyle === "apa" ? 12 : 18,
+          textAlign: flow.academicStyle === "apa" ? "center" : "left",
           ...(flow.academicStyle === "apa"
             ? { fontFamily: "PrismaSerif" }
             : {}),

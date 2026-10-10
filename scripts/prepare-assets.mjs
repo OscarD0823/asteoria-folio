@@ -8,33 +8,42 @@ import {
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 const require = createRequire(import.meta.url);
-const appVersion = JSON.parse(readFileSync("package.json", "utf8")).version;
+const writer = process.env.VITE_PRODUCT === "writer";
+const appVersion = writer
+  ? "1.0.0"
+  : JSON.parse(readFileSync("package.json", "utf8")).version;
+const releaseTag = (writer ? "writer-v" : "v") + appVersion;
+const assetName = writer ? "Prisma-Writer" : "Prisma-PDF";
 const release = "https://github.com/OscarD0823/prisma-pdf/releases/";
 writeFileSync(
   "public/version.json",
   JSON.stringify(
     {
       version: appVersion,
-      releaseUrl: release + "tag/v" + appVersion,
+      releaseUrl: release + "tag/" + releaseTag,
       androidUrl:
         release +
-        "download/v" +
-        appVersion +
-        "/Prisma-PDF-" +
+        "download/" +
+        releaseTag +
+        "/" +
+        assetName +
+        "-" +
         appVersion +
         "-Android.apk",
       windowsUrl:
         release +
-        "download/v" +
-        appVersion +
-        "/Prisma-PDF-" +
+        "download/" +
+        releaseTag +
+        "/" +
+        assetName +
+        "-" +
         appVersion +
         "-Windows-Setup.exe",
       features: [
-        "Biblioteca de 81 familias tipográficas e importación de fuentes personales",
-        "Reglas laterales y secciones con diseño independiente",
-        "Más estilos bibliográficos, citas y búsqueda con reemplazo",
-        "Exportación a Word, HTML, Markdown, TXT e imágenes",
+        "Biblioteca de fuentes con favoritas, texto de muestra y vistas de lista o tarjetas",
+        "Galería de estilos, índices con relleno y numeración alineada",
+        "Revisor ortográfico de español e inspector Unicode locales",
+        "Escritura con separación de páginas e importación de DOCX",
         "Comprobación de actualizaciones sin enviar documentos",
       ],
     },
@@ -51,6 +60,11 @@ mkdirSync("public/engine", { recursive: true });
 for (const name of ["mupdf.js", "mupdf-wasm.js", "mupdf-wasm.wasm"])
   cpSync(join(engine, name), join("public/engine", name));
 mkdirSync("public/third-party", { recursive: true });
+mkdirSync("public/spelling", { recursive: true });
+const dictionary = dirname(require.resolve("dictionary-es"));
+for (const file of ["index.aff", "index.dic"])
+  cpSync(join(dictionary, file), join("public/spelling", file));
+cpSync(join(dictionary, "license"), "public/spelling/LICENSE.txt");
 for (const dependency of [
   "mupdf",
   "pdf-lib",
@@ -79,6 +93,7 @@ for (const dependency of [
   "docx",
   "citeproc",
   "fflate",
+  "typo-js",
 ]) {
   let root;
   if (dependency === "mupdf") root = dirname(engine);

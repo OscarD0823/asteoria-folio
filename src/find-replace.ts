@@ -30,8 +30,20 @@ export function replacementMatches(
       if (match[0].includes("\uFFFC")) continue;
       if (
         wholeWord &&
-        ((at > 0 && /[\p{L}\p{N}_]/u.test(text[at - 1])) ||
-          (end < text.length && /[\p{L}\p{N}_]/u.test(text[end])))
+        ((at > 0 &&
+          /[\p{L}\p{M}\p{N}_]/u.test(
+            String.fromCodePoint(
+              text.codePointAt(
+                at > 1 && /[\uDC00-\uDFFF]/.test(text[at - 1])
+                  ? at - 2
+                  : at - 1,
+              )!,
+            ),
+          )) ||
+          (end < text.length &&
+            /[\p{L}\p{M}\p{N}_]/u.test(
+              String.fromCodePoint(text.codePointAt(end)!),
+            )))
       )
         continue;
       matches.push({ from: pos + 1 + at, to: pos + 1 + end, text: match[0] });

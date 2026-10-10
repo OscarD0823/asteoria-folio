@@ -59,6 +59,8 @@ import {
   type SectionKind,
 } from "./sections";
 import { replaceText, replacementMatches } from "./find-replace";
+import { StyleGallery } from "./StyleGallery";
+import { fontFamilies } from "./fonts";
 type Props = {
   tab: string;
   flow?: FlowDocument;
@@ -75,6 +77,7 @@ type Props = {
   showRuler: boolean;
   onShowRuler: (show: boolean) => void;
   onNavigate: () => void;
+  onReview: (panel: "spelling" | "characters") => void;
   onLocate: (blockId: string) => void;
   onError: (e: unknown) => void;
   selected?: Mark;
@@ -137,7 +140,7 @@ export function WordTools(p: Props) {
       editor?.isActive(type),
     ) ?? "image";
   const group = (title: string, children: React.ReactNode) => (
-    <div className="ribbon-group word-group">
+    <div className="ribbon-group word-group" data-group={title}>
       <div className="word-group-controls">{children}</div>
       <small>{title}</small>
     </div>
@@ -343,6 +346,44 @@ export function WordTools(p: Props) {
   async function submit() {
     setWorking(true);
     try {
+      if (dialog === "academic") {
+        academic(fields.style as AcademicStyle);
+        setDialog("");
+        return;
+      }
+      if (dialog === "index") {
+        const attrs = {
+          kind: fields.kind,
+          levels: Number(fields.levels) || 3,
+          leader: fields.leader || "dots",
+          pageNumbers: fields.pages !== "false",
+        };
+        const e = needsEditor();
+        let found = false;
+        e.state.doc.descendants((node, pos) => {
+          if (
+            !found &&
+            node.type.name === "generatedIndex" &&
+            node.attrs.kind === fields.kind
+          ) {
+            e.view.dispatch(
+              e.state.tr.setNodeMarkup(pos, undefined, {
+                ...node.attrs,
+                ...attrs,
+              }),
+            );
+            found = true;
+          }
+        });
+        if (!found)
+          insert({
+            type: "generatedIndex",
+            attrs: { ...attrs, id: uid() },
+            content: [],
+          });
+        setDialog("");
+        return;
+      }
       if (dialog === "new-section" || dialog === "sections") {
         const flow = p.flow;
         if (!flow)
@@ -666,44 +707,7 @@ export function WordTools(p: Props) {
           )}
           {group(
             "Estilos",
-            <div className="style-gallery">
-              {[
-                "Normal",
-                "Título 1",
-                "Título 2",
-                "Título 3",
-                "Título 4",
-                "Título 5",
-                "Título 6",
-                "Cita",
-                "Código",
-              ].map((label, i) => (
-                <button
-                  key={label}
-                  disabled={!editor}
-                  onClick={() => {
-                    if (!editor) return;
-                    const chain = editor.chain().focus();
-                    i === 0
-                      ? chain.setParagraph().run()
-                      : i <= 6
-                        ? chain
-                            .toggleHeading({
-                              level: i as 1 | 2 | 3 | 4 | 5 | 6,
-                            })
-                            .run()
-                        : i === 7
-                          ? chain.toggleBlockquote().run()
-                          : chain.toggleCodeBlock().run();
-                  }}
-                >
-                  <span className={"sample-style style-" + i}>
-                    {i ? "Aa" : "Normal"}
-                  </span>
-                  <small>{label}</small>
-                </button>
-              ))}
-            </div>,
+            <StyleGallery editor={editor} academicStyle={style} />,
           )}
           {group(
             "Párrafo",
@@ -889,21 +893,29 @@ export function WordTools(p: Props) {
         <>
           {group(
             "Formato del trabajo",
-            <label className="academic-selector">
-              Estilo
-              <select
-                aria-label="Estilo académico"
-                value={style}
+            <div>
+              <label className="academic-selector">
+                Estilo
+                <select
+                  aria-label="Estilo académico"
+                  value={style}
+                  disabled={!p.flow}
+                  onChange={(e) => academic(e.target.value as AcademicStyle)}
+                >
+                  {Object.entries(academicPresets).map(([v, preset]) => (
+                    <option value={v} key={v}>
+                      {preset.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Button
                 disabled={!p.flow}
-                onChange={(e) => academic(e.target.value as AcademicStyle)}
+                onClick={() => open("academic", { style })}
               >
-                {Object.entries(academicPresets).map(([v, preset]) => (
-                  <option value={v} key={v}>
-                    {preset.label}
-                  </option>
-                ))}
-              </select>
-            </label>,
+                Vista de formatos
+              </Button>
+            </div>,
           )}
           {group(
             "Índices automáticos",
@@ -913,10 +925,23 @@ export function WordTools(p: Props) {
                   key={kind}
                   disabled={!editor || !p.flow}
                   onClick={() =>
-                    insert({
-                      type: "generatedIndex",
-                      attrs: { id: uid(), kind },
-                      content: [],
+                    open("index", {
+                      kind,
+                      levels: String(
+                        p.flow?.content.content?.find(
+                          (n) =>
+                            n.type === "generatedIndex" &&
+                            n.attrs?.kind === kind,
+                        )?.attrs?.levels ?? 3,
+                      ),
+                      leader: String(
+                        p.flow?.content.content?.find(
+                          (n) =>
+                            n.type === "generatedIndex" &&
+                            n.attrs?.kind === kind,
+                        )?.attrs?.leader ?? "dots",
+                      ),
+                      pages: "true",
                     })
                   }
                 >
@@ -950,6 +975,10 @@ export function WordTools(p: Props) {
           {group(
             "Revisión",
             <>
+              {action("Ortografía", BookOpen, () => p.onReview("spelling"))}
+              {action("Inspector de caracteres", Pilcrow, () =>
+                p.onReview("characters"),
+              )}
               {action(
                 "Comentario",
                 MessageSquare,
@@ -1172,6 +1201,8 @@ export function WordTools(p: Props) {
                   replace: "Buscar y reemplazar",
                   "new-section": "Crear sección",
                   sections: "Secciones del documento",
+                  academic: "Formatos del trabajo",
+                  index: "Personalizar índice",
                 }[dialog]
               }
             </h2>
@@ -1179,6 +1210,134 @@ export function WordTools(p: Props) {
               <X size={19} />
             </Button>
           </header>
+          {dialog === "academic" && (
+            <div className="academic-browser">
+              <div className="academic-format-list">
+                {Object.entries(academicPresets).map(([key, preset]) => (
+                  <button
+                    key={key}
+                    aria-pressed={fields.style === key}
+                    onClick={() => setFields({ style: key })}
+                  >
+                    <strong>{preset.label}</strong>
+                    <small>
+                      {preset.layout
+                        ? "Formato de página y bibliografía"
+                        : "Citas y referencias"}
+                    </small>
+                  </button>
+                ))}
+              </div>
+              <div className="academic-format-preview">
+                <small>VISTA PREVIA</small>
+                <div
+                  className="academic-sample-paper"
+                  style={{
+                    fontFamily:
+                      fontFamilies.find(
+                        (f) =>
+                          f.value ===
+                          academicPresets[fields.style as AcademicStyle]
+                            ?.fontFamily,
+                      )?.css ?? "PrismaSerif",
+                    lineHeight:
+                      academicPresets[fields.style as AcademicStyle]
+                        ?.lineHeight ?? 1.4,
+                  }}
+                >
+                  <h3>
+                    {academicPresets[fields.style as AcademicStyle]?.label}
+                  </h3>
+                  <b>Introducción</b>
+                  <p>
+                    La investigación organiza las ideas y presenta sus
+                    resultados con claridad. Este ejemplo muestra el formato de
+                    los párrafos.
+                  </p>
+                  <b>Referencias</b>
+                  <p className="sample-reference">
+                    {formatReference(
+                      {
+                        ...emptyRef(),
+                        author: "García, Ana",
+                        title: "Métodos de investigación",
+                        year: "2026",
+                        type: "book",
+                        publisher: "Editorial Académica",
+                      },
+                      fields.style as AcademicStyle,
+                      1,
+                    )}
+                  </p>
+                </div>
+                <p>
+                  {academicPresets[fields.style as AcademicStyle]?.description}
+                </p>
+                <small>
+                  Aplicar actualizará los formatos que define este estilo.
+                  Revisa los requisitos adicionales de tu institución.
+                </small>
+              </div>
+            </div>
+          )}
+          {dialog === "index" && (
+            <>
+              <div className="form-grid">
+                {field(
+                  "kind",
+                  "Tipo de índice",
+                  "select",
+                  Object.entries(indexLabels),
+                )}
+                {fields.kind === "contents" &&
+                  field(
+                    "levels",
+                    "Niveles de título",
+                    "select",
+                    [1, 2, 3, 4, 5, 6].map((n) => [String(n), String(n)]),
+                  )}
+                {fields.kind !== "references" && (
+                  <>
+                    {field("leader", "Carácter de relleno", "select", [
+                      ["dots", "Puntos ·····"],
+                      ["dashes", "Guiones -----"],
+                      ["line", "Línea continua"],
+                      ["none", "Ninguno"],
+                    ])}
+                    {field("pages", "Números de página", "select", [
+                      ["true", "Alinear a la derecha"],
+                      ["false", "Ocultar"],
+                    ])}
+                  </>
+                )}
+              </div>
+              <div className="index-preview">
+                <h3>{indexLabels[fields.kind as IndexKind]}</h3>
+                {["Introducción", "Objetivos", "Resultados"].map((label, i) => (
+                  <div
+                    className="index-entry"
+                    key={label}
+                    style={{ paddingLeft: i === 1 ? 18 : 0 }}
+                  >
+                    <span className="index-entry-text">{label}</span>
+                    {fields.pages !== "false" && (
+                      <>
+                        <span
+                          className={"index-leader leader-" + fields.leader}
+                        />
+                        <span className="index-entry-page">{i + 1}</span>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p>
+                El índice se actualiza al editar los títulos. La numeración se
+                calcula con las páginas del PDF final. Si ya existe un índice de
+                este tipo, se actualizará.
+              </p>
+            </>
+          )}
           {(dialog === "new-section" || dialog === "sections") && (
             <>
               <p>
@@ -1905,6 +2064,7 @@ export function WordTools(p: Props) {
                       {
                         words: "Palabras",
                         characters: "Caracteres",
+                        graphemes: "Caracteres visuales",
                         withoutSpaces: "Caracteres sin espacios",
                         numbers: "Números",
                         sum: "Suma de números",

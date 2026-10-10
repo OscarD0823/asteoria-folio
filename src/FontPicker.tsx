@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { fontFamilies } from "./fonts";
 import { localFontFamilies, type LocalFont } from "./local-fonts";
+import { readPreference, writePreference } from "./preferences";
 const essentials = [
   ["Arial · 11 pt", "Arimo", "Arimo"],
   ["Calibri · 11 pt", "Carlito", "Carlito"],
@@ -28,6 +29,20 @@ export function FontPicker({
     [query, setQuery] = useState(""),
     [category, setCategory] = useState("all"),
     [loading, setLoading] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>(() =>
+    readPreference("favorite-fonts", []),
+  );
+  const [recent, setRecent] = useState<string[]>(() =>
+    readPreference("recent-fonts", []),
+  );
+  const [sample, setSample] = useState(
+    "El arte de escribir. ÁÉÍÓÚ ñ · 0123456789",
+  );
+  const [previewSize, setPreviewSize] = useState(24);
+  const [preview, setPreview] = useState(value);
+  const [view, setView] = useState<"grid" | "list">("grid");
+  const [bold, setBold] = useState(false),
+    [italic, setItalic] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null),
     searchInput = useRef<HTMLInputElement>(null),
     button = useRef<HTMLButtonElement>(null);
@@ -47,9 +62,13 @@ export function FontPicker({
     .filter(
       (f) =>
         (category === "all" ||
-          (category === "local"
-            ? f.value.startsWith("local-")
-            : f.category === category)) &&
+          (category === "favorites"
+            ? favorites.includes(f.value)
+            : category === "recent"
+              ? recent.includes(f.value)
+              : category === "local"
+                ? f.value.startsWith("local-")
+                : f.category === category)) &&
         filter(f.label).includes(filter(query)),
     )
     .sort((a, b) => a.label.localeCompare(b.label, "es"));
@@ -68,6 +87,9 @@ export function FontPicker({
     return () => window.removeEventListener("keydown", key, true);
   }, [open]);
   const choose = (font: string) => {
+    const next = [font, ...recent.filter((f) => f !== font)].slice(0, 12);
+    setRecent(next);
+    writePreference("recent-fonts", next);
     onChange(font);
     setOpen(false);
     button.current?.focus();
@@ -101,7 +123,7 @@ export function FontPicker({
                 if (e.key !== "Tab") return;
                 const items = Array.from(
                   e.currentTarget.querySelectorAll<HTMLElement>(
-                    "button:not(:disabled),input:not([type=hidden]),select,a[href]",
+                    "button:not(:disabled),input:not([hidden]):not([type=hidden]),select,a[href]",
                   ),
                 );
                 if (e.shiftKey && document.activeElement === items[0]) {
@@ -151,11 +173,61 @@ export function FontPicker({
                   onChange={(e) => setCategory(e.target.value)}
                 >
                   <option value="all">Todas</option>
+                  <option value="favorites">Favoritas</option>
+                  <option value="recent">Usadas recientemente</option>
                   <option value="serif">Con remates · serif</option>
                   <option value="sans-serif">Sin remates · sans serif</option>
                   <option value="monospace">Monoespaciadas</option>
                   <option value="local">Mis fuentes</option>
                 </select>
+              </div>
+              <div className="font-preview-controls">
+                <input
+                  aria-label="Texto de vista previa de fuentes"
+                  value={sample}
+                  maxLength={160}
+                  onChange={(e) => setSample(e.target.value)}
+                />
+                <label>
+                  Tamaño{" "}
+                  <input
+                    aria-label="Tamaño de vista previa"
+                    type="range"
+                    min="16"
+                    max="40"
+                    value={previewSize}
+                    onChange={(e) => setPreviewSize(Number(e.target.value))}
+                  />
+                  <output>{previewSize}</output>
+                </label>
+                <button
+                  aria-label="Vista previa en negrita"
+                  aria-pressed={bold}
+                  onClick={() => setBold(!bold)}
+                >
+                  <b>B</b>
+                </button>
+                <button
+                  aria-label="Vista previa en cursiva"
+                  aria-pressed={italic}
+                  onClick={() => setItalic(!italic)}
+                >
+                  <i>I</i>
+                </button>
+                <button
+                  aria-label="Vista en tarjetas"
+                  aria-pressed={view === "grid"}
+                  onClick={() => setView("grid")}
+                >
+                  ▦
+                </button>
+                <button
+                  aria-label="Vista en lista"
+                  aria-pressed={view === "list"}
+                  onClick={() => setView("list")}
+                >
+                  ☷
+                </button>
               </div>
               <details className="essential-fonts">
                 <summary>Fuentes para entregas académicas</summary>
@@ -202,35 +274,78 @@ export function FontPicker({
                 </a>
               </details>
               <div
-                className="font-catalog"
+                className={"font-catalog font-catalog-" + view}
                 role="group"
                 aria-label="Fuentes disponibles"
               >
                 {shown.map((f) => (
-                  <button
+                  <div
+                    className={
+                      "font-card " + (f.value === value ? "selected" : "")
+                    }
                     key={f.value}
-                    aria-label={"Usar " + f.label}
-                    className={f.value === value ? "selected" : ""}
-                    onClick={() => choose(f.value)}
                   >
-                    <strong>{f.label}</strong>
-                    <span style={{ fontFamily: f.css }}>
-                      Aa Bb Cc · ÁÉÍÓÚ ñ 123
-                    </span>
-                    <small>
-                      {f.value.startsWith("local-")
-                        ? "Fuente personal · incluida en el proyecto"
-                        : f.category === "serif"
-                          ? "Serif"
-                          : f.category === "monospace"
-                            ? "Monoespaciada"
-                            : "Sans serif"}
-                    </small>
-                  </button>
+                    <button
+                      key={f.value}
+                      aria-label={"Usar " + f.label}
+                      className={f.value === value ? "selected" : ""}
+                      onClick={() => choose(f.value)}
+                      onFocus={() => setPreview(f.value)}
+                      onMouseEnter={() => setPreview(f.value)}
+                    >
+                      <strong>{f.label}</strong>
+                      <span
+                        style={{
+                          fontFamily: f.css,
+                          fontSize: previewSize,
+                          fontWeight: bold ? 700 : 400,
+                          fontStyle: italic ? "italic" : "normal",
+                        }}
+                      >
+                        {sample || "Aa Bb Cc · ÁÉÍÓÚ ñ 123"}
+                      </span>
+                      <small>
+                        {f.value.startsWith("local-")
+                          ? "Fuente personal · incluida en el proyecto"
+                          : f.category === "serif"
+                            ? "Serif"
+                            : f.category === "monospace"
+                              ? "Monoespaciada"
+                              : "Sans serif"}
+                      </small>
+                    </button>
+                    <button
+                      className="font-favorite"
+                      aria-label={
+                        (favorites.includes(f.value)
+                          ? "Quitar de favoritas "
+                          : "Agregar a favoritas ") + f.label
+                      }
+                      aria-pressed={favorites.includes(f.value)}
+                      onClick={() => {
+                        const next = favorites.includes(f.value)
+                          ? favorites.filter((v) => v !== f.value)
+                          : [...favorites, f.value];
+                        setFavorites(next);
+                        writePreference("favorite-fonts", next);
+                      }}
+                    >
+                      {favorites.includes(f.value) ? "★" : "☆"}
+                    </button>
+                  </div>
                 ))}
                 {!shown.length && <p>No hay fuentes con ese nombre.</p>}
               </div>
               <footer>
+                <span className="font-result-count">
+                  {shown.length} fuentes ·{" "}
+                  {families.find((f) => f.value === preview)?.label ??
+                    selected?.label}
+                  <small>
+                    Selecciona una tarjeta para aplicar. Las estrellas guardan
+                    tus favoritas.
+                  </small>
+                </span>
                 <button
                   disabled={loading}
                   onClick={() => fileInput.current?.click()}
