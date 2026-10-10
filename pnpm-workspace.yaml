@@ -4,3 +4,4 @@ allowBuilds:
   electron-winstaller: false
 overrides:
   'xcode>uuid': 11.1.1
+  'speech-rule-engine>@xmldom/xmldom': 0.9.12

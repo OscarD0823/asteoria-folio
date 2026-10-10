@@ -15,6 +15,9 @@ for (const dependency of [
   "mupdf",
   "pdf-lib",
   "@pdf-lib/fontkit",
+  "mathjax-full",
+  "regenerator-runtime",
+  "@tiptap/pm",
   "pdfjs-dist",
   "react",
   "react-dom",
@@ -40,7 +43,11 @@ for (const dependency of [
     try {
       root = dirname(require.resolve(dependency + "/package.json"));
     } catch {
-      root = dirname(require.resolve(dependency));
+      root = dirname(
+        require.resolve(
+          dependency === "@tiptap/pm" ? "@tiptap/pm/model" : dependency,
+        ),
+      );
       while (!existsSync(join(root, "package.json")) && root !== dirname(root))
         root = dirname(root);
     }
@@ -56,8 +63,29 @@ for (const dependency of [
       ),
     );
 }
-const pmRequire=createRequire(createRequire(require.resolve('@tiptap/core')).resolve('@tiptap/pm/model'));
-for(const dependency of ['prosemirror-model','prosemirror-state','prosemirror-view','prosemirror-transform','prosemirror-history','prosemirror-commands','prosemirror-schema-list','prosemirror-keymap','prosemirror-dropcursor','prosemirror-gapcursor','prosemirror-inputrules','prosemirror-tables']){
-  let root=dirname(pmRequire.resolve(dependency));while(!existsSync(join(root,'package.json'))&&root!==dirname(root))root=dirname(root);
-  const license=['LICENSE','LICENSE.md','LICENSE.txt'].map(name=>join(root,name)).find(existsSync);if(license)cpSync(license,join('public/third-party',dependency+'-LICENSE.txt'));
+const pmRequire = createRequire(
+  createRequire(require.resolve("@tiptap/core")).resolve("@tiptap/pm/model"),
+);
+for (const dependency of [
+  "prosemirror-model",
+  "prosemirror-state",
+  "prosemirror-view",
+  "prosemirror-transform",
+  "prosemirror-history",
+  "prosemirror-commands",
+  "prosemirror-schema-list",
+  "prosemirror-keymap",
+  "prosemirror-dropcursor",
+  "prosemirror-gapcursor",
+  "prosemirror-inputrules",
+  "prosemirror-tables",
+]) {
+  let root = dirname(pmRequire.resolve(dependency));
+  while (!existsSync(join(root, "package.json")) && root !== dirname(root))
+    root = dirname(root);
+  const license = ["LICENSE", "LICENSE.md", "LICENSE.txt"]
+    .map((name) => join(root, name))
+    .find(existsSync);
+  if (license)
+    cpSync(license, join("public/third-party", dependency + "-LICENSE.txt"));
 }

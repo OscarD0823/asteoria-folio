@@ -5,6 +5,7 @@ const files = [
   ".gitignore",
   "LICENSE",
   "README.md",
+  "README-academic.md",
   "package.json",
   "pnpm-lock.yaml",
   "pnpm-workspace.yaml",

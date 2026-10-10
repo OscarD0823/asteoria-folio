@@ -1,0 +1,37 @@
+{
+  "family": "Montserrat",
+  "repository": "https://github.com/JulietaUla/Montserrat",
+  "revision": "555facfb2a18c72c3c0380f0d9c0f060453a9058",
+  "licenseSource": "https://raw.githubusercontent.com/JulietaUla/Montserrat/555facfb2a18c72c3c0380f0d9c0f060453a9058/OFL.txt",
+  "files": [
+    {
+      "file": "Montserrat-Regular.ttf",
+      "style": "Regular",
+      "bytes": 445928,
+      "sha256": "3e8abe50c44c82e2242e97d1ec8c0d385c4890cdc50447bcdb8605c81a38cfb2",
+      "url": "https://raw.githubusercontent.com/JulietaUla/Montserrat/555facfb2a18c72c3c0380f0d9c0f060453a9058/fonts/ttf/Montserrat-Regular.ttf"
+    },
+    {
+      "file": "Montserrat-Bold.ttf",
+      "style": "Bold",
+      "bytes": 454864,
+      "sha256": "bc6e854971cea46b463be6f9eef4d9cd52f51cfc1fc0dd90c9d3e6483dc0ec61",
+      "url": "https://raw.githubusercontent.com/JulietaUla/Montserrat/555facfb2a18c72c3c0380f0d9c0f060453a9058/fonts/ttf/Montserrat-Bold.ttf"
+    },
+    {
+      "file": "Montserrat-Italic.ttf",
+      "style": "Italic",
+      "bytes": 449764,
+      "sha256": "b8fa0ea7f433669d94d27e66ea81cc627deb71861ed9d20f53d7afa1f33ba86a",
+      "url": "https://raw.githubusercontent.com/JulietaUla/Montserrat/555facfb2a18c72c3c0380f0d9c0f060453a9058/fonts/ttf/Montserrat-Italic.ttf"
+    },
+    {
+      "file": "Montserrat-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "bytes": 460160,
+      "sha256": "b4c121b337aaa977d711b6f397c5b9672d720af622555f1e3f9d3b87f2983665",
+      "url": "https://raw.githubusercontent.com/JulietaUla/Montserrat/555facfb2a18c72c3c0380f0d9c0f060453a9058/fonts/ttf/Montserrat-BoldItalic.ttf"
+    }
+  ],
+  "changes": "None. Original static font binaries; filenames normalized only."
+}

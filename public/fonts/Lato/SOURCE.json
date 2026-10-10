@@ -1,0 +1,37 @@
+{
+  "family": "Lato",
+  "repository": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "licenseSource": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/lato/OFL.txt",
+  "files": [
+    {
+      "file": "Lato-Regular.ttf",
+      "style": "Regular",
+      "bytes": 656568,
+      "sha256": "d636e4683231f931eda222d588e944d082bfd3bdba02f928bee461c0f185b251",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/lato/Lato-Regular.ttf"
+    },
+    {
+      "file": "Lato-Italic.ttf",
+      "style": "Italic",
+      "bytes": 722900,
+      "sha256": "e399c44efe1387100531d26c7e4800c5d12251b890d6654a3098c7c679cb1786",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/lato/Lato-Italic.ttf"
+    },
+    {
+      "file": "Lato-Bold.ttf",
+      "style": "Bold",
+      "bytes": 656544,
+      "sha256": "8a0aace75d33794eece4b28187bfc1df0bbd2888b5d8a56e01788c8d65d16be1",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/lato/Lato-Bold.ttf"
+    },
+    {
+      "file": "Lato-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "bytes": 698364,
+      "sha256": "62c1b7f0d2e74b45960154c3520efc337b553db0961bfdc950d5618334596cc8",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/lato/Lato-BoldItalic.ttf"
+    }
+  ],
+  "changes": "None. Original static font binaries; filenames normalized only."
+}

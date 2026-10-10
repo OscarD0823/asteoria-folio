@@ -1,0 +1,16 @@
+{
+  "family": "Noto Sans Math",
+  "repository": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "licenseSource": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/notosansmath/OFL.txt",
+  "files": [
+    {
+      "file": "NotoSansMath-Regular.ttf",
+      "style": "Regular",
+      "bytes": 1015396,
+      "sha256": "3f495fe933c06786e4d5f6d86b8ee70b6753a68ee3b9d87528726de0f6e2c47d",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/notosansmath/NotoSansMath-Regular.ttf"
+    }
+  ],
+  "changes": "None. Original static font binaries; filenames normalized only."
+}

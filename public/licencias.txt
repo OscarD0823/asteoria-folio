@@ -22,3 +22,68 @@ Fuentes locales incluidas sin modificaciones; licencia y autores en ./fonts/.
 Fuente: https://github.com/liberationfonts/liberation-fonts/releases/tag/2.1.5
 Dependencias y versiones exactas en el archivo pnpm-lock.yaml del codigo fuente.
 Licencias completas de las dependencias: ./third-party/<nombre>-LICENSE.txt
+
+Tipografías adicionales locales (archivos estáticos con procedencia registrada):
+Lato — SIL Open Font License 1.1; ./fonts/Lato/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+PT Sans — SIL Open Font License 1.1; ./fonts/PTSans/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+PT Serif — SIL Open Font License 1.1; ./fonts/PTSerif/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Ubuntu — Ubuntu Font Licence 1.0; ./fonts/Ubuntu/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Cousine — SIL Open Font License 1.1; ./fonts/Cousine/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Tinos — SIL Open Font License 1.1; ./fonts/Tinos/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Comic Neue — SIL Open Font License 1.1; ./fonts/ComicNeue/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Carlito — SIL Open Font License 1.1; ./fonts/Carlito/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Caladea — SIL Open Font License 1.1; ./fonts/Caladea/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Noto Sans Symbols 2 — SIL Open Font License 1.1; ./fonts/NotoSansSymbols2/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Noto Sans Math — SIL Open Font License 1.1; ./fonts/NotoSansMath/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Fira Sans — SIL Open Font License 1.1; ./fonts/FiraSans/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Fira Mono — SIL Open Font License 1.1; ./fonts/FiraMono/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Mukta — SIL Open Font License 1.1; ./fonts/Mukta/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Bree Serif — SIL Open Font License 1.1; ./fonts/BreeSerif/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+Noto Sans — SIL Open Font License 1.1; ./fonts/NotoSans/LICENSE.txt
+  Fuente: https://github.com/notofonts/noto-fonts/tree/ffebf8c1ee449e544955a7e813c54f9b73848eac
+Noto Serif — SIL Open Font License 1.1; ./fonts/NotoSerif/LICENSE.txt
+  Fuente: https://github.com/notofonts/noto-fonts/tree/ffebf8c1ee449e544955a7e813c54f9b73848eac
+Noto Sans Mono — SIL Open Font License 1.1; ./fonts/NotoSansMono/LICENSE.txt
+  Fuente: https://github.com/notofonts/noto-fonts/tree/ffebf8c1ee449e544955a7e813c54f9b73848eac
+Source Sans 3 — SIL Open Font License 1.1; ./fonts/SourceSans3/LICENSE.txt
+  Fuente: https://github.com/adobe-fonts/source-sans/tree/87b37a2daaed80fcb8e8ccb0085c4d72ddade12e
+Source Serif 4 — SIL Open Font License 1.1; ./fonts/SourceSerif4/LICENSE.txt
+  Fuente: https://github.com/adobe-fonts/source-serif/tree/80d3f8894c09c937bebfa9011247d2e1c79fd6f4
+Roboto — Apache License 2.0; ./fonts/Roboto/LICENSE.txt
+  Fuente: https://github.com/googlefonts/roboto-2/tree/38062f4b4a0be4346d07a928408da21602545e9e
+Montserrat — SIL Open Font License 1.1; ./fonts/Montserrat/LICENSE.txt
+  Fuente: https://github.com/JulietaUla/Montserrat/tree/555facfb2a18c72c3c0380f0d9c0f060453a9058
+Open Sans — SIL Open Font License 1.1; ./fonts/OpenSans/LICENSE.txt
+  Fuente: https://github.com/googlefonts/opensans/tree/bd7e37632246368c60fdcbd374dbf9bad11969b6
+Noto Sans Arabic — SIL Open Font License 1.1; ./fonts/NotoSansArabic/LICENSE.txt
+  Fuente: https://github.com/notofonts/noto-fonts/tree/ffebf8c1ee449e544955a7e813c54f9b73848eac
+Noto Sans Hebrew — SIL Open Font License 1.1; ./fonts/NotoSansHebrew/LICENSE.txt
+  Fuente: https://github.com/notofonts/noto-fonts/tree/ffebf8c1ee449e544955a7e813c54f9b73848eac
+Noto Sans Thai — SIL Open Font License 1.1; ./fonts/NotoSansThai/LICENSE.txt
+  Fuente: https://github.com/notofonts/noto-fonts/tree/ffebf8c1ee449e544955a7e813c54f9b73848eac
+Noto Sans Devanagari — SIL Open Font License 1.1; ./fonts/NotoSansDevanagari/LICENSE.txt
+  Fuente: https://github.com/notofonts/noto-fonts/tree/ffebf8c1ee449e544955a7e813c54f9b73848eac
+Noto Sans SC (CJK) — SIL Open Font License 1.1; ./fonts/NotoSansSC/LICENSE.txt
+  Fuente: https://github.com/google/fonts/tree/bd8f81ddb5c74d5c8897b36ad88b440266245103
+  Instancia TTF regular derivada con FontTools 4.61.1; proceso en ./fonts/NotoSansSC/DERIVATION.md.
+Archivos, revisiones y sumas SHA-256 de cada fuente: ./fonts/<familia>/SOURCE.json.
+Catálogo y variantes realmente disponibles: ./fonts/catalog.json.
+No todas las familias incluyen negrita/cursiva; la variante regular es el respaldo declarado.
+Las familias Noto adicionales cubren símbolos, matemáticas, CJK simplificado, árabe, hebreo, tailandés y devanagari.
+La cobertura Unicode depende de los glifos originales incluidos; no incluye todas las escrituras ni todos los emoji.
+No se usan servicios remotos de tipografías durante la edición.

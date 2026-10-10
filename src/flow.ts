@@ -2,10 +2,20 @@ import {
   PDFDocument,
   rgb,
   PDFString,
+  PDFHexString,
+  PDFName,
+  degrees,
   type PDFPage,
   type PDFFont,
 } from "pdf-lib";
-import { createFontProvider } from "./fonts";
+import { createFontProvider, resolveFontRuns } from "./fonts";
+import {
+  normalizeAcademicDocument,
+  captionBlocks,
+  roman,
+  type AcademicStyle,
+  type ReferenceRecord,
+} from "./academic";
 
 export type RichNode = {
   type?: string;
@@ -15,7 +25,7 @@ export type RichNode = {
   content?: RichNode[];
 };
 export type PageLayout = {
-  format: "a4" | "letter" | "legal";
+  format: "a4" | "letter" | "legal" | "a3" | "a5" | "b5" | "tabloid" | "custom";
   orientation: "portrait" | "landscape";
   top: number;
   bottom: number;
@@ -24,8 +34,35 @@ export type PageLayout = {
   header: string;
   footer: string;
   numbering: boolean;
+  columns?: number;
+  columnGap?: number;
+  customWidth?: number;
+  customHeight?: number;
+  headerFirst?: string;
+  footerFirst?: string;
+  headerEven?: string;
+  footerEven?: string;
+  differentFirst?: boolean;
+  oddEven?: boolean;
+  pageNumberPosition?: "header-right" | "footer-center" | "footer-right";
+  pageNumberStart?: number;
+  watermark?: Watermark;
 };
-export type FlowDocument = { content: RichNode; layout: PageLayout };
+export type Watermark = {
+  text: string;
+  color: string;
+  opacity: number;
+  angle: number;
+  size: number;
+  image?: string;
+};
+export type FlowDocument = {
+  content: RichNode;
+  layout: PageLayout;
+  academicStyle?: AcademicStyle;
+  references?: ReferenceRecord[];
+  pageMap?: Record<string, number>;
+};
 export const defaultLayout = (): PageLayout => ({
   format: "a4",
   orientation: "portrait",
@@ -38,23 +75,35 @@ export const defaultLayout = (): PageLayout => ({
   numbering: false,
 });
 export const pageSize = (layout: PageLayout): [number, number] => {
+  const sizes: Record<string, [number, number]> = {
+    a3: [841.89, 1190.55],
+    a5: [419.53, 595.28],
+    b5: [498.9, 708.66],
+    tabloid: [792, 1224],
+    custom: [mm(layout.customWidth || 210), mm(layout.customHeight || 297)],
+  };
   const base: [number, number] =
-    layout.format === "letter"
+    sizes[layout.format] ??
+    (layout.format === "letter"
       ? [612, 792]
       : layout.format === "legal"
         ? [612, 1008]
-        : [595.28, 841.89];
+        : [595.28, 841.89]);
   return layout.orientation === "landscape" ? [base[1], base[0]] : base;
 };
 export const mm = (n: number) => (n * 72) / 25.4;
 export const plainText = (node?: RichNode): string =>
-  node?.type === "text"
-    ? (node.text ?? "")
-    : node?.type === "hardBreak"
-      ? "\n"
-      : (node?.content ?? [])
-          .map(plainText)
-          .join(node?.type === "doc" ? "\n" : "");
+  node?.type === "citation"
+    ? String(node.attrs?.label ?? "")
+    : node?.type === "equation"
+      ? String(node.attrs?.latex ?? "")
+      : node?.type === "text"
+        ? (node.text ?? "")
+        : node?.type === "hardBreak"
+          ? "\n"
+          : (node?.content ?? [])
+              .map(plainText)
+              .join(node?.type === "doc" ? "\n" : "");
 export function safeColor(value: unknown, fallback = "#20273a") {
   if (typeof value !== "string") return fallback;
   if (/^#[\da-f]{6}$/i.test(value)) return value;
@@ -93,6 +142,7 @@ type Style = {
   background?: string;
   rise: number;
   link?: string;
+  comment?: { id: string; text: string; author: string };
 };
 export type TextDefaults = {
   font?: string;
@@ -125,6 +175,12 @@ function styleFor(node: RichNode, defaults: TextDefaults): Style {
     rise: 0,
   };
   for (const mark of node.marks ?? []) {
+    if (mark.type === "comment")
+      style.comment = {
+        id: String(mark.attrs?.id),
+        text: String(mark.attrs?.text ?? ""),
+        author: String(mark.attrs?.author ?? "Autor"),
+      };
     if (mark.type === "bold") style.bold = true;
     if (mark.type === "italic") style.italic = true;
     if (mark.type === "underline") style.underline = true;
@@ -160,6 +216,7 @@ async function linesFor(
   width: number,
   getFont: ReturnType<typeof createFontProvider>,
   defaults: TextDefaults = {},
+  firstWidth = width,
 ): Promise<Line[]> {
   const lines: Line[] = [];
   let runs: Run[] = [],
@@ -179,38 +236,57 @@ async function linesFor(
     maxSize = defaults.size ?? 11;
   };
   const add = async (text: string, style: Style) => {
-    const font = await getFont(style.family, style.bold, style.italic);
-    const measure = (s: string) => {
-      try {
-        return font.widthOfTextAtSize(s, style.size);
-      } catch {
-        throw new Error(
-          "El texto contiene caracteres no compatibles con esta tipografía. Cambia a Liberation Sans.",
-        );
-      }
-    };
-    for (const token of text.split(/(\s+)/)) {
-      if (!token) continue;
-      for (const [j, piece] of token.split("\n").entries()) {
-        if (j) flush(true);
-        if (!piece) continue;
-        let tw = measure(piece);
-        if (lineWidth + tw > width && runs.length) {
-          flush();
-          if (/^\s+$/.test(piece)) continue;
+    const segments = await resolveFontRuns(
+      getFont,
+      style.family,
+      style.bold,
+      style.italic,
+      text,
+    );
+    for (const segment of segments) {
+      const font = segment.font;
+      const measure = (s: string) => {
+        try {
+          return font.widthOfTextAtSize(s, style.size);
+        } catch {
+          throw new Error(
+            "El texto contiene caracteres no compatibles con esta tipografía. Cambia a Liberation Sans.",
+          );
         }
-        if (tw > width && !/^\s+$/.test(piece)) {
-          for (const char of Array.from(piece)) {
-            tw = measure(char);
-            if (lineWidth + tw > width && runs.length) flush();
-            runs.push({ text: char, style, font, width: tw });
+      };
+      for (const token of segment.text.replace(/\t/g, "    ").split(/(\s+)/)) {
+        if (!token) continue;
+        for (const [j, piece] of token.split("\n").entries()) {
+          if (j) flush(true);
+          if (!piece) continue;
+          let tw = measure(piece);
+          if (
+            lineWidth + tw > (lines.length ? width : firstWidth) &&
+            runs.length
+          ) {
+            flush();
+            if (/^\s+$/.test(piece)) continue;
+          }
+          if (
+            tw > (lines.length ? width : firstWidth) &&
+            !/^\s+$/.test(piece)
+          ) {
+            for (const char of Array.from(piece)) {
+              tw = measure(char);
+              if (
+                lineWidth + tw > (lines.length ? width : firstWidth) &&
+                runs.length
+              )
+                flush();
+              runs.push({ text: char, style, font, width: tw });
+              lineWidth += tw;
+              maxSize = Math.max(maxSize, style.size);
+            }
+          } else {
+            runs.push({ text: piece, style, font, width: tw });
             lineWidth += tw;
             maxSize = Math.max(maxSize, style.size);
           }
-        } else {
-          runs.push({ text: piece, style, font, width: tw });
-          lineWidth += tw;
-          maxSize = Math.max(maxSize, style.size);
         }
       }
     }
@@ -218,6 +294,15 @@ async function linesFor(
   const walk = async (n: RichNode): Promise<void> => {
     if (n.type === "hardBreak") {
       flush(true);
+      return;
+    }
+    if (n.type === "citation") {
+      await add(String(n.attrs?.label ?? "[?]"), {
+        ...styleFor(n, defaults),
+        link:
+          "#" +
+          String(n.attrs?.referenceAnchor ?? "reference-" + n.attrs?.refId),
+      });
       return;
     }
     if (n.type === "text") {
@@ -230,6 +315,7 @@ async function linesFor(
   flush(true);
   return lines;
 }
+const commentsDrawn = new WeakMap<PDFPage, Set<string>>();
 function drawLine(
   page: PDFPage,
   line: Line,
@@ -267,6 +353,24 @@ function drawLine(
   }
   for (const run of runs) {
     const s = run.style;
+    if (s.comment) {
+      const seen = commentsDrawn.get(page) ?? new Set<string>();
+      commentsDrawn.set(page, seen);
+      if (!seen.has(s.comment.id)) {
+        seen.add(s.comment.id);
+        const annotation = page.doc.context.obj({
+          Type: "Annot",
+          Subtype: "Text",
+          Rect: [x, baseline, x + 18, baseline + 18],
+          Contents: PDFHexString.fromText(s.comment.text),
+          T: PDFHexString.fromText(s.comment.author),
+          Name: "Comment",
+          C: [0.4, 0.35, 0.85],
+          F: 4,
+        });
+        page.node.addAnnot(page.doc.context.register(annotation));
+      }
+    }
     if (s.background)
       page.drawRectangle({
         x,
@@ -297,13 +401,15 @@ function drawLine(
         thickness: Math.max(0.5, s.size / 18),
         color: color(s.color),
       });
-    if (links && s.link && /^(https?:\/\/|mailto:)/i.test(s.link)) {
+    if (links && s.link && /^(https?:\/\/|mailto:|#)/i.test(s.link)) {
       const annotation = page.doc.context.obj({
         Type: "Annot",
         Subtype: "Link",
         Rect: [x, baseline - s.size * 0.2, x + run.width, baseline + s.size],
         Border: [0, 0, 0],
-        A: { Type: "Action", S: "URI", URI: PDFString.of(s.link) },
+        A: s.link.startsWith("#")
+          ? { Type: "Action", S: "GoTo", D: PDFString.of(s.link.slice(1)) }
+          : { Type: "Action", S: "URI", URI: PDFString.of(s.link) },
       });
       page.node.addAnnot(page.doc.context.register(annotation));
     }
@@ -343,19 +449,50 @@ export async function drawRichBox(
   }
   return y - top;
 }
-export async function buildFlowPdf(
+async function buildFlowPass(
   flow: FlowDocument,
   title = "Mi documento",
-): Promise<Uint8Array> {
+): Promise<{ bytes: Uint8Array; pageMap: Record<string, number> }> {
   const doc = await PDFDocument.create(),
     getFont = createFontProvider(doc),
     layout = flow.layout,
     [pw, ph] = pageSize(layout);
-  const left = mm(layout.left),
+  const imageCache = new Map<
+    string,
+    Awaited<ReturnType<typeof doc.embedPng>>
+  >();
+  const embedImage = async (src: string) => {
+    let image = imageCache.get(src);
+    if (!image) {
+      image = src.startsWith("data:image/png")
+        ? await doc.embedPng(src)
+        : await doc.embedJpg(src);
+      imageCache.set(src, image);
+    }
+    return image;
+  };
+  const marginLeft = mm(layout.left),
     right = mm(layout.right),
     top = mm(layout.top),
     bottom = mm(layout.bottom),
-    width = pw - left - right;
+    fullWidth = pw - marginLeft - right;
+  const columns = Math.max(1, Math.min(3, layout.columns || 1)),
+    gap = mm(layout.columnGap ?? 6.35),
+    width = (fullWidth - gap * (columns - 1)) / columns;
+  let left = marginLeft,
+    column = 0;
+  const pageMap: Record<string, number> = {},
+    destinations = new Map<string, unknown>();
+  const anchor = (n: RichNode) => {
+    if (n.attrs?.id) {
+      const id = String(n.attrs.id);
+      pageMap[id] = doc.getPageCount();
+      destinations.set(
+        id,
+        doc.context.obj([page.ref, PDFName.of("XYZ"), left, ph - y, null]),
+      );
+    }
+  };
   if (width < 80 || ph - top - bottom < 100)
     throw new Error("Reduce los márgenes para dejar espacio al contenido.");
   let page = doc.addPage([pw, ph]),
@@ -363,9 +500,19 @@ export async function buildFlowPdf(
   const nextPage = () => {
     page = doc.addPage([pw, ph]);
     y = top;
+    column = 0;
+    left = marginLeft;
+  };
+  const nextColumn = () => {
+    if (column + 1 >= columns) nextPage();
+    else {
+      column++;
+      left = marginLeft + column * (width + gap);
+      y = top;
+    }
   };
   const room = (height: number) => {
-    if (y + height > ph - bottom && y > top) nextPage();
+    if (y + height > ph - bottom && y > top) nextColumn();
   };
   async function paragraph(
     n: RichNode,
@@ -380,39 +527,109 @@ export async function buildFlowPdf(
       size: heading ? ([26, 21, 17, 14, 12, 11][level - 1] ?? 14) : 12,
       bold: heading,
       ...defaults,
+      ...(n.attrs?.fontFamily ? { font: String(n.attrs.fontFamily) } : {}),
+      ...(n.attrs?.fontSize ? { size: Number(n.attrs.fontSize) } : {}),
     };
+    if (n.attrs?.breakBefore && (y > top || column > 0)) nextPage();
+    y += Number(n.attrs?.spaceBefore || 0);
+    const hanging = Number(n.attrs?.hangingIndent || 0),
+      first = Number(n.attrs?.firstLineIndent || 0);
     const pad = indent + Number(n.attrs?.indent ?? 0) * 18;
     const lines = await linesFor(
       n,
-      width - pad - (prefix ? 15 : 0),
+      width - pad - hanging - (prefix ? 15 : 0),
       getFont,
       effective,
+      width - pad - first - (prefix ? 15 : 0),
     );
     if (heading) room(lines.reduce((h, l) => h + l.height, 0) + 25);
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       room(line.height);
+      if (i === 0) anchor(n);
       if (i === 0 && prefix)
         page.drawText(prefix, {
           x: left + pad,
           y: ph - y - line.size,
-          font: await getFont("PrismaSans"),
+          font: await getFont("PrismaSans", false, false, prefix),
           size: line.size,
           color: color("#5146cc"),
         });
       drawLine(
         page,
         line,
-        left + pad + (prefix ? 15 : 0),
+        left + pad + (i === 0 ? first : hanging) + (prefix ? 15 : 0),
         y,
-        width - pad - (prefix ? 15 : 0),
+        width - pad - (i === 0 ? first : hanging) - (prefix ? 15 : 0),
         String(n.attrs?.textAlign ?? "left"),
       );
       y += line.height;
     }
-    y += heading ? 10 : 7;
+    y += Number(n.attrs?.spaceAfter ?? (heading ? 10 : 7));
   }
   async function render(n: RichNode, indent = 0, prefix = ""): Promise<void> {
+    if (n.type === "caption") return;
+    if (n.type === "generatedIndex") {
+      if (
+        n.attrs?.kind === "references" &&
+        flow.academicStyle === "apa" &&
+        (y > top || column > 0)
+      )
+        nextPage();
+      anchor(n);
+      await paragraph({
+        type: "heading",
+        attrs: {
+          level: 1,
+          fontSize: flow.academicStyle === "apa" ? 12 : 18,
+          ...(flow.academicStyle === "apa"
+            ? { fontFamily: "PrismaSerif" }
+            : {}),
+        },
+        content: [{ type: "text", text: String(n.attrs?.title || "Índice") }],
+      });
+      for (const child of n.content ?? []) {
+        const target = child.attrs?.targetId;
+        await paragraph(
+          target && n.attrs?.kind !== "references"
+            ? {
+                ...child,
+                content: (child.content ?? []).map((c) => ({
+                  ...c,
+                  marks: [
+                    ...(c.marks ?? []),
+                    { type: "link", attrs: { href: "#" + target } },
+                  ],
+                })),
+              }
+            : child,
+        );
+      }
+      y += 10;
+      return;
+    }
+    if (n.type === "appendix") {
+      await paragraph({
+        ...n,
+        type: "heading",
+        attrs: {
+          ...n.attrs,
+          level: 1,
+          fontSize: flow.academicStyle === "apa" ? 12 : 20,
+        },
+        content: [
+          {
+            type: "text",
+            text: [n.attrs?.label, n.attrs?.title].filter(Boolean).join(": "),
+          },
+        ],
+      });
+      return;
+    }
+    if (n.type === "columnBreak") {
+      nextColumn();
+      return;
+    }
     if (
       n.type === "paragraph" ||
       n.type === "heading" ||
@@ -434,28 +651,33 @@ export async function buildFlowPdf(
       room(14);
       page.drawLine({
         start: { x: left, y: ph - y - 4 },
-        end: { x: pw - right, y: ph - y - 4 },
+        end: { x: left + width, y: ph - y - 4 },
         thickness: 0.8,
         color: color("#cbd0de"),
       });
       y += 18;
       return;
     }
-    if (n.type === "image") {
+    if (
+      ["image", "equation", "chart", "shape", "video"].includes(n.type ?? "")
+    ) {
       const src = String(n.attrs?.src ?? "");
       if (!/^data:image\/(png|jpeg);base64,/i.test(src)) return;
-      const image = src.startsWith("data:image/png")
-        ? await doc.embedPng(src)
-        : await doc.embedJpg(src);
+      const image = await embedImage(src);
       const iw = Math.min(
           width,
-        Math.max(20, Number(n.attrs?.width) * .75 || Math.min(image.width * .75, width)),
+          Math.max(
+            20,
+            Number(n.attrs?.width) * 0.75 ||
+              Math.min(image.width * 0.75, width),
+          ),
         ),
         ih = (iw * image.height) / image.width;
       const fit = Math.min(1, (ph - top - bottom - 10) / ih),
         sw = iw * fit,
         sh = ih * fit;
       room(sh + 10);
+      anchor(n);
       const align = String(n.attrs?.align ?? "left"),
         x =
           left +
@@ -465,6 +687,23 @@ export async function buildFlowPdf(
               ? width - sw
               : 0);
       page.drawImage(image, { x, y: ph - y - sh, width: sw, height: sh });
+      if (
+        n.type === "video" &&
+        /^(https?:\/\/)/i.test(String(n.attrs?.url ?? ""))
+      ) {
+        const annotation = doc.context.obj({
+          Type: "Annot",
+          Subtype: "Link",
+          Rect: [x, ph - y - sh, x + sw, ph - y],
+          Border: [0, 0, 0],
+          A: {
+            Type: "Action",
+            S: "URI",
+            URI: PDFString.of(String(n.attrs?.url)),
+          },
+        });
+        page.node.addAnnot(doc.context.register(annotation));
+      }
       y += sh + 12;
       return;
     }
@@ -528,7 +767,8 @@ export async function buildFlowPdf(
         for (const child of c.node.content ?? [])
           c.lines.push(
             ...(await linesFor(child, Math.max(10, c.width - 16), getFont, {
-              size: 10,
+              size: flow.academicStyle === "apa" ? 12 : 10,
+              font: flow.academicStyle === "apa" ? "PrismaSerif" : "PrismaSans",
               bold: c.node.type === "tableHeader",
             })),
           );
@@ -557,6 +797,7 @@ export async function buildFlowPdf(
             "La fila o las celdas unidas de la tabla son más altas que la página. Divide su contenido o reduce la letra.",
           );
         room(groupHeight);
+        if (rowIndex === 0) anchor(n);
         const tops = [y];
         for (let i = rowIndex; i < end; i++)
           tops.push(tops.at(-1)! + heights[i]);
@@ -572,9 +813,13 @@ export async function buildFlowPdf(
             y: ph - cy - height,
             width: c.width,
             height,
-            color: color(c.node.type === "tableHeader" ? "#eeedff" : "#ffffff"),
+            color: color(
+              flow.academicStyle !== "apa" && c.node.type === "tableHeader"
+                ? "#eeedff"
+                : "#ffffff",
+            ),
             borderColor: color("#ccd0df"),
-            borderWidth: 0.65,
+            borderWidth: flow.academicStyle === "apa" ? 0 : 0.65,
           });
           let textY = cy + 7;
           for (const line of c.lines) {
@@ -588,6 +833,22 @@ export async function buildFlowPdf(
             );
             textY += line.height;
           }
+        }
+        if (flow.academicStyle === "apa") {
+          if (rowIndex === 0)
+            page.drawLine({
+              start: { x: left, y: ph - y },
+              end: { x: left + width, y: ph - y },
+              thickness: 1,
+              color: color("#20273a"),
+            });
+          if (end === 1 || end === rows.length)
+            page.drawLine({
+              start: { x: left, y: ph - y - groupHeight },
+              end: { x: left + width, y: ph - y - groupHeight },
+              thickness: 1,
+              color: color("#20273a"),
+            });
         }
         y += groupHeight;
         rowIndex = end;
@@ -603,7 +864,23 @@ export async function buildFlowPdf(
           await render(
             child,
             indent + 12,
-            first ? (n.type === "bulletList" ? "•" : `${number}.`) : "",
+            first
+              ? n.type === "bulletList"
+                ? { circle: "◦", square: "▪", check: "✓", arrow: "→" }[
+                    String(n.attrs?.listStyle)
+                  ] || "•"
+                : `${(() => {
+                    const style = String(n.attrs?.listStyle);
+                    const label = style.includes("roman")
+                      ? roman(number)
+                      : style.includes("alpha")
+                        ? String.fromCharCode(97 + ((number - 1) % 26))
+                        : String(number);
+                    return style.startsWith("upper")
+                      ? label.toUpperCase()
+                      : label;
+                  })()}.`
+              : "",
           );
           first = false;
         }
@@ -623,40 +900,226 @@ export async function buildFlowPdf(
         });
       return;
     }
-    for (const child of n.content ?? []) await render(child, indent, prefix);
+    for (const child of n.content ?? []) {
+      if (child.type === "caption") continue;
+      const cap = (n.content ?? []).find(
+        (c) => c.type === "caption" && c.attrs?.targetId === child.attrs?.id,
+      );
+      const blocks = cap
+        ? captionBlocks(cap, flow.academicStyle ?? "free")
+        : { before: [], after: [] };
+      if (blocks.before.length) {
+        let captionHeight = 0;
+        for (const block of blocks.before) {
+          const lines = await linesFor(block, width, getFont);
+          captionHeight +=
+            lines.reduce((sum, line) => sum + line.height, 0) +
+            Number(block.attrs?.spaceBefore || 0) +
+            Number(block.attrs?.spaceAfter ?? 7);
+        }
+        let objectHeight = 30;
+        const src = String(child.attrs?.src || "");
+        if (/^data:image\/(png|jpeg);base64,/i.test(src)) {
+          const image = await embedImage(src);
+          const iw = Math.min(
+            width,
+            Number(child.attrs?.width) * 0.75 || image.width * 0.75,
+          );
+          objectHeight =
+            Math.min(
+              (iw * image.height) / image.width,
+              ph - top - bottom - captionHeight - 12,
+            ) + 12;
+        } else if (child.type === "table") {
+          const cells = child.content?.[0]?.content ?? [];
+          for (const cell of cells) {
+            let height = 14;
+            for (const block of cell.content ?? [])
+              height += (
+                await linesFor(
+                  block,
+                  Math.max(10, width / Math.max(1, cells.length) - 16),
+                  getFont,
+                  { size: flow.academicStyle === "apa" ? 12 : 10 },
+                )
+              ).reduce((sum, line) => sum + line.height, 0);
+            objectHeight = Math.max(objectHeight, height);
+          }
+        }
+        room(captionHeight + objectHeight);
+      }
+      for (const b of blocks.before) await render(b, indent);
+      await render(child, indent, prefix);
+      for (const b of blocks.after) await render(b, indent);
+    }
   }
   await render(flow.content);
-  const font = await getFont("PrismaSans");
   for (const [index, p] of doc.getPages().entries()) {
-    if (layout.header)
-      p.drawText(layout.header, {
-        x: left,
-        y: ph - Math.max(15, top * 0.45),
-        font,
-        size: 9,
-        color: color("#74788b"),
-      });
-    if (layout.footer)
-      p.drawText(layout.footer, {
-        x: left,
-        y: Math.max(12, bottom * 0.4),
-        font,
-        size: 9,
-        color: color("#74788b"),
-      });
+    const header =
+      layout.differentFirst && index === 0
+        ? (layout.headerFirst ?? "")
+        : layout.oddEven && index % 2 === 1
+          ? (layout.headerEven ?? layout.header)
+          : layout.header;
+    const footer =
+      layout.differentFirst && index === 0
+        ? (layout.footerFirst ?? "")
+        : layout.oddEven && index % 2 === 1
+          ? (layout.footerEven ?? layout.footer)
+          : layout.footer;
+    if (header)
+      await drawRichBox(
+        doc,
+        p,
+        {
+          type: "doc",
+          content: [
+            { type: "paragraph", content: [{ type: "text", text: header }] },
+          ],
+        },
+        marginLeft,
+        Math.max(8, top * 0.4) - 9,
+        fullWidth,
+        { size: 9 },
+        getFont,
+      );
+    if (footer)
+      await drawRichBox(
+        doc,
+        p,
+        {
+          type: "doc",
+          content: [
+            { type: "paragraph", content: [{ type: "text", text: footer }] },
+          ],
+        },
+        marginLeft,
+        ph - Math.max(15, bottom * 0.5),
+        fullWidth,
+        { size: 9 },
+        getFont,
+      );
     if (layout.numbering) {
-      const label = `${index + 1} / ${doc.getPageCount()}`;
+      const label = layout.pageNumberPosition
+          ? String(index + (layout.pageNumberStart ?? 1))
+          : `${index + 1} / ${doc.getPageCount()}`,
+        font = await getFont("PrismaSans", false, false, label),
+        pos = layout.pageNumberPosition ?? "footer-right";
       p.drawText(label, {
-        x: pw - right - font.widthOfTextAtSize(label, 9),
-        y: Math.max(12, bottom * 0.4),
+        x:
+          pos === "footer-center"
+            ? (pw - font.widthOfTextAtSize(label, 10)) / 2
+            : pw - right - font.widthOfTextAtSize(label, 10),
+        y:
+          pos === "header-right"
+            ? ph - Math.max(18, top * 0.5)
+            : Math.max(12, bottom * 0.4),
         font,
-        size: 9,
-        color: color("#74788b"),
+        size: 10,
+        color: color("#20273a"),
       });
     }
+    if (layout.watermark?.text || layout.watermark?.image)
+      await drawWatermark(doc, p, layout.watermark, getFont);
+  }
+  if (destinations.size) {
+    const names: unknown[] = [];
+    for (const [id, dest] of [...destinations].sort((a, b) =>
+      a[0].localeCompare(b[0]),
+    ))
+      names.push(PDFString.of(id), dest);
+    doc.catalog.set(
+      PDFName.of("Names"),
+      doc.context.obj({
+        Dests: doc.context.obj({ Names: doc.context.obj(names as never[]) }),
+      }),
+    );
   }
   doc.setTitle(title);
   doc.setCreator("Prisma PDF");
   doc.setProducer("Prisma PDF · documentos");
-  return doc.save();
+  return { bytes: await doc.save(), pageMap };
+}
+
+export async function drawWatermark(
+  doc: PDFDocument,
+  page: PDFPage,
+  mark: Watermark,
+  getFont = createFontProvider(doc),
+  dimensions = page.getSize(),
+) {
+  const opacity = Math.max(0, Math.min(1, mark.opacity)),
+    { width: w, height: h } = dimensions;
+  if (mark.image && /^data:image\/(png|jpeg);base64,/i.test(mark.image)) {
+    const image = mark.image.startsWith("data:image/png")
+        ? await doc.embedPng(mark.image)
+        : await doc.embedJpg(mark.image),
+      width = w * 0.65,
+      height = (width * image.height) / image.width;
+    page.drawImage(image, {
+      x: (w - width) / 2,
+      y: (h - height) / 2,
+      width,
+      height,
+      opacity,
+      rotate: degrees(mark.angle),
+    });
+  } else if (mark.text) {
+    const font = await getFont("PrismaSans", false, false, mark.text),
+      size = Math.max(
+        10,
+        Math.min(mark.size, (w * 0.8) / font.widthOfTextAtSize(mark.text, 1)),
+      ),
+      width = font.widthOfTextAtSize(mark.text, size);
+    const a = (mark.angle * Math.PI) / 180;
+    page.drawText(mark.text, {
+      x: w / 2 - (width / 2) * Math.cos(a),
+      y: h / 2 - (width / 2) * Math.sin(a),
+      font,
+      size,
+      color: color(safeColor(mark.color, "#9298a5")),
+      opacity,
+      rotate: degrees(mark.angle),
+    });
+  }
+}
+export async function buildFlowDocument(
+  flow: FlowDocument,
+  title = "Mi documento",
+) {
+  let content = normalizeAcademicDocument(
+      flow.content,
+      flow.references ?? [],
+      flow.academicStyle ?? "free",
+    ),
+    result: Awaited<ReturnType<typeof buildFlowPass>> | undefined;
+  const paginate = (node: RichNode, map: Record<string, number>): RichNode => ({
+    ...node,
+    attrs: {
+      ...node.attrs,
+      ...(node.attrs?.id && map[String(node.attrs.id)]
+        ? { page: map[String(node.attrs.id)] }
+        : {}),
+    },
+    ...(node.content
+      ? { content: node.content.map((n) => paginate(n, map)) }
+      : {}),
+  });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    result = await buildFlowPass({ ...flow, content }, title);
+    const updated = normalizeAcademicDocument(
+      paginate(content, result.pageMap),
+      flow.references ?? [],
+      flow.academicStyle ?? "free",
+    );
+    if (JSON.stringify(updated) === JSON.stringify(content)) break;
+    content = updated;
+  }
+  return { ...result!, content };
+}
+export async function buildFlowPdf(
+  flow: FlowDocument,
+  title = "Mi documento",
+): Promise<Uint8Array> {
+  return (await buildFlowDocument(flow, title)).bytes;
 }

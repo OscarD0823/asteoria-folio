@@ -1,6 +1,6 @@
 {
   "name": "prisma-pdf",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "license": "AGPL-3.0-or-later",
   "private": true,
   "type": "module",
@@ -28,17 +28,21 @@
     "@tiptap/extension-table": "^3.31.4",
     "@tiptap/extension-text-align": "^3.31.4",
     "@tiptap/extension-text-style": "^3.31.4",
+    "@tiptap/pm": "3.31.4",
     "@tiptap/react": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.4",
     "lucide-react": "^0.468.0",
+    "mathjax-full": "3.2.2",
     "mupdf": "^1.28.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "6.4.299",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "regenerator-runtime": "0.14.1"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3",
+    "@types/mathjax": "0.0.40",
     "@types/node": "^22.0.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",

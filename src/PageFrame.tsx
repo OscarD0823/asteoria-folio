@@ -5,6 +5,7 @@ import { getPdf, pdfjs } from "./renderer";
 import { runNative, type Inspection, type NativeObject } from "./native";
 import { fontCss } from "./fonts";
 import { plainText, type RichNode } from "./flow";
+import type { Watermark } from "./flow";
 import {
   rotation,
   turnPoint,
@@ -29,6 +30,10 @@ export type FrameProps = {
   onSelect: (id: string, edit?: boolean) => void;
   onEditor: (editor: RichEditorInstance) => void;
   onMark: (mark: Mark) => void;
+  onTextPage?: (marks: Mark[]) => void;
+  showMarks?: boolean;
+  autoCorrect?: boolean;
+  searchQuery?: string;
   onAdd: (mark: Mark) => void;
   onNative: (object: NativeObject) => Promise<void>;
   onArea: (rect: [number, number, number, number]) => void;
@@ -36,6 +41,7 @@ export type FrameProps = {
   onError: (error: unknown) => void;
   onPlace: (x: number, y: number) => void;
   readonly?: boolean;
+  watermark?: Watermark;
 };
 function RichView({ node }: { node: RichNode }) {
   if (node.type === "text") {
@@ -124,6 +130,27 @@ export function PageFrame(props: FrameProps) {
     scale = width / w;
   const inspectEnabled =
     !readonly && ["select", "edit", "objects"].includes(tool);
+  const allText =
+    tool === "edit" && page.textReady && !readonly && page.rotation === 0;
+  const textContent: RichNode = {
+    type: "doc",
+    content: page.marks
+      .filter((m) => m.type === "text")
+      .flatMap((m) => {
+        const node = markContent(m);
+        return (node.content ?? []).map((n, i) => ({
+          ...n,
+          attrs: {
+            ...n.attrs,
+            id: i ? `${m.id}-${i}` : m.id,
+            fontFamily: m.font,
+            fontSize: m.size,
+            lineHeight: m.lineHeight ?? 1.25,
+            pdfBox: { x: m.x, y: m.y, width: m.width },
+          },
+        }));
+      }),
+  };
   const gesture = useRef<{
     mode: "move" | "resize" | "draw" | "area";
     start: [number, number];
@@ -174,8 +201,9 @@ export function PageFrame(props: FrameProps) {
     container.replaceChildren();
     if (
       !visible ||
-      readonly ||
-      !["select", "highlight", "underline", "strikeout"].includes(tool)
+      (readonly && !props.searchQuery) ||
+      (!props.searchQuery &&
+        !["select", "highlight", "underline", "strikeout"].includes(tool))
     )
       return;
     (async () => {
@@ -194,12 +222,30 @@ export function PageFrame(props: FrameProps) {
       });
       if (cancelled) return;
       await layer.render();
+      if (props.searchQuery)
+        for (const span of container.querySelectorAll("span"))
+          if (
+            span.textContent
+              ?.toLocaleLowerCase("es")
+              .includes(props.searchQuery.toLocaleLowerCase("es"))
+          )
+            span.classList.add("document-search-hit");
     })().catch(props.onError);
     return () => {
       cancelled = true;
       layer?.cancel();
     };
-  }, [source.id, page.index, page.rotation, width, w, visible, tool, readonly]);
+  }, [
+    source.id,
+    page.index,
+    page.rotation,
+    width,
+    w,
+    visible,
+    tool,
+    readonly,
+    props.searchQuery,
+  ]);
   function point(e: PointerEvent): [number, number] {
     const rect = root.current!.getBoundingClientRect();
     return [
@@ -390,14 +436,81 @@ export function PageFrame(props: FrameProps) {
             pointerEvents:
               ["select", "highlight", "underline", "strikeout"].includes(
                 tool,
-              ) && !readonly
+              ) &&
+              !readonly &&
+              !allText
                 ? "auto"
                 : "none",
           }}
         />
+        {props.watermark?.text && (
+          <div
+            className="flow-watermark"
+            style={{
+              color: props.watermark.color,
+              opacity: props.watermark.opacity,
+              fontFamily: "PrismaSans",
+              fontSize: props.watermark.size * scale,
+              transform: `translate(-50%,-50%) rotate(${-props.watermark.angle}deg)`,
+            }}
+          >
+            {props.watermark.text}
+          </div>
+        )}
+        {allText && visible && (
+          <RichEditor
+            positioned
+            searchQuery={props.searchQuery}
+            showMarks={props.showMarks}
+            autoCorrect={props.autoCorrect}
+            content={textContent}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: w / 0.75,
+              height: h / 0.75,
+              zoom: scale * 0.75,
+            }}
+            onFocus={props.onEditor}
+            onChange={(node) => {
+              const marks = (node.content ?? []).map((n, i) => {
+                const old = page.marks.find((m) => m.id === n.attrs?.id),
+                  prev = page.marks.filter((m) => m.type === "text")[
+                    Math.max(0, i - 1)
+                  ];
+                const b = n.attrs?.pdfBox as
+                  | { x: number; y: number; width: number }
+                  | undefined;
+                return {
+                  ...(old ??
+                    prev ?? {
+                      type: "text" as const,
+                      color: props.color,
+                      size: props.size,
+                      font: "PrismaSans",
+                      viewRotation: 0,
+                    }),
+                  id: String(n.attrs?.id || uid()),
+                  x: b?.x ?? prev?.x ?? 40,
+                  y: b?.y ?? (prev?.y ?? 40) + (prev?.height ?? 18),
+                  width: b?.width ?? prev?.width ?? 400,
+                  height: old?.height ?? 18,
+                  bold: false,
+                  italic: false,
+                  richText: {
+                    type: "doc",
+                    content: [{ ...n, attrs: { ...n.attrs, pdfBox: null } }],
+                  },
+                  text: plainText(n),
+                } as Mark;
+              });
+              props.onTextPage?.(marks);
+            }}
+          />
+        )}
         {inspection?.objects
           .filter((o) =>
-            tool === "edit"
+            tool === "edit" && !allText
               ? o.kind === "text"
               : tool === "objects"
                 ? o.kind === "image"
@@ -436,7 +549,10 @@ export function PageFrame(props: FrameProps) {
               />
             );
           })}
-        {(visible ? page.marks : []).map((original) => {
+        {(visible
+          ? page.marks.filter((m) => !allText || m.type !== "text")
+          : []
+        ).map((original) => {
           const m = draft?.id === original.id ? draft : original;
           const delta = rotation(page.rotation - m.viewRotation),
             [bw, bh] = delta % 180 ? [h, w] : [w, h],

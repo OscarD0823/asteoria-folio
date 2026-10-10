@@ -1,6 +1,83 @@
 import { PDFDocument } from "pdf-lib";
 import { pruneSources } from "./storage";
 import { uid, type Workspace } from "./pdf";
+import { pageSize, type PageLayout } from "./flow";
+export function validateLayout(l: PageLayout): void {
+  const formats = [
+    "a4",
+    "letter",
+    "legal",
+    "a3",
+    "a5",
+    "b5",
+    "tabloid",
+    "custom",
+  ];
+  const bounded = (v: unknown, min: number, max: number) =>
+    typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
+  if (
+    !l ||
+    !formats.includes(l.format) ||
+    !["portrait", "landscape"].includes(l.orientation) ||
+    [l.top, l.bottom, l.left, l.right].some((v) => !bounded(v, 0, 100))
+  )
+    throw new Error("Los márgenes del proyecto no son válidos.");
+  if (
+    l.columns !== undefined &&
+    (!Number.isInteger(l.columns) || !bounded(l.columns, 1, 3))
+  )
+    throw new Error("El número de columnas no es válido.");
+  if (l.columnGap !== undefined && !bounded(l.columnGap, 0, 50))
+    throw new Error("La separación de columnas no es válida.");
+  if (
+    l.format === "custom" &&
+    (!bounded(l.customWidth, 50, 1000) || !bounded(l.customHeight, 50, 1000))
+  )
+    throw new Error("El tamaño de papel no es válido.");
+  if (
+    l.pageNumberStart !== undefined &&
+    (!Number.isInteger(l.pageNumberStart) ||
+      !bounded(l.pageNumberStart, 1, 100000))
+  )
+    throw new Error("La numeración no es válida.");
+  if (
+    l.pageNumberPosition !== undefined &&
+    !["header-right", "footer-center", "footer-right"].includes(
+      l.pageNumberPosition,
+    )
+  )
+    throw new Error("La posición de numeración no es válida.");
+  for (const text of [
+    l.header,
+    l.footer,
+    l.headerFirst,
+    l.headerEven,
+    l.footerFirst,
+    l.footerEven,
+  ])
+    if (text !== undefined && (typeof text !== "string" || text.length > 5000))
+      throw new Error("El encabezado o pie de página no es válido.");
+  if (
+    l.watermark &&
+    (!bounded(l.watermark.opacity, 0, 1) ||
+      !bounded(l.watermark.size, 6, 200) ||
+      !bounded(l.watermark.angle, -360, 360) ||
+      typeof l.watermark.text !== "string" ||
+      l.watermark.text.length > 500)
+  )
+    throw new Error("La marca de agua no es válida.");
+  const [w, h] = pageSize(l),
+    columns = l.columns || 1;
+  if (
+    (w -
+      ((l.left + l.right) * 72) / 25.4 -
+      (((l.columnGap ?? 6.35) * 72) / 25.4) * (columns - 1)) /
+      columns <
+      80 ||
+    h - ((l.top + l.bottom) * 72) / 25.4 < 100
+  )
+    throw new Error("Reduce los márgenes para dejar espacio al contenido.");
+}
 const encode = (bytes: Uint8Array) => {
   let s = "";
   for (let i = 0; i < bytes.length; i += 32768)
@@ -65,6 +142,8 @@ export async function readProject(bytes: Uint8Array): Promise<Workspace> {
   const check = (value: unknown, depth = 0): void => {
     if (depth > 40 || ++nodes > 250000)
       throw new Error("El proyecto tiene demasiados elementos.");
+    if (typeof value === "number" && !Number.isFinite(value))
+      throw new Error("Un valor del proyecto no es válido.");
     if (!value || typeof value !== "object") return;
     if (Array.isArray(value)) {
       for (const v of value) check(v, depth + 1);
@@ -76,7 +155,8 @@ export async function readProject(bytes: Uint8Array): Promise<Workspace> {
       if (
         (key === "src" || key === "data") &&
         typeof v === "string" &&
-        !/^data:image\/(png|jpeg);base64,/i.test(v)
+        v !== "" &&
+        !/^data:(?:image\/(?:png|jpeg)|video\/(?:mp4|webm));base64,/i.test(v)
       )
         throw new Error("Las imágenes deben estar incluidas en el proyecto.");
       check(v, depth + 1);
@@ -101,17 +181,26 @@ export async function readProject(bytes: Uint8Array): Promise<Workspace> {
     }
   }
   if (w.flow) {
-    check(w.flow.content);
-    const l = w.flow.layout;
+    check(w.flow);
+    validateLayout(w.flow.layout);
     if (
-      !l ||
-      !["a4", "letter", "legal"].includes(l.format) ||
-      !["portrait", "landscape"].includes(l.orientation) ||
-      [l.top, l.bottom, l.left, l.right].some(
-        (n) => !Number.isFinite(n) || n < 0 || n > 100,
-      )
+      w.flow.academicStyle &&
+      !["free", "apa", "ieee", "iso690"].includes(w.flow.academicStyle)
     )
-      throw new Error("Los márgenes del proyecto no son válidos.");
+      throw new Error("El estilo académico no es válido.");
+    if (
+      w.flow.references &&
+      (!Array.isArray(w.flow.references) ||
+        w.flow.references.length > 10000 ||
+        w.flow.references.some(
+          (r) => !r || typeof r.id !== "string" || typeof r.title !== "string",
+        ))
+    )
+      throw new Error("Las referencias no son válidas.");
+  }
+  if (w.layout) {
+    check(w.layout);
+    validateLayout(w.layout);
   }
   return { ...w, projectId: uid() };
 }

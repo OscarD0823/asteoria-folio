@@ -15,6 +15,7 @@ import {
   type PageLayout,
   pageSize,
   mm,
+  drawWatermark,
 } from "./flow";
 import { createFontProvider } from "./fonts";
 
@@ -61,6 +62,7 @@ export type Page = {
   index: number;
   rotation: number;
   marks: Mark[];
+  textReady?: boolean;
 };
 export type Workspace = {
   sources: Source[];
@@ -68,6 +70,7 @@ export type Workspace = {
   name: string;
   flow?: FlowDocument;
   projectId?: string;
+  layout?: PageLayout;
 };
 export const uid = () => crypto.randomUUID();
 export const emptyWorkspace = (): Workspace => ({
@@ -126,15 +129,13 @@ export async function appendPdf(
     sources: [...state.sources, source],
     pages: [
       ...state.pages,
-      ...doc
-        .getPages()
-        .map((_, index) => ({
-          id: uid(),
-          sourceId: source.id,
-          index,
-          rotation: 0,
-          marks: [],
-        })),
+      ...doc.getPages().map((_, index) => ({
+        id: uid(),
+        sourceId: source.id,
+        index,
+        rotation: 0,
+        marks: [],
+      })),
     ],
   };
 }
@@ -143,7 +144,16 @@ export async function buildPdf(
   onlyIds?: string[],
 ): Promise<Uint8Array> {
   if (state.flow) {
-    const bytes = await buildFlowPdf(state.flow, state.name);
+    const bytes = await (
+      typeof window === "undefined"
+        ? buildFlowPdf
+        : async (flow: FlowDocument, title: string) =>
+            (
+              await (
+                await import("./flow-renderer")
+              ).renderFlow(flow, title, "export")
+            ).bytes
+    )(state.flow, state.name);
     if (!onlyIds) return bytes;
     const doc = await PDFDocument.load(bytes),
       out = await PDFDocument.create();
@@ -321,6 +331,89 @@ export async function buildPdf(
   output.setTitle(state.name);
   output.setCreator("Prisma PDF");
   output.setProducer("Prisma PDF · pdf-lib");
+  if (state.layout) {
+    const layout = state.layout;
+    for (const [index, page] of output.getPages().entries()) {
+      const crop = page.getCropBox(),
+        r = rotation(page.getRotation().angle),
+        w = r % 180 ? crop.height : crop.width,
+        h = r % 180 ? crop.width : crop.height;
+      const matrix: Record<
+        number,
+        [number, number, number, number, number, number]
+      > = {
+        0: [1, 0, 0, 1, crop.x, crop.y],
+        90: [0, 1, -1, 0, crop.x + crop.width, crop.y],
+        180: [-1, 0, 0, -1, crop.x + crop.width, crop.y + crop.height],
+        270: [0, -1, 1, 0, crop.x, crop.y + crop.height],
+      };
+      page.pushOperators(
+        pushGraphicsState(),
+        concatTransformationMatrix(...matrix[r]),
+      );
+      const left = mm(layout.left),
+        right = mm(layout.right),
+        top = mm(layout.top),
+        bottom = mm(layout.bottom),
+        offset = page.getHeight() - h;
+      const header =
+        layout.differentFirst && index === 0
+          ? (layout.headerFirst ?? "")
+          : layout.oddEven && index % 2 === 1
+            ? (layout.headerEven ?? layout.header)
+            : layout.header;
+      const footer =
+        layout.differentFirst && index === 0
+          ? (layout.footerFirst ?? "")
+          : layout.oddEven && index % 2 === 1
+            ? (layout.footerEven ?? layout.footer)
+            : layout.footer;
+      for (const [text, y] of [
+        [header, Math.max(8, top * 0.4) - 9],
+        [footer, h - Math.max(15, bottom * 0.5)],
+      ] as const)
+        if (text)
+          await drawRichBox(
+            output,
+            page,
+            {
+              type: "doc",
+              content: [
+                { type: "paragraph", content: [{ type: "text", text }] },
+              ],
+            },
+            left,
+            y + offset,
+            w - left - right,
+            { size: 9 },
+            getFont,
+          );
+      if (layout.numbering) {
+        const label = String(index + (layout.pageNumberStart ?? 1)),
+          font = await getFont("PrismaSans", false, false, label),
+          position = layout.pageNumberPosition ?? "footer-right";
+        page.drawText(label, {
+          x:
+            position === "footer-center"
+              ? (w - font.widthOfTextAtSize(label, 10)) / 2
+              : w - right - font.widthOfTextAtSize(label, 10),
+          y:
+            position === "header-right"
+              ? h - Math.max(18, top * 0.5)
+              : Math.max(12, bottom * 0.4),
+          font,
+          size: 10,
+          color: hexColor("#20273a"),
+        });
+      }
+      if (layout.watermark)
+        await drawWatermark(output, page, layout.watermark, getFont, {
+          width: w,
+          height: h,
+        });
+      page.pushOperators(popGraphicsState());
+    }
+  }
   return output.save();
 }
 export function pageRange(value: string, count: number): number[] {
@@ -342,7 +435,9 @@ export async function fitPdfToLayout(
   state: Workspace,
   layout: PageLayout,
 ): Promise<Workspace> {
-  const source = await PDFDocument.load(await buildPdf(state)),
+  const source = await PDFDocument.load(
+      await buildPdf({ ...state, layout: undefined }),
+    ),
     out = await PDFDocument.create(),
     [w, h] = pageSize(layout);
   const left = mm(layout.left),
@@ -365,23 +460,17 @@ export async function fitPdfToLayout(
       s = Math.min((w - left - right) / dw, (h - top - bottom) / dh);
     const x = left + (w - left - right - dw * s) / 2,
       y = bottom + (h - top - bottom - dh * s) / 2;
-    out
-      .addPage([w, h])
-      .drawPage(embed, {
-        x:
-          x +
-          (angle === 180
-            ? crop.width * s
-            : angle === 270
-              ? crop.height * s
-              : 0),
-        y:
-          y +
-          (angle === 90 ? crop.width * s : angle === 180 ? crop.height * s : 0),
-        width: crop.width * s,
-        height: crop.height * s,
-        rotate: degrees(-angle),
-      });
+    out.addPage([w, h]).drawPage(embed, {
+      x:
+        x +
+        (angle === 180 ? crop.width * s : angle === 270 ? crop.height * s : 0),
+      y:
+        y +
+        (angle === 90 ? crop.width * s : angle === 180 ? crop.height * s : 0),
+      width: crop.width * s,
+      height: crop.height * s,
+      rotate: degrees(-angle),
+    });
   }
   const result = await appendPdf(
     emptyWorkspace(),

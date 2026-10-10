@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { Node, Extension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
@@ -10,6 +10,17 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Superscript from "@tiptap/extension-superscript";
 import Subscript from "@tiptap/extension-subscript";
 import type { RichNode } from "./flow";
+import {
+  Citation,
+  Caption,
+  Appendix,
+  GeneratedIndex,
+  ColumnBreak,
+  Annotation,
+  Media,
+  DocumentAttributes,
+  FormattingMarks,
+} from "./document-extensions";
 export type RichEditorInstance = Editor;
 const PageBreak = Node.create({
   name: "pageBreak",
@@ -57,6 +68,10 @@ export function RichEditor({
   inline = false,
   style,
   autoFocus = false,
+  showMarks = false,
+  autoCorrect = false,
+  positioned = false,
+  searchQuery = "",
 }: {
   content: RichNode;
   onChange: (node: RichNode) => void;
@@ -64,7 +79,12 @@ export function RichEditor({
   inline?: boolean;
   style?: React.CSSProperties;
   autoFocus?: boolean;
+  showMarks?: boolean;
+  autoCorrect?: boolean;
+  positioned?: boolean;
+  searchQuery?: string;
 }) {
+  const lastExternal = useRef("");
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -92,6 +112,19 @@ export function RichEditor({
       Subscript,
       PageBreak,
       Indent,
+      Citation,
+      Caption,
+      Appendix,
+      GeneratedIndex,
+      ColumnBreak,
+      Annotation,
+      ...Media,
+      DocumentAttributes,
+      FormattingMarks.configure({
+        enabled: showMarks,
+        autoCorrect,
+        query: searchQuery,
+      }),
     ],
     content,
     autofocus: autoFocus ? "end" : false,
@@ -107,6 +140,8 @@ export function RichEditor({
         "aria-label": inline
           ? "Editar texto del documento"
           : "Contenido del documento",
+        spellcheck: "true",
+        lang: "es",
       },
       transformPastedHTML: (html) => {
         const doc = new DOMParser().parseFromString(html, "text/html");
@@ -119,15 +154,55 @@ export function RichEditor({
     },
   });
   useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const incoming = JSON.stringify(
+      editor.schema.nodeFromJSON(content).toJSON(),
+    );
+    if (incoming === lastExternal.current) return;
+    lastExternal.current = incoming;
     if (
       editor &&
       !editor.isDestroyed &&
-      JSON.stringify(editor.getJSON()) !== JSON.stringify(content)
-    )
+      JSON.stringify(editor.getJSON()) !== incoming
+    ) {
+      const { from, to } = editor.state.selection;
       editor.commands.setContent(content, { emitUpdate: false });
+      const end = editor.state.doc.content.size;
+      editor.commands.setTextSelection({
+        from: Math.min(from, end),
+        to: Math.min(to, end),
+      });
+    }
   }, [content, editor]);
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const extension = editor.extensionManager.extensions.find(
+      (e) => e.name === "formattingMarks",
+    );
+    if (extension) {
+      Object.assign(
+        (
+          editor.storage as unknown as Record<
+            string,
+            { enabled: boolean; autoCorrect: boolean; query: string }
+          >
+        ).formattingMarks,
+        { enabled: showMarks, autoCorrect, query: searchQuery },
+      );
+      editor.view.dispatch(editor.state.tr);
+    }
+  }, [editor, showMarks, autoCorrect, searchQuery]);
   return (
-    <div className={inline ? "inline-editor" : "rich-editor"} style={style}>
+    <div
+      className={
+        positioned
+          ? "pdf-document-editor"
+          : inline
+            ? "inline-editor"
+            : "rich-editor"
+      }
+      style={style}
+    >
       <EditorContent editor={editor} />
     </div>
   );

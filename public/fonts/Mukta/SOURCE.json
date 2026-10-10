@@ -1,0 +1,23 @@
+{
+  "family": "Mukta",
+  "repository": "https://github.com/google/fonts",
+  "revision": "bd8f81ddb5c74d5c8897b36ad88b440266245103",
+  "licenseSource": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/mukta/OFL.txt",
+  "files": [
+    {
+      "file": "Mukta-Regular.ttf",
+      "style": "Regular",
+      "bytes": 432248,
+      "sha256": "2958e4af564507df2a856164df6f9978dacb03f999a4f34a0c269dc8a4de9688",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/mukta/Mukta-Regular.ttf"
+    },
+    {
+      "file": "Mukta-Bold.ttf",
+      "style": "Bold",
+      "bytes": 418416,
+      "sha256": "7d22891cd57507b04af95a67ffaf59b7073b3595a27d1cfbbcefb418de820a12",
+      "url": "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/mukta/Mukta-Bold.ttf"
+    }
+  ],
+  "changes": "None. Original static font binaries; filenames normalized only."
+}

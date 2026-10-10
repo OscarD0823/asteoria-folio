@@ -81,7 +81,7 @@ import {
   type ProjectSummary,
   pruneSources,
 } from "./storage";
-import { projectBytes, readProject } from "./projects";
+import { projectBytes, readProject, validateLayout } from "./projects";
 import {
   defaultLayout,
   pageSize,
@@ -89,6 +89,16 @@ import {
   plainText,
   type PageLayout,
 } from "./flow";
+import { renderFlow } from "./flow-renderer";
+import { DocumentNavigation } from "./DocumentNavigation";
+import { blankWithWatermarks, watermarkCandidate } from "./watermarks";
+import { insertBlankPage } from "./page-insertion";
+import { WordTools } from "./WordTools";
+import { DocumentRuler } from "./DocumentRuler";
+import { normalizeAcademicDocument, academicPlainText } from "./academic";
+import { documentStatistics } from "./document-tools";
+import type { TextPreparation, Inspection } from "./native";
+import type { RichNode } from "./flow";
 import { fontFamilies } from "./fonts";
 import { RichEditor, type RichEditorInstance } from "./LazyRichEditor";
 import { PageFrame } from "./PageFrame";
@@ -135,6 +145,11 @@ export default function Studio() {
     [selectedId, setSelectedId] = useState(""),
     [editing, setEditing] = useState(""),
     [tool, setTool] = useState<Tool>("select");
+  const [showMarks, setShowMarks] = useState(false),
+    [autoCorrect, setAutoCorrect] = useState(false),
+    [showRuler, setShowRuler] = useState(true),
+    [navigation, setNavigation] = useState(false),
+    [searchQuery, setSearchQuery] = useState("");
   const [tab, setTab] = useState("Inicio"),
     [view, setView] = useState<"write" | "pdf">("write"),
     [sidebar, setSidebar] = useState(window.innerWidth > 850),
@@ -190,11 +205,24 @@ export default function Studio() {
       .find((m) => m.id === selectedId),
     writing = !!workspace.flow && view === "write";
   const rich =
-    editor && !editor.isDestroyed && (writing || !!editing) ? editor : null;
-  const fail = (e: unknown) =>
+    editor && !editor.isDestroyed && (writing || !!editing || tool === "edit")
+      ? editor
+      : null;
+  const fail = (e: unknown) => {
+    if (
+      e instanceof Error &&
+      (/Loading aborted|Rendering cancelled/i.test(e.message) ||
+        [
+          "AbortException",
+          "RenderingCancelledException",
+          "AbortError",
+        ].includes(e.name))
+    )
+      return;
     setError(
       e instanceof Error ? e.message : "No pudimos completar esta acción.",
     );
+  };
   const inform = (s: string) => {
     setNotice(s);
     setError("");
@@ -324,14 +352,22 @@ export default function Studio() {
     const expected = ++flowJob.current,
       flow = workspace.flow;
     const t = setTimeout(() => {
-      buildFlowPdf(flow, state.current.name)
-        .then(async (bytes) => {
+      renderFlow(flow, state.current.name)
+        .then(async ({ bytes, content, pageMap }) => {
           if (expected !== flowJob.current || state.current.flow !== flow)
             return;
           const doc = await PDFDocument.load(bytes),
             sourceId = uid();
           const next = {
             ...state.current,
+            flow: {
+              ...flow,
+              pageMap,
+              content:
+                JSON.stringify(content) === JSON.stringify(flow.content)
+                  ? flow.content
+                  : content,
+            },
             sources: [
               { id: sourceId, name: state.current.name + ".pdf", bytes },
             ],
@@ -347,13 +383,20 @@ export default function Studio() {
           setWorkspace(next);
           if (!activeId) setActiveId(next.pages[0].id);
         })
-        .catch(fail);
+        .catch((e) => {
+          if (e?.name !== "AbortError") fail(e);
+        });
     }, 700);
     return () => {
       clearTimeout(t);
       flowJob.current++;
     };
-  }, [workspace.flow]);
+  }, [
+    workspace.flow?.content,
+    workspace.flow?.layout,
+    workspace.flow?.references,
+    workspace.flow?.academicStyle,
+  ]);
   useEffect(() => {
     if (!rich) return;
     const update = () => setTick((n) => n + 1);
@@ -562,6 +605,10 @@ export default function Studio() {
     }
   }
   function choose(next: Tool) {
+    if (next === "edit" && !workspace.flow) {
+      void prepareAllText();
+      return;
+    }
     clear();
     setPending(undefined);
     setTool(next);
@@ -577,6 +624,217 @@ export default function Studio() {
       ].includes(next)
     )
       setSize(2);
+  }
+  async function prepareAllText() {
+    if (busy) return;
+    clear();
+    setBusy("Preparando todo el texto del documento…");
+    try {
+      let current = state.current;
+      for (const source of current.sources) {
+        const pending = current.pages.filter(
+          (p) => p.sourceId === source.id && !p.textReady,
+        );
+        if (!pending.length) continue;
+        const prepared = (await runNative({
+            action: "editAll",
+            bytes: source.bytes,
+            index: 0,
+          })) as TextPreparation,
+          id = uid();
+        current = {
+          ...current,
+          sources: [
+            ...current.sources,
+            { id, name: source.name, bytes: prepared.bytes },
+          ],
+          pages: current.pages.map((p) => {
+            if (!pending.some((a) => a.id === p.id)) return p;
+            const info = prepared.pages[p.index];
+            const marks: Mark[] = info.objects.map((o) => ({
+              id: uid(),
+              type: "text",
+              x: o.x,
+              y: (o.baseline ?? o.y + o.size) - o.size,
+              width: Math.max(
+                12,
+                o.width + 4,
+                Math.min(
+                  info.width - o.x - 35,
+                  ...info.objects
+                    .filter(
+                      (n) =>
+                        n.x > o.x + o.width * 0.6 &&
+                        n.y < o.y + o.height &&
+                        n.y + n.height > o.y,
+                    )
+                    .map((n) => n.x - o.x - 5),
+                ),
+              ),
+              height: o.size * 1.25,
+              size: o.size,
+              color: o.color,
+              font:
+                o.font === "Times-Roman"
+                  ? "PrismaSerif"
+                  : o.font === "Courier"
+                    ? "PrismaMono"
+                    : "PrismaSans",
+              bold: o.bold,
+              italic: o.italic,
+              text: o.text,
+              viewRotation: 0,
+            }));
+            return {
+              ...p,
+              sourceId: id,
+              textReady: true,
+              marks: [...p.marks, ...marks],
+            };
+          }),
+        };
+      }
+      commit(current);
+      setTool("edit");
+      inform(
+        "Todo el texto disponible está listo: escribe directamente en cualquier línea.",
+      );
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+    }
+  }
+  async function flexibleDocument() {
+    if (busy || state.current.flow) return;
+    setBusy("Organizando el PDF como documento editable…");
+    try {
+      const content: RichNode[] = [];
+      for (const page of state.current.pages) {
+        const source = state.current.sources.find(
+          (s) => s.id === page.sourceId,
+        )!;
+        const info = (await runNative({
+          action: "inspect",
+          bytes: source.bytes,
+          index: page.index,
+        })) as Inspection;
+        for (const o of info.objects) {
+          if (o.kind === "text" && o.text)
+            content.push({
+              type: "paragraph",
+              attrs: { id: uid() },
+              content: [
+                {
+                  type: "text",
+                  text: o.text,
+                  marks: [
+                    ...(o.bold ? [{ type: "bold" }] : []),
+                    ...(o.italic ? [{ type: "italic" }] : []),
+                    {
+                      type: "textStyle",
+                      attrs: {
+                        fontFamily:
+                          o.font === "Times-Roman"
+                            ? "PrismaSerif"
+                            : "PrismaSans",
+                        fontSize: o.size + "pt",
+                        color: o.color,
+                      },
+                    },
+                  ],
+                },
+              ],
+            });
+          else if (o.kind === "image" && o.data)
+            content.push({
+              type: "image",
+              attrs: { id: uid(), src: o.data, width: o.width / 0.75 },
+            });
+        }
+        for (const mark of page.marks) {
+          if (mark.type === "text")
+            content.push(
+              ...(mark.richText?.content ?? [
+                {
+                  type: "paragraph",
+                  content: mark.text ? [{ type: "text", text: mark.text }] : [],
+                },
+              ]),
+            );
+          else if (mark.type === "image" || mark.type === "signature")
+            content.push({
+              type: "image",
+              attrs: { id: mark.id, src: mark.data, width: mark.width / 0.75 },
+            });
+        }
+        content.push({ type: "pageBreak" });
+      }
+      content.pop();
+      const flow = {
+        content: normalizeAcademicDocument(
+          {
+            type: "doc",
+            content: content.length ? content : [{ type: "paragraph" }],
+          },
+          [],
+          "free",
+        ),
+        layout: state.current.layout ?? defaultLayout(),
+        academicStyle: "free" as const,
+        references: [],
+      };
+      commit({ ...state.current, flow });
+      setView("write");
+      clear();
+      inform(
+        "Escritura flexible activa. Revisa el orden y los saltos antes de aplicar un estilo académico.",
+      );
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy("");
+    }
+  }
+  async function updateDocumentLayout(next: PageLayout) {
+    validateLayout(next);
+    if (
+      !Number.isFinite(next.left) ||
+      !Number.isFinite(next.right) ||
+      !Number.isFinite(next.top) ||
+      !Number.isFinite(next.bottom) ||
+      [next.left, next.right, next.top, next.bottom].some(
+        (n) => n < 0 || n > 100,
+      )
+    )
+      throw new Error("Los márgenes deben estar entre 0 y 100 mm.");
+    const [w, h] = pageSize(next);
+    if (
+      w - ((next.left + next.right) * 72) / 25.4 < 80 ||
+      h - ((next.top + next.bottom) * 72) / 25.4 < 100
+    )
+      throw new Error("Reduce los márgenes para dejar espacio al contenido.");
+    if (state.current.flow)
+      commit({
+        ...state.current,
+        flow: { ...state.current.flow, layout: next },
+      });
+    else {
+      setBusy("Aplicando diseño…");
+      try {
+        const current = state.current.layout;
+        const geometry =
+          JSON.stringify({ ...next, watermark: undefined }) !==
+          JSON.stringify({ ...current, watermark: undefined });
+        const changed = geometry
+          ? await fitPdfToLayout(state.current, next)
+          : state.current;
+        commit({ ...changed, layout: next });
+      } finally {
+        setBusy("");
+      }
+    }
+    setLayout(next);
   }
   function select(id: string, edit = false) {
     if (edit && editing !== id)
@@ -940,21 +1198,74 @@ export default function Studio() {
       setBusy("");
     }
   }
-  async function blank() {
-    if (writing && rich) {
-      rich.chain().focus().insertContent({ type: "pageBreak" }).run();
+  async function blank(placement = "below") {
+    if (state.current.flow) {
+      const flow = state.current.flow,
+        block =
+          writing && rich
+            ? rich.state.selection.$from.depth
+              ? rich.state.selection.$from.node(1)
+              : rich.state.doc.nodeAt(rich.state.selection.from)
+            : undefined,
+        page =
+          Number(block?.attrs.page) ||
+          flow.pageMap?.[String(block?.attrs.id)] ||
+          Math.max(1, workspace.pages.indexOf(active) + 1);
+      const content = insertBlankPage(
+        flow.content,
+        page,
+        placement,
+        flow.pageMap,
+      );
+      commit({
+        ...state.current,
+        flow: {
+          ...flow,
+          content: normalizeAcademicDocument(
+            content,
+            flow.references ?? [],
+            flow.academicStyle ?? "free",
+          ),
+        },
+      });
       return;
     }
     setBusy("Añadiendo página…");
     try {
-      const d = await PDFDocument.create();
-      d.addPage(pageSize(layout));
-      const next = await appendPdf(
-        state.current,
-        await d.save(),
-        "Página nueva.pdf",
+      const current = state.current,
+        source = current.sources.find((s) => s.id === active?.sourceId),
+        pageLayout = current.layout ?? layout;
+      let bytes: Uint8Array;
+      if (source && active) {
+        const info = (await runNative({
+          action: "watermarks",
+          bytes: source.bytes,
+          index: active.index,
+        })) as Inspection;
+        bytes = await blankWithWatermarks(
+          source.bytes,
+          active.index,
+          pageLayout,
+          watermarkCandidate(info.objects, info.width, info.height),
+        );
+      } else {
+        const d = await PDFDocument.create();
+        d.addPage(pageSize(pageLayout));
+        bytes = await d.save();
+      }
+      const next = await appendPdf(current, bytes, "Página nueva.pdf");
+      const added = next.pages.at(-1)!,
+        pages = next.pages.slice(0, -1),
+        at = pages.findIndex((p) => p.id === active?.id);
+      pages.splice(
+        placement === "end"
+          ? pages.length
+          : Math.max(0, at + (placement === "above" ? 0 : 1)),
+        0,
+        added,
       );
-      commit({ ...next, name: state.current.name });
+      commit({ ...next, pages, name: state.current.name });
+      setActiveId(added.id);
     } catch (e) {
       fail(e);
     } finally {
@@ -1326,7 +1637,7 @@ export default function Studio() {
             </section>
           </main>
           <footer className="home-footer">
-            <span>Prisma PDF 3.0 · Hecho para crear.</span>
+            <span>Prisma PDF 4.0 · Hecho para crear.</span>
             <a
               href="https://github.com/OscarD0823/prisma-pdf"
               target="_blank"
@@ -1374,7 +1685,11 @@ export default function Studio() {
               {icon("Guardar proyecto", Save, () => void saveNamed())}
               {icon("Imprimir", Printer, () => void beginPrint())}
               <InstallApp />
-              <Button className="primary" onClick={beginExport}>
+              <Button
+                title="Guardar PDF"
+                className="primary"
+                onClick={beginExport}
+              >
                 <Download size={16} />
                 <span>Guardar PDF</span>
               </Button>
@@ -1382,7 +1697,21 @@ export default function Studio() {
           </header>
           <nav className="ribbon-tabs">
             <div>
-              {["Inicio", "Insertar", "Diseño", "Páginas"].map((t) => (
+              {[
+                "Inicio",
+                "Insertar",
+                "Diseño",
+                "Referencias",
+                "Revisar",
+                "Vista",
+                "Páginas",
+                ...(["image", "equation", "chart", "shape", "video"].some(
+                  (type) => rich?.isActive(type),
+                ) || selected?.type === "image"
+                  ? ["Formato de imagen"]
+                  : []),
+                ...(rich?.isActive("table") ? ["Diseño de tabla"] : []),
+              ].map((t) => (
                 <Button
                   key={t}
                   className={tab === t ? "active" : ""}
@@ -1399,6 +1728,10 @@ export default function Studio() {
                     className={view === "write" ? "active" : ""}
                     onClick={() => {
                       setView("write");
+                      if (
+                        ["Formato de imagen", "Diseño de tabla"].includes(tab)
+                      )
+                        setTab("Inicio");
                       clear();
                     }}
                   >
@@ -1408,6 +1741,10 @@ export default function Studio() {
                     className={view === "pdf" ? "active" : ""}
                     onClick={() => {
                       setView("pdf");
+                      if (
+                        ["Formato de imagen", "Diseño de tabla"].includes(tab)
+                      )
+                        setTab("Inicio");
                       clear();
                     }}
                   >
@@ -1427,442 +1764,493 @@ export default function Studio() {
             aria-label="Herramientas del documento"
             data-format-tick={tick}
           >
-            {tab === "Inicio" ? (
-              <>
-                {!workspace.flow && (
-                  <div className="ribbon-group tools-group">
-                    <div className="tool-buttons">
-                      {tools.map((t) => (
-                        <Button
-                          key={t.id}
-                          title={t.label}
-                          className={tool === t.id ? "active" : ""}
-                          onClick={() => choose(t.id)}
-                        >
-                          <t.icon size={20} />
-                          <span>{t.label}</span>
-                        </Button>
-                      ))}
+            {["Inicio", "Insertar", "Diseño", "Páginas"].includes(tab) &&
+              (tab === "Inicio" ? (
+                <>
+                  {!workspace.flow && (
+                    <div className="ribbon-group tools-group">
+                      <div className="tool-buttons">
+                        {tools.map((t) => (
+                          <Button
+                            key={t.id}
+                            title={t.label}
+                            className={tool === t.id ? "active" : ""}
+                            onClick={() => choose(t.id)}
+                          >
+                            <t.icon size={20} />
+                            <span>{t.label}</span>
+                          </Button>
+                        ))}
+                      </div>
+                      <small>Editar documento</small>
                     </div>
-                    <small>Editar documento</small>
-                  </div>
-                )}
-                <div className="ribbon-group font-group">
-                  <div className="ribbon-row">
-                    <select
-                      aria-label="Tipo de letra"
-                      value={sf}
-                      onChange={(e) => format("font", e.target.value)}
-                    >
-                      {fontFamilies.map((f) => (
-                        <option key={f.value} value={f.value}>
-                          {f.label}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      aria-label="Tamaño de letra"
-                      type="number"
-                      min="6"
-                      max="144"
-                      key={ss}
-                      defaultValue={ss}
-                      onBlur={(e) =>
-                        format(
-                          "size",
-                          String(
-                            Math.max(
-                              6,
-                              Math.min(144, Number(e.target.value) || 12),
-                            ),
-                          ),
-                        )
-                      }
-                    />
-                  </div>
-                  <div className="ribbon-row">
-                    {icon(
-                      "Negrita",
-                      Bold,
-                      () => format("bold"),
-                      false,
-                      rich?.isActive("bold") ??
-                        (selected?.richText
-                          ? hasRichMark(selected.richText, "bold")
-                          : selected?.bold),
-                    )}
-                    {icon(
-                      "Cursiva",
-                      Italic,
-                      () => format("italic"),
-                      false,
-                      rich?.isActive("italic") ??
-                        (selected?.richText
-                          ? hasRichMark(selected.richText, "italic")
-                          : selected?.italic),
-                    )}
-                    {icon(
-                      "Subrayado",
-                      Underline,
-                      () => format("underline"),
-                      false,
-                      rich?.isActive("underline") ??
-                        (selected?.richText
-                          ? hasRichMark(selected.richText, "underline")
-                          : selected?.underline),
-                    )}
-                    {icon(
-                      "Tachado",
-                      Strikethrough,
-                      () => format("strike"),
-                      false,
-                      rich?.isActive("strike") ??
-                        (selected?.richText
-                          ? hasRichMark(selected.richText, "strike")
-                          : selected?.strike),
-                    )}
-                    <label className="color-control">
-                      <span>A</span>
+                  )}
+                  <div className="ribbon-group font-group">
+                    <div className="ribbon-row">
+                      <select
+                        aria-label="Tipo de letra"
+                        value={sf}
+                        onChange={(e) => format("font", e.target.value)}
+                      >
+                        {fontFamilies.map((f) => (
+                          <option key={f.value} value={f.value}>
+                            {f.label}
+                          </option>
+                        ))}
+                      </select>
                       <input
-                        aria-label="Color de texto"
-                        type="color"
-                        value={color}
-                        onChange={(e) => format("color", e.target.value)}
+                        aria-label="Tamaño de letra"
+                        type="number"
+                        min="6"
+                        max="144"
+                        key={ss}
+                        defaultValue={ss}
+                        onBlur={(e) =>
+                          format(
+                            "size",
+                            String(
+                              Math.max(
+                                6,
+                                Math.min(144, Number(e.target.value) || 12),
+                              ),
+                            ),
+                          )
+                        }
                       />
-                    </label>
-                    {icon("Color de resaltado", Highlighter, () =>
-                      rich ? format("highlight") : choose("highlight"),
-                    )}
+                    </div>
+                    <div className="ribbon-row">
+                      {icon(
+                        "Negrita",
+                        Bold,
+                        () => format("bold"),
+                        false,
+                        rich?.isActive("bold") ??
+                          (selected?.richText
+                            ? hasRichMark(selected.richText, "bold")
+                            : selected?.bold),
+                      )}
+                      {icon(
+                        "Cursiva",
+                        Italic,
+                        () => format("italic"),
+                        false,
+                        rich?.isActive("italic") ??
+                          (selected?.richText
+                            ? hasRichMark(selected.richText, "italic")
+                            : selected?.italic),
+                      )}
+                      {icon(
+                        "Subrayado",
+                        Underline,
+                        () => format("underline"),
+                        false,
+                        rich?.isActive("underline") ??
+                          (selected?.richText
+                            ? hasRichMark(selected.richText, "underline")
+                            : selected?.underline),
+                      )}
+                      {icon(
+                        "Tachado",
+                        Strikethrough,
+                        () => format("strike"),
+                        false,
+                        rich?.isActive("strike") ??
+                          (selected?.richText
+                            ? hasRichMark(selected.richText, "strike")
+                            : selected?.strike),
+                      )}
+                      <label className="color-control">
+                        <span>A</span>
+                        <input
+                          aria-label="Color de texto"
+                          type="color"
+                          value={color}
+                          onChange={(e) => format("color", e.target.value)}
+                        />
+                      </label>
+                      {icon("Color de resaltado", Highlighter, () =>
+                        rich ? format("highlight") : choose("highlight"),
+                      )}
+                    </div>
+                    <small>Tipografía</small>
                   </div>
-                  <small>Tipografía</small>
-                </div>
-                <div className="ribbon-group paragraph-group">
-                  <div className="ribbon-row">
-                    {icon("Alinear izquierda", AlignLeft, () =>
-                      format("align", "left"),
-                    )}
-                    {icon("Centrar", AlignCenter, () =>
-                      format("align", "center"),
-                    )}
-                    {icon("Alinear derecha", AlignRight, () =>
-                      format("align", "right"),
-                    )}
-                    {icon("Justificar", AlignJustify, () =>
-                      format("align", "justify"),
-                    )}
-                    {icon(
-                      "Lista con viñetas",
-                      List,
-                      () => format("bullet"),
-                      !rich || !writing,
-                    )}
-                    {icon(
-                      "Lista numerada",
-                      ListOrdered,
-                      () => format("ordered"),
-                      !rich || !writing,
-                    )}
+                  <div className="ribbon-group paragraph-group">
+                    <div className="ribbon-row">
+                      {icon("Alinear izquierda", AlignLeft, () =>
+                        format("align", "left"),
+                      )}
+                      {icon("Centrar", AlignCenter, () =>
+                        format("align", "center"),
+                      )}
+                      {icon("Alinear derecha", AlignRight, () =>
+                        format("align", "right"),
+                      )}
+                      {icon("Justificar", AlignJustify, () =>
+                        format("align", "justify"),
+                      )}
+                      {icon(
+                        "Lista con viñetas",
+                        List,
+                        () => format("bullet"),
+                        !rich || !writing,
+                      )}
+                      {icon(
+                        "Lista numerada",
+                        ListOrdered,
+                        () => format("ordered"),
+                        !rich || !writing,
+                      )}
+                    </div>
+                    <div className="ribbon-row">
+                      {icon(
+                        "Reducir sangría",
+                        IndentDecrease,
+                        () => format("outdent"),
+                        !rich,
+                      )}
+                      {icon(
+                        "Aumentar sangría",
+                        IndentIncrease,
+                        () => format("indent"),
+                        !rich,
+                      )}
+                      <select
+                        aria-label="Interlineado"
+                        onChange={(e) => format("spacing", e.target.value)}
+                        defaultValue="1.45"
+                      >
+                        {["1", "1.25", "1.45", "1.5", "2"].map((s) => (
+                          <option key={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <small>Párrafo</small>
                   </div>
-                  <div className="ribbon-row">
-                    {icon(
-                      "Reducir sangría",
-                      IndentDecrease,
-                      () => format("outdent"),
-                      !rich,
-                    )}
-                    {icon(
-                      "Aumentar sangría",
-                      IndentIncrease,
-                      () => format("indent"),
-                      !rich,
-                    )}
-                    <select
-                      aria-label="Interlineado"
-                      onChange={(e) => format("spacing", e.target.value)}
-                      defaultValue="1.45"
-                    >
-                      {["1", "1.25", "1.45", "1.5", "2"].map((s) => (
-                        <option key={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <small>Párrafo</small>
-                </div>
-                <div className="ribbon-group">
-                  <select
-                    aria-label="Estilo de párrafo"
-                    disabled={!rich || !writing}
-                    onChange={(e) => format("heading", e.target.value)}
-                    defaultValue="0"
-                  >
-                    <option value="0">Normal</option>
-                    <option value="1">Título</option>
-                    <option value="2">Subtítulo</option>
-                    <option value="3">Encabezado</option>
-                  </select>
-                  <div className="ribbon-row">
-                    {icon(
-                      "Superíndice",
-                      Superscript,
-                      () => format("superscript"),
-                      !rich,
-                    )}
-                    {icon(
-                      "Subíndice",
-                      Subscript,
-                      () => format("subscript"),
-                      !rich,
-                    )}
-                    {icon(
-                      "Borrar formato",
-                      Eraser,
-                      () => format("clear"),
-                      !rich,
-                    )}
-                  </div>
-                  <small>Estilos</small>
-                </div>
-              </>
-            ) : tab === "Insertar" ? (
-              <>
-                <div className="ribbon-group">
-                  <div className="large-tools">
-                    <Button onClick={() => imageInput.current?.click()}>
-                      <ImagePlus />
-                      <span>Imagen</span>
-                    </Button>
-                    <Button onClick={() => setDialog("signature")}>
-                      <PenLine />
-                      <span>Firma</span>
-                    </Button>
-                    <Button
-                      disabled={!rich || !writing}
-                      onClick={() => setDialog("table")}
-                    >
-                      <Table2 />
-                      <span>Tabla</span>
-                    </Button>
-                    <Button
-                      disabled={!rich || !writing}
-                      onClick={() => setDialog("link")}
-                    >
-                      <Link2 />
-                      <span>Enlace</span>
-                    </Button>
-                    <Button onClick={() => void blank()}>
-                      <FilePlus2 />
-                      <span>
-                        {writing ? "Salto de página" : "Página en blanco"}
-                      </span>
-                    </Button>
-                  </div>
-                  <small>Elementos</small>
-                </div>
-                {rich?.isActive("table") && (
                   <div className="ribbon-group">
+                    <select
+                      aria-label="Estilo de párrafo"
+                      disabled={!rich || !writing}
+                      onChange={(e) => format("heading", e.target.value)}
+                      defaultValue="0"
+                    >
+                      <option value="0">Normal</option>
+                      <option value="1">Título</option>
+                      <option value="2">Subtítulo</option>
+                      <option value="3">Encabezado</option>
+                    </select>
                     <div className="ribbon-row">
-                      <Button
-                        onClick={() => rich.chain().focus().addRowAfter().run()}
-                      >
-                        + Fila
-                      </Button>
-                      <Button
-                        onClick={() =>
-                          rich.chain().focus().addColumnAfter().run()
-                        }
-                      >
-                        + Columna
-                      </Button>
-                      <Button
-                        onClick={() =>
-                          rich.chain().focus().mergeOrSplit().run()
-                        }
-                      >
-                        Unir / separar
-                      </Button>
+                      {icon(
+                        "Superíndice",
+                        Superscript,
+                        () => format("superscript"),
+                        !rich,
+                      )}
+                      {icon(
+                        "Subíndice",
+                        Subscript,
+                        () => format("subscript"),
+                        !rich,
+                      )}
+                      {icon(
+                        "Borrar formato",
+                        Eraser,
+                        () => format("clear"),
+                        !rich,
+                      )}
                     </div>
-                    <div className="ribbon-row">
-                      <Button
-                        onClick={() => rich.chain().focus().deleteRow().run()}
-                      >
-                        Quitar fila
-                      </Button>
-                      <Button
-                        onClick={() =>
-                          rich.chain().focus().deleteColumn().run()
-                        }
-                      >
-                        Quitar columna
-                      </Button>
-                      <Button
-                        onClick={() => rich.chain().focus().deleteTable().run()}
-                      >
-                        Quitar tabla
-                      </Button>
-                    </div>
-                    <small>Tabla seleccionada</small>
+                    <small>Estilos</small>
                   </div>
-                )}
-                {!workspace.flow && (
+                </>
+              ) : tab === "Insertar" ? (
+                <>
                   <div className="ribbon-group">
                     <div className="large-tools">
-                      {[
-                        {
-                          id: "objects",
-                          icon: ImagePlus,
-                          label: "Imágenes originales",
-                        },
-                        { id: "rectangle", icon: Square, label: "Rectángulo" },
-                        { id: "ellipse", icon: Circle, label: "Elipse" },
-                        { id: "arrow", icon: ArrowRight, label: "Flecha" },
-                        { id: "draw", icon: PenLine, label: "Dibujo" },
-                        { id: "redact", icon: Eraser, label: "Borrar área" },
-                      ].map((t) => (
+                      <Button onClick={() => imageInput.current?.click()}>
+                        <ImagePlus />
+                        <span>Imagen</span>
+                      </Button>
+                      <Button onClick={() => setDialog("signature")}>
+                        <PenLine />
+                        <span>Firma</span>
+                      </Button>
+                      <Button
+                        disabled={!rich || !writing}
+                        onClick={() => setDialog("table")}
+                      >
+                        <Table2 />
+                        <span>Tabla</span>
+                      </Button>
+                      <Button
+                        disabled={!rich || !writing}
+                        onClick={() => setDialog("link")}
+                      >
+                        <Link2 />
+                        <span>Enlace</span>
+                      </Button>
+                    </div>
+                    <small>Elementos</small>
+                  </div>
+                  {rich?.isActive("table") && (
+                    <div className="ribbon-group">
+                      <div className="ribbon-row">
                         <Button
-                          key={t.id}
-                          className={tool === t.id ? "active" : ""}
-                          onClick={() => choose(t.id as Tool)}
+                          onClick={() =>
+                            rich.chain().focus().addRowAfter().run()
+                          }
                         >
-                          <t.icon />
-                          <span>{t.label}</span>
+                          + Fila
                         </Button>
+                        <Button
+                          onClick={() =>
+                            rich.chain().focus().addColumnAfter().run()
+                          }
+                        >
+                          + Columna
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            rich.chain().focus().mergeOrSplit().run()
+                          }
+                        >
+                          Unir / separar
+                        </Button>
+                      </div>
+                      <div className="ribbon-row">
+                        <Button
+                          onClick={() => rich.chain().focus().deleteRow().run()}
+                        >
+                          Quitar fila
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            rich.chain().focus().deleteColumn().run()
+                          }
+                        >
+                          Quitar columna
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            rich.chain().focus().deleteTable().run()
+                          }
+                        >
+                          Quitar tabla
+                        </Button>
+                      </div>
+                      <small>Tabla seleccionada</small>
+                    </div>
+                  )}
+                  {!workspace.flow && (
+                    <div className="ribbon-group">
+                      <div className="large-tools">
+                        {[
+                          {
+                            id: "objects",
+                            icon: ImagePlus,
+                            label: "Imágenes originales",
+                          },
+                          {
+                            id: "rectangle",
+                            icon: Square,
+                            label: "Rectángulo",
+                          },
+                          { id: "ellipse", icon: Circle, label: "Elipse" },
+                          { id: "arrow", icon: ArrowRight, label: "Flecha" },
+                          { id: "draw", icon: PenLine, label: "Dibujo" },
+                          { id: "redact", icon: Eraser, label: "Borrar área" },
+                        ].map((t) => (
+                          <Button
+                            key={t.id}
+                            className={tool === t.id ? "active" : ""}
+                            onClick={() => choose(t.id as Tool)}
+                          >
+                            <t.icon />
+                            <span>{t.label}</span>
+                          </Button>
+                        ))}
+                      </div>
+                      <small>Objetos y formas</small>
+                    </div>
+                  )}
+                </>
+              ) : tab === "Diseño" ? (
+                <>
+                  <div className="ribbon-group">
+                    <div className="large-tools">
+                      <Button
+                        onClick={() => {
+                          setLayout(workspace.flow?.layout ?? layout);
+                          setDialog("layout");
+                        }}
+                      >
+                        <Maximize2 />
+                        <span>Márgenes y tamaño</span>
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setLayout(workspace.flow?.layout ?? layout);
+                          setDialog("layout");
+                        }}
+                      >
+                        <FileText />
+                        <span>Encabezado y pie</span>
+                      </Button>
+                      <Button onClick={() => void numbering()}>
+                        <ListOrdered />
+                        <span>Numeración</span>
+                      </Button>
+                    </div>
+                    <small>Diseño de página</small>
+                  </div>
+                  <div className="ribbon-group">
+                    <div className="palette">
+                      {palette.map((c) => (
+                        <button
+                          key={c}
+                          aria-label={"Usar color " + c}
+                          style={{ background: c }}
+                          onClick={() => {
+                            setColor(c);
+                            if (rich) format("color", c);
+                          }}
+                        />
                       ))}
                     </div>
-                    <small>Objetos y formas</small>
+                    <small>Colores del documento</small>
                   </div>
-                )}
-              </>
-            ) : tab === "Diseño" ? (
-              <>
-                <div className="ribbon-group">
-                  <div className="large-tools">
-                    <Button
-                      onClick={() => {
-                        setLayout(workspace.flow?.layout ?? layout);
-                        setDialog("layout");
-                      }}
-                    >
-                      <Maximize2 />
-                      <span>Márgenes y tamaño</span>
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setLayout(workspace.flow?.layout ?? layout);
-                        setDialog("layout");
-                      }}
-                    >
-                      <FileText />
-                      <span>Encabezado y pie</span>
-                    </Button>
-                    <Button onClick={() => void numbering()}>
-                      <ListOrdered />
-                      <span>Numeración</span>
-                    </Button>
-                  </div>
-                  <small>Diseño de página</small>
-                </div>
-                <div className="ribbon-group">
-                  <div className="palette">
-                    {palette.map((c) => (
-                      <button
-                        key={c}
-                        aria-label={"Usar color " + c}
-                        style={{ background: c }}
+                  <p className="ribbon-note">
+                    {workspace.flow
+                      ? "El texto continúa en nuevas páginas según tus márgenes."
+                      : "Los márgenes ajustan la página completa y conservan el diseño del PDF."}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="ribbon-group">
+                    <div className="large-tools">
+                      <Button onClick={() => mergeInput.current?.click()}>
+                        <Layers3 />
+                        <span>Unir PDF</span>
+                      </Button>
+                      <Button
                         onClick={() => {
-                          setColor(c);
-                          if (rich) format("color", c);
+                          setScope("range");
+                          setExportName(workspace.name);
+                          setDialog("export");
                         }}
-                      />
-                    ))}
+                      >
+                        <Scissors />
+                        <span>Extraer páginas</span>
+                      </Button>
+                      <Button
+                        disabled={!!workspace.flow}
+                        onClick={() => imagesInput.current?.click()}
+                      >
+                        <ImagePlus />
+                        <span>Imágenes a PDF</span>
+                      </Button>
+                    </div>
+                    <small>Organizar</small>
                   </div>
-                  <small>Colores del documento</small>
-                </div>
-                <p className="ribbon-note">
-                  {workspace.flow
-                    ? "El texto continúa en nuevas páginas según tus márgenes."
-                    : "Los márgenes ajustan la página completa y conservan el diseño del PDF."}
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="ribbon-group">
-                  <div className="large-tools">
-                    <Button onClick={() => mergeInput.current?.click()}>
-                      <Layers3 />
-                      <span>Unir PDF</span>
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setScope("range");
-                        setExportName(workspace.name);
-                        setDialog("export");
-                      }}
-                    >
-                      <Scissors />
-                      <span>Extraer páginas</span>
-                    </Button>
-                    <Button
-                      disabled={!!workspace.flow}
-                      onClick={() => imagesInput.current?.click()}
-                    >
-                      <ImagePlus />
-                      <span>Imágenes a PDF</span>
-                    </Button>
+                  <div className="ribbon-group">
+                    <div className="large-tools">
+                      <Button
+                        disabled={!!workspace.flow}
+                        onClick={() => pageAction("rotate")}
+                      >
+                        <RotateCw />
+                        <span>Girar</span>
+                      </Button>
+                      <Button
+                        disabled={!!workspace.flow}
+                        onClick={() => pageAction("copy")}
+                      >
+                        <Copy />
+                        <span>Duplicar</span>
+                      </Button>
+                      <Button
+                        disabled={
+                          !!workspace.flow || workspace.pages.length < 2
+                        }
+                        onClick={() => pageAction("delete")}
+                      >
+                        <Trash2 />
+                        <span>Eliminar</span>
+                      </Button>
+                    </div>
+                    <small>Página actual</small>
                   </div>
-                  <small>Organizar</small>
-                </div>
-                <div className="ribbon-group">
-                  <div className="large-tools">
-                    <Button
-                      disabled={!!workspace.flow}
-                      onClick={() => pageAction("rotate")}
-                    >
-                      <RotateCw />
-                      <span>Girar</span>
+                  <div className="ribbon-group">
+                    <div className="ribbon-row">
+                      {icon(
+                        "Subir página",
+                        ArrowUp,
+                        () => pageAction("up"),
+                        !!workspace.flow,
+                      )}
+                      {icon(
+                        "Bajar página",
+                        ArrowDown,
+                        () => pageAction("down"),
+                        !!workspace.flow,
+                      )}
+                    </div>
+                    <Button onClick={() => void portable()}>
+                      <Save size={16} />
+                      Copia editable
                     </Button>
-                    <Button
-                      disabled={!!workspace.flow}
-                      onClick={() => pageAction("copy")}
-                    >
-                      <Copy />
-                      <span>Duplicar</span>
-                    </Button>
-                    <Button
-                      disabled={!!workspace.flow || workspace.pages.length < 2}
-                      onClick={() => pageAction("delete")}
-                    >
-                      <Trash2 />
-                      <span>Eliminar</span>
-                    </Button>
+                    <small>Continuar después</small>
                   </div>
-                  <small>Página actual</small>
-                </div>
-                <div className="ribbon-group">
-                  <div className="ribbon-row">
-                    {icon(
-                      "Subir página",
-                      ArrowUp,
-                      () => pageAction("up"),
-                      !!workspace.flow,
-                    )}
-                    {icon(
-                      "Bajar página",
-                      ArrowDown,
-                      () => pageAction("down"),
-                      !!workspace.flow,
-                    )}
-                  </div>
-                  <Button onClick={() => void portable()}>
-                    <Save size={16} />
-                    Copia editable
-                  </Button>
-                  <small>Continuar después</small>
-                </div>
-              </>
-            )}
+                </>
+              ))}
+            <WordTools
+              tab={tab}
+              flow={workspace.flow}
+              editor={rich}
+              layout={workspace.flow?.layout ?? workspace.layout ?? layout}
+              onFlow={(flow) => {
+                commit({ ...state.current, flow });
+                setView("write");
+              }}
+              onLayout={(next) => {
+                void updateDocumentLayout(next).catch(fail);
+              }}
+              onConvert={flexibleDocument}
+              onBlank={blank}
+              showMarks={showMarks}
+              onShowMarks={setShowMarks}
+              autoCorrect={autoCorrect}
+              onAutoCorrect={setAutoCorrect}
+              showRuler={showRuler}
+              onShowRuler={setShowRuler}
+              onNavigate={() => {
+                setNavigation(true);
+                setSidebar(true);
+              }}
+              onLocate={(blockId) => {
+                setView("write");
+                setTimeout(
+                  () =>
+                    document
+                      .getElementById("block-" + blockId)
+                      ?.scrollIntoView({ block: "center", behavior: "smooth" }),
+                  0,
+                );
+              }}
+              onError={fail}
+              selected={selected}
+              onDeleteSelected={removeSelected}
+              onSelected={(m) => {
+                const p = workspace.pages.find((p) =>
+                  p.marks.some((n) => n.id === m.id),
+                );
+                if (p) changeMark(p.id, m);
+              }}
+            />
           </div>
           <div className="workspace">
-            <aside className={`pages-sidebar ${sidebar ? "" : "collapsed"}`}>
+            <aside
+              className={`pages-sidebar ${sidebar ? "" : "collapsed"} ${navigation ? "navigating" : ""}`}
+            >
               <div className="sidebar-title">
                 <span>
                   Páginas <b>{workspace.pages.length}</b>
@@ -1871,7 +2259,34 @@ export default function Studio() {
                   setSidebar(false),
                 )}
               </div>
-              <div className="page-list">
+              {navigation && (
+                <DocumentNavigation
+                  workspace={workspace}
+                  editor={rich}
+                  onPage={(id) => {
+                    setActiveId(id);
+                    if (workspace.flow) setView("pdf");
+                    setTimeout(
+                      () =>
+                        document.getElementById("page-" + id)?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        }),
+                      0,
+                    );
+                  }}
+                  onQuery={setSearchQuery}
+                  onClose={() => {
+                    setNavigation(false);
+                    setSearchQuery("");
+                  }}
+                  onError={fail}
+                />
+              )}
+              <div
+                className="page-list"
+                style={navigation ? { display: "none" } : undefined}
+              >
                 {workspace.pages.map((p, i) => (
                   <button
                     key={p.id}
@@ -1926,7 +2341,7 @@ export default function Studio() {
                   {writing
                     ? "DOCUMENTO DE TEXTO"
                     : tool === "edit"
-                      ? "HAZ CLIC EN UNA LÍNEA PARA EDITARLA"
+                      ? "ESCRIBE DIRECTAMENTE EN EL DOCUMENTO"
                       : tool === "highlight"
                         ? "SELECCIONA LAS PALABRAS PARA RESALTAR"
                         : pending
@@ -1935,10 +2350,8 @@ export default function Studio() {
                 </span>
                 <span>
                   {writing
-                    ? plainText(workspace.flow?.content)
-                        .trim()
-                        .split(/\s+/)
-                        .filter(Boolean).length + " palabras"
+                    ? documentStatistics(workspace.flow!.content).words +
+                      " palabras"
                     : workspace.pages.length + " páginas"}
                 </span>
               </div>
@@ -1952,16 +2365,66 @@ export default function Studio() {
                     padding: `${workspace.flow.layout.top}mm ${workspace.flow.layout.right}mm ${workspace.flow.layout.bottom}mm ${workspace.flow.layout.left}mm`,
                   }}
                 >
-                  <div className="paper-ruler" />
+                  {showRuler && (
+                    <DocumentRuler
+                      layout={workspace.flow.layout}
+                      onChange={(next) => {
+                        void updateDocumentLayout(next).catch(fail);
+                      }}
+                      firstLine={
+                        Number(
+                          rich?.getAttributes("paragraph").firstLineIndent,
+                        ) || 0
+                      }
+                      hanging={
+                        Number(
+                          rich?.getAttributes("paragraph").hangingIndent,
+                        ) || 0
+                      }
+                      onIndent={(first, hanging) =>
+                        rich
+                          ?.chain()
+                          .focus()
+                          .updateAttributes(
+                            rich.isActive("heading") ? "heading" : "paragraph",
+                            { firstLineIndent: first, hangingIndent: hanging },
+                          )
+                          .run()
+                      }
+                    />
+                  )}
+                  {workspace.flow.layout.watermark?.text && (
+                    <div
+                      className="flow-watermark"
+                      style={{
+                        color: workspace.flow.layout.watermark.color,
+                        opacity: workspace.flow.layout.watermark.opacity,
+                        transform: `translate(-50%,-50%) rotate(${-workspace.flow.layout.watermark.angle}deg)`,
+                        fontSize: workspace.flow.layout.watermark.size + "pt",
+                      }}
+                    >
+                      {workspace.flow.layout.watermark.text}
+                    </div>
+                  )}
                   <RichEditor
                     autoFocus
+                    showMarks={showMarks}
+                    autoCorrect={autoCorrect}
+                    searchQuery={searchQuery}
                     content={workspace.flow.content}
                     onFocus={setEditor}
                     onChange={(content) =>
                       commit(
                         {
                           ...state.current,
-                          flow: { ...state.current.flow!, content },
+                          flow: {
+                            ...state.current.flow!,
+                            content: normalizeAcademicDocument(
+                              content,
+                              state.current.flow!.references ?? [],
+                              state.current.flow!.academicStyle ?? "free",
+                            ),
+                          },
                         },
                         false,
                       )
@@ -1985,9 +2448,38 @@ export default function Studio() {
                       selected={selectedId}
                       editing={editing}
                       readonly={!!workspace.flow}
+                      watermark={
+                        !workspace.flow
+                          ? workspace.layout?.watermark
+                          : undefined
+                      }
                       onActive={() => setActiveId(p.id)}
                       onSelect={select}
                       onEditor={setEditor}
+                      showMarks={showMarks}
+                      autoCorrect={autoCorrect}
+                      searchQuery={searchQuery}
+                      onTextPage={(marks) =>
+                        commit(
+                          {
+                            ...state.current,
+                            pages: state.current.pages.map((a) =>
+                              a.id === p.id
+                                ? {
+                                    ...a,
+                                    marks: [
+                                      ...a.marks.filter(
+                                        (m) => m.type !== "text",
+                                      ),
+                                      ...marks,
+                                    ],
+                                  }
+                                : a,
+                            ),
+                          },
+                          false,
+                        )
+                      }
                       onMark={(m) => changeMark(p.id, m)}
                       onAdd={(m) => addMarks(p.id, [m])}
                       onNative={(o) => promote(p, o)}
@@ -2008,6 +2500,18 @@ export default function Studio() {
                 ? "Modo escritura"
                 : `Página ${Math.max(1, workspace.pages.indexOf(active) + 1)} de ${workspace.pages.length}`}
             </span>
+            {writing && workspace.flow && (
+              <span className="document-statistics">
+                {documentStatistics(
+                  workspace.flow.content,
+                ).words.toLocaleString("es-CO")}{" "}
+                palabras ·{" "}
+                {documentStatistics(
+                  workspace.flow.content,
+                ).characters.toLocaleString("es-CO")}{" "}
+                caracteres
+              </span>
+            )}
             {selected && (
               <div className="selection-toolbar">
                 <span>
@@ -2418,17 +2922,20 @@ export default function Studio() {
               <>
                 <h2 id="dialog-title">Un poco de orientación.</h2>
                 <p>
-                  <b>PDF cargado:</b> haz clic en Editar palabras y selecciona
-                  una línea. Escribe directamente sobre la página. Selecciona
-                  imágenes para moverlas y cambia su tamaño desde la esquina.
+                  <b>PDF cargado:</b> pulsa Editar palabras para preparar todo
+                  el texto del documento. Escribe directamente sobre la página.
+                  Selecciona imágenes para moverlas y cambia su tamaño desde la
+                  esquina.
                 </p>
                 <p>
                   <b>Resaltar:</b> arrastra sobre el texto para seleccionar
                   palabras. El resaltado sigue las líneas del PDF.
                 </p>
                 <p>
-                  <b>Documento nuevo:</b> escribe con formato, listas, tablas e
-                  imágenes. Vista PDF muestra las páginas finales.
+                  <b>Documento nuevo:</b> usa las pestañas de la cinta para
+                  formato, tablas, imágenes, ecuaciones y gráficos. Referencias
+                  aplica APA, IEEE o ISO 690 y crea índices y citas. Vista PDF
+                  muestra las páginas finales.
                 </p>
                 <p>
                   <b>Continuar después:</b> la última sesión se guarda

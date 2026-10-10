@@ -1,0 +1,37 @@
+{
+  "family": "Source Sans 3",
+  "repository": "https://github.com/adobe-fonts/source-sans",
+  "revision": "87b37a2daaed80fcb8e8ccb0085c4d72ddade12e",
+  "licenseSource": "https://raw.githubusercontent.com/adobe-fonts/source-sans/87b37a2daaed80fcb8e8ccb0085c4d72ddade12e/LICENSE.md",
+  "files": [
+    {
+      "file": "SourceSans3-Regular.ttf",
+      "style": "Regular",
+      "bytes": 431196,
+      "sha256": "4644c81b86ec9caaa76b634889968ed3c4f4f52f054855933acc7c2b21e53b0f",
+      "url": "https://raw.githubusercontent.com/adobe-fonts/source-sans/87b37a2daaed80fcb8e8ccb0085c4d72ddade12e/TTF/SourceSans3-Regular.ttf"
+    },
+    {
+      "file": "SourceSans3-Bold.ttf",
+      "style": "Bold",
+      "bytes": 428176,
+      "sha256": "9214b9d95e4231c609802815c2646c98174e2102d0d37f88978a7f8e71006e6a",
+      "url": "https://raw.githubusercontent.com/adobe-fonts/source-sans/87b37a2daaed80fcb8e8ccb0085c4d72ddade12e/TTF/SourceSans3-Bold.ttf"
+    },
+    {
+      "file": "SourceSans3-Italic.ttf",
+      "style": "Italic",
+      "bytes": 315812,
+      "sha256": "192afd78f0f54a3c69eaf02d43f4d9a821e9d6110e41d3d25d61a7385cd580e4",
+      "url": "https://raw.githubusercontent.com/adobe-fonts/source-sans/87b37a2daaed80fcb8e8ccb0085c4d72ddade12e/TTF/SourceSans3-It.ttf"
+    },
+    {
+      "file": "SourceSans3-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "bytes": 318700,
+      "sha256": "7978291fc1bf314db887e0366853b33c5cf2e964c7b95cfb9ce403a6ec46a842",
+      "url": "https://raw.githubusercontent.com/adobe-fonts/source-sans/87b37a2daaed80fcb8e8ccb0085c4d72ddade12e/TTF/SourceSans3-BoldIt.ttf"
+    }
+  ],
+  "changes": "None. Original static font binaries; filenames normalized only."
+}

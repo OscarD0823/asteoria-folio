@@ -1,0 +1,37 @@
+{
+  "family": "Source Serif 4",
+  "repository": "https://github.com/adobe-fonts/source-serif",
+  "revision": "80d3f8894c09c937bebfa9011247d2e1c79fd6f4",
+  "licenseSource": "https://raw.githubusercontent.com/adobe-fonts/source-serif/80d3f8894c09c937bebfa9011247d2e1c79fd6f4/LICENSE.md",
+  "files": [
+    {
+      "file": "SourceSerif4-Regular.ttf",
+      "style": "Regular",
+      "bytes": 261868,
+      "sha256": "e5a4ee6a3d87bb9024796be390c6771e2a0eb1883dae25effaf57ca01668e24b",
+      "url": "https://raw.githubusercontent.com/adobe-fonts/source-serif/80d3f8894c09c937bebfa9011247d2e1c79fd6f4/TTF/SourceSerif4-Regular.ttf"
+    },
+    {
+      "file": "SourceSerif4-Bold.ttf",
+      "style": "Bold",
+      "bytes": 271568,
+      "sha256": "7cf4f4e1ad74f45058d5bc61716b82560442fbdcd9d3654d2dea96bf6c683d86",
+      "url": "https://raw.githubusercontent.com/adobe-fonts/source-serif/80d3f8894c09c937bebfa9011247d2e1c79fd6f4/TTF/SourceSerif4-Bold.ttf"
+    },
+    {
+      "file": "SourceSerif4-Italic.ttf",
+      "style": "Italic",
+      "bytes": 187808,
+      "sha256": "9d2950a8f1da66e21502c35d646a1d2148e79f9ea43fd2158cf02f5232e7f430",
+      "url": "https://raw.githubusercontent.com/adobe-fonts/source-serif/80d3f8894c09c937bebfa9011247d2e1c79fd6f4/TTF/SourceSerif4-It.ttf"
+    },
+    {
+      "file": "SourceSerif4-BoldItalic.ttf",
+      "style": "BoldItalic",
+      "bytes": 191832,
+      "sha256": "7b215b37f8873f5579f3f8d2ded3ca7c588e2f435cd996605ebfc5befe2cd5eb",
+      "url": "https://raw.githubusercontent.com/adobe-fonts/source-serif/80d3f8894c09c937bebfa9011247d2e1c79fd6f4/TTF/SourceSerif4-BoldIt.ttf"
+    }
+  ],
+  "changes": "None. Original static font binaries; filenames normalized only."
+}
