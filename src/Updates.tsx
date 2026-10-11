@@ -192,6 +192,7 @@ export function Updates({
       <button
         ref={trigger}
         className={"update-button" + (newer || ready ? " available" : "")}
+        aria-label={newer || ready ? "Actualización disponible" : "Actualizar"}
         title="Actualizaciones"
         onClick={() => {
           setOpen(true);

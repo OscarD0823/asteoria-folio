@@ -613,6 +613,7 @@ export default function Sheets() {
             Prisma <b>Sheets</b>
           </span>
         </a>
+        {!book&&<span className="private-badge"><LockKeyhole size={13}/>100 % local</span>}
         {book && (
           <>
             <input
@@ -632,8 +633,10 @@ export default function Sheets() {
           </>
         )}
         <div className="sheets-header-actions">
+          {book&&<>
           <MacroStudio kind="sheets" bridge={book?{operations:['setCell','replaceText'],snapshot:()=>sheetMacroSnapshot(book),apply:async(operations,revision)=>{const previous=structuredClone(book.workbook.model);applySheetMacro(book,operations,revision);history.current.push(previous);if(history.current.length>20)history.current.shift();future.current=[];changed();}}:null}/>
           <TextProofing bridge={book?{operations:['setCell','replaceText'],snapshot:()=>sheetMacroSnapshot(book),apply:async(operations,revision)=>{const previous=structuredClone(book.workbook.model);applySheetMacro(book,operations,revision);history.current.push(previous);if(history.current.length>20)history.current.shift();future.current=[];changed();}}:null} text={()=>{const values:string[]=[];for(const current of book?.workbook.worksheets??[])current.eachRow(row=>row.eachCell(cell=>{if(typeof cell.value==="string")values.push(cell.value);}));return values.join("\n");}}/>
+          </>}
           <InstallApp />
           <Updates beforeReload={persist} onError={fail} />
           {book && (
