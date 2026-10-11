@@ -11,9 +11,9 @@ const require = createRequire(import.meta.url);
 const writer = process.env.VITE_PRODUCT === "writer";
 const sheets = process.env.VITE_PRODUCT === "sheets";
 const appVersion = writer
-  ? "1.1.1"
+  ? "1.2.0"
   : sheets
-    ? "0.1.1"
+    ? "0.2.0"
     : JSON.parse(readFileSync("package.json", "utf8")).version;
 const releaseTag =
   (sheets ? "sheets-v" : writer ? "writer-v" : "v") + appVersion;
@@ -49,12 +49,15 @@ writeFileSync(
         "-Windows-Setup.exe",
       features: sheets
         ? [
+            "Aplicación instalable y biblioteca completa de fuentes con favoritas",
             "Editor local de hojas XLSX y CSV",
             "Fórmulas, formatos y varias hojas",
             "Tablas para Word y Writer, exportación PDF e impresión",
             "Guardado local y aviso de funciones incompatibles",
           ]
         : [
+            "Aplicación instalable y descarga opcional de biblioteca sin conexión",
+            "Diccionario personal con definiciones e importación local",
             "Informe de compatibilidad al importar documentos Word",
             "Índices de tablas y figuras actualizables en Word",
             "Biblioteca de fuentes con favoritas, texto de muestra y vistas de lista o tarjetas",

@@ -36,6 +36,9 @@ import {
 import { download } from "./download";
 import { Updates } from "./Updates";
 import { InstallApp } from "./InstallApp";
+import { FontPicker } from "./FontPicker";
+import { fontFamilies } from "./fonts";
+import { officeFontCss, resolveOfficeFont } from "./office-fonts";
 import { product } from "./product";
 import { loadBook, saveBook } from "./sheets-storage";
 import "./sheets.css";
@@ -866,28 +869,13 @@ export default function Sheets() {
                   <small>Portapapeles</small>
                 </div>
                 <div className="sheet-tools-group">
-                  <select
-                    aria-label="Fuente de las celdas"
-                    value={active?.font?.name ?? "Calibri"}
-                    onChange={(e) => format({ font: { name: e.target.value } })}
-                  >
-                    {[
-                      "Calibri",
-                      "Arial",
-                      "Times New Roman",
-                      "Cambria",
-                      "Aptos",
-                      "Carlito",
-                      "Liberation Sans",
-                      "Liberation Serif",
-                      "Courier New",
-                      "Verdana",
-                      "Georgia",
-                      "Tahoma",
-                    ].map((f) => (
-                      <option key={f}>{f}</option>
-                    ))}
-                  </select>
+                  <FontPicker label="Fuente de las celdas"
+                    value={resolveOfficeFont(active?.font?.name)?.value ?? "Carlito"}
+                    displayLabel={active?.font?.name ?? "Calibri"}
+                    onChange={value => format({ font: { name: fontFamilies.find(font => font.value === value)?.label ?? "Carlito" } })}
+                    onError={error => setMessage(error instanceof Error ? error.message : "No se pudo seleccionar la fuente.")}
+                  />
+                  {resolveOfficeFont(active?.font?.name)?.label !== (active?.font?.name ?? "Calibri") && <small title="El nombre original se conserva al guardar el archivo XLSX">Vista previa: {resolveOfficeFont(active?.font?.name)?.label ?? "fuente del dispositivo o Carlito"}</small>}
                   <input
                     aria-label="Tamaño de letra"
                     type="number"
@@ -1449,17 +1437,7 @@ export default function Sheets() {
                           borderBottom: border("bottom"),
                           borderLeft: border("left"),
                           borderRight: border("right"),
-                          fontFamily:
-                            (
-                              {
-                                Calibri: "Carlito",
-                                Arial: "PrismaSans",
-                                "Times New Roman": "PrismaSerif",
-                                "Courier New": "PrismaMono",
-                              } as Record<string, string>
-                            )[cell.font?.name ?? ""] ??
-                            cell.font?.name ??
-                            "Carlito, Arial, sans-serif",
+                          fontFamily: officeFontCss(cell.font?.name),
                           fontSize:
                             ((cell.font?.size ?? 11) * zoom) / 100 + "pt",
                           fontWeight: cell.font?.bold ? "bold" : undefined,

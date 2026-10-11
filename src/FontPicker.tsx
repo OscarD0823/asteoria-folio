@@ -17,13 +17,17 @@ export function FontPicker({
   onAcademicFont,
   onImport,
   onError,
+  label = "Tipo de letra",
+  displayLabel,
 }: {
   value: string;
   fonts?: LocalFont[];
   onChange: (value: string) => void;
-  onAcademicFont: (font: string, size: number) => void;
-  onImport: (files: File[]) => Promise<void>;
+  onAcademicFont?: (font: string, size: number) => void;
+  onImport?: (files: File[]) => Promise<void>;
   onError: (error: unknown) => void;
+  label?: string;
+  displayLabel?: string;
 }) {
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState(""),
@@ -99,12 +103,12 @@ export function FontPicker({
       <button
         className="font-picker-button"
         ref={button}
-        aria-label="Tipo de letra"
+        aria-label={label}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >
-        {selected?.label ?? "Elegir fuente"} <span>▾</span>
+        {displayLabel ?? selected?.label ?? "Elegir fuente"} <span>▾</span>
       </button>
       {open &&
         createPortal(
@@ -156,8 +160,8 @@ export function FontPicker({
                     (f) => f.styles || f.file || f.value.startsWith("local-"),
                   ).length
                 }{" "}
-                familias disponibles en tu dispositivo. Vista previa y PDF
-                utilizan los mismos archivos.
+                familias incluidas. Vista previa y PDF utilizan los mismos archivos.
+                Para tener toda la biblioteca sin conexión, usa «Instalar app».
               </p>
               <div className="font-search">
                 <input
@@ -178,7 +182,7 @@ export function FontPicker({
                   <option value="serif">Con remates · serif</option>
                   <option value="sans-serif">Sin remates · sans serif</option>
                   <option value="monospace">Monoespaciadas</option>
-                  <option value="local">Mis fuentes</option>
+                  {(onImport || fonts.length > 0) && <option value="local">Mis fuentes</option>}
                 </select>
               </div>
               <div className="font-preview-controls">
@@ -229,7 +233,7 @@ export function FontPicker({
                   ☷
                 </button>
               </div>
-              <details className="essential-fonts">
+              {onAcademicFont && <details className="essential-fonts">
                 <summary>Fuentes para entregas académicas</summary>
                 <p>
                   APA permite varias fuentes legibles. IEEE suele usar Times New
@@ -272,7 +276,7 @@ export function FontPicker({
                 >
                   Guía de fuentes APA
                 </a>
-              </details>
+              </details>}
               <div
                 className={"font-catalog font-catalog-" + view}
                 role="group"
@@ -346,15 +350,15 @@ export function FontPicker({
                     tus favoritas.
                   </small>
                 </span>
-                <button
+                {onImport && <button
                   disabled={loading}
                   onClick={() => fileInput.current?.click()}
                 >
                   {loading ? "Leyendo fuentes…" : "Importar TTF / OTF"}
-                </button>
-                <small>
+                </button>}
+                {onImport && <small>
                   Se guardan en este proyecto, sin subirlas a ningún servidor.
-                </small>
+                </small>}
               </footer>
               <input
                 type="file"
@@ -367,7 +371,7 @@ export function FontPicker({
                   e.target.value = "";
                   setLoading(true);
                   try {
-                    await onImport(files);
+                    await onImport?.(files);
                   } catch (error) {
                     onError(error);
                   } finally {

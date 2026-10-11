@@ -8,6 +8,8 @@ import {
   type WordLocation,
 } from "./spelling";
 import { readPreference, writePreference } from "./preferences";
+import { LexiconManager } from "./LexiconManager";
+import { loadLexicon, saveLexicon, mergeLexicon, spellingTerm, type LexiconEntry } from "./lexicon";
 export const spellingKey = new PluginKey("prismaSpelling");
 export function SpellingReview({
   editor,
@@ -23,13 +25,34 @@ export function SpellingReview({
     [status, setStatus] = useState(""),
     [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-  const [accepted, setAccepted] = useState<string[]>(() =>
-    readPreference("personal-dictionary", []),
-  );
+  const [accepted, setAccepted] = useState<string[]>(() => {
+    const value = readPreference<unknown>("personal-dictionary", []);
+    return Array.isArray(value) ? value.filter((word): word is string => typeof word === "string" && spellingTerm(word)).slice(0, 5000) : [];
+  });
+  const [lexicon, setLexicon] = useState<LexiconEntry[]>([]), [lexiconOpen, setLexiconOpen] = useState(false),
+    [lexiconReady, setLexiconReady] = useState(false), [lexiconBusy, setLexiconBusy] = useState(false), [lexiconError, setLexiconError] = useState("");
   const [ignored, setIgnored] = useState<string[]>([]),
     [refresh, setRefresh] = useState(0);
   const revision = useRef(0),
     current = issues[index];
+  useEffect(() => {
+    let live = true;
+    void loadLexicon().then(async entries => {
+      const legacy = readPreference<unknown>("personal-dictionary", []);
+      const words = Array.isArray(legacy) ? legacy.filter((word): word is string => typeof word === "string" && spellingTerm(word)).slice(0, 5000) : [];
+      // Migrate the previous personal word list without replacing existing definitions.
+      const next = mergeLexicon(entries, words.map(term => ({ term, definition: "", spelling: true })));
+      if (words.length) { await saveLexicon(next); writePreference("personal-dictionary", []); }
+      if (live) { setLexicon(next); setAccepted(next.filter(entry => entry.spelling).map(entry => entry.term)); setLexiconReady(true); }
+    }).catch(error => { if (live) setLexiconError(error instanceof Error ? error.message : "No se pudo abrir el diccionario local."); });
+    return () => { live = false; };
+  }, []);
+  async function updateLexicon(entries: LexiconEntry[]) {
+    await saveLexicon(entries);
+    setLexicon(entries);
+    setAccepted(entries.filter(entry => entry.spelling).map(entry => entry.term));
+    writePreference("personal-dictionary", []);
+  }
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
     let timer: ReturnType<typeof setTimeout>;
@@ -146,6 +169,9 @@ export function SpellingReview({
         </button>
       </header>
       <p className="review-language">Español · diccionario local</p>
+      <button disabled={!lexiconReady || lexiconBusy} onClick={() => setLexiconOpen(true)}>Diccionario personal · {lexicon.length} entradas</button>
+      {lexiconError && <p role="alert">{lexiconError}</p>}
+      {lexiconOpen && <LexiconManager entries={lexicon} onSave={updateLexicon} onClose={() => setLexiconOpen(false)} />}
       {!editor ? (
         <>
           <p>
@@ -194,10 +220,12 @@ export function SpellingReview({
                   Omitir esta palabra
                 </button>
                 <button
-                  onClick={() => {
-                    const next = [...accepted, current.word].slice(-5000);
-                    setAccepted(next);
-                    writePreference("personal-dictionary", next);
+                  disabled={!lexiconReady || lexiconBusy}
+                  onClick={async () => {
+                    setLexiconBusy(true); setLexiconError("");
+                    try { await updateLexicon(mergeLexicon(lexicon, [{ term: current.word, definition: "", spelling: true }])); }
+                    catch (error) { setLexiconError(error instanceof Error ? error.message : "No se pudo guardar la palabra."); }
+                    finally { setLexiconBusy(false); }
                   }}
                 >
                   Agregar al diccionario
@@ -228,24 +256,6 @@ export function SpellingReview({
               </div>
             </>
           )}
-          <details>
-            <summary>Diccionario personal ({accepted.length})</summary>
-            {accepted.length ? (
-              <>
-                <p>{accepted.join(", ")}</p>
-                <button
-                  onClick={() => {
-                    setAccepted([]);
-                    writePreference("personal-dictionary", []);
-                  }}
-                >
-                  Restablecer diccionario personal
-                </button>
-              </>
-            ) : (
-              <p>Agrega nombres propios y términos que quieras conservar.</p>
-            )}
-          </details>
         </>
       )}
       <footer>

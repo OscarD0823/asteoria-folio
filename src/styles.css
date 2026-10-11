@@ -1449,6 +1449,10 @@ p {
     width: 200px;
   }
   .header-actions .install-button {
+    display: inline-flex;
+    padding: 8px;
+  }
+  .header-actions .install-button span {
     display: none;
   }
   .privacy-label {

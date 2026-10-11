@@ -902,7 +902,7 @@ async function buildFlowPass(
         column: number;
         span: number;
         rowspan: number;
-        lines: Line[];
+        lines: (Line & { align?: string })[];
         width: number;
       };
       const cells: Cell[] = [];
@@ -943,10 +943,10 @@ async function buildFlowPass(
         for (const child of c.node.content ?? [])
           c.lines.push(
             ...(await linesFor(child, Math.max(10, c.width - 16), getFont, {
-              size: flow.academicStyle === "apa" ? 12 : 10,
-              font: flow.academicStyle === "apa" ? "PrismaSerif" : "PrismaSans",
+              size: child.attrs?.fontSize ? Math.max(6, Math.min(144, Number(child.attrs.fontSize) || 11)) : flow.academicStyle === "apa" ? 12 : 10,
+              font: String(child.attrs?.fontFamily || (flow.academicStyle === "apa" ? "PrismaSerif" : "PrismaSans")),
               bold: c.node.type === "tableHeader",
-            })),
+            })).map(line => ({ ...line, align: String(child.attrs?.textAlign || "left") })),
           );
         const needed = c.lines.reduce((s, l) => s + l.height, 0) + 14;
         if (c.rowspan === 1) heights[c.row] = Math.max(heights[c.row], needed);
@@ -1005,7 +1005,7 @@ async function buildFlowPass(
               x + 8,
               textY,
               c.width - 16,
-              String(c.node.content?.[0]?.attrs?.textAlign ?? "left"),
+              line.align ?? "left",
             );
             textY += line.height;
           }

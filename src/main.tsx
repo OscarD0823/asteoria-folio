@@ -1,4 +1,5 @@
 import React from "react";
+import "./install-support";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./styles.css";

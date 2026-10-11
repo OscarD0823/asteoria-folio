@@ -1,9 +1,11 @@
 {
-  "version": "6.1.1",
-  "releaseUrl": "https://github.com/OscarD0823/prisma-pdf/releases/tag/v6.1.1",
-  "androidUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.1.1/Prisma-PDF-6.1.1-Android.apk",
-  "windowsUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.1.1/Prisma-PDF-6.1.1-Windows-Setup.exe",
+  "version": "6.2.0",
+  "releaseUrl": "https://github.com/OscarD0823/prisma-pdf/releases/tag/v6.2.0",
+  "androidUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.2.0/Prisma-PDF-6.2.0-Android.apk",
+  "windowsUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.2.0/Prisma-PDF-6.2.0-Windows-Setup.exe",
   "features": [
+    "Aplicación instalable y descarga opcional de biblioteca sin conexión",
+    "Diccionario personal con definiciones e importación local",
     "Informe de compatibilidad al importar documentos Word",
     "Índices de tablas y figuras actualizables en Word",
     "Biblioteca de fuentes con favoritas, texto de muestra y vistas de lista o tarjetas",

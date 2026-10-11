@@ -1,6 +1,6 @@
 import { defaultLayout, type FlowDocument, type RichNode } from "./flow";
 import { displayValue, parseAddress, type SheetsBook } from "./sheets-core";
-import { fontFamilies } from "./fonts";
+import { resolveOfficeFont } from "./office-fonts";
 export function sheetFlow(
   book: SheetsBook,
   name: string,
@@ -36,12 +36,7 @@ export function sheetFlow(
     for (let c = firstCol; c <= lastCol; c++) {
       const cell = sheet.getCell(r + 1, c + 1),
         font =
-          fontFamilies.find((f) => f.label === cell.font?.name)?.value ??
-          (cell.font?.name === "Times New Roman"
-            ? "PrismaSerif"
-            : cell.font?.name === "Calibri"
-              ? "Carlito"
-              : "PrismaSans");
+          resolveOfficeFont(cell.font?.name)?.value ?? "Carlito";
       const master = cell.isMerged ? parseAddress(cell.master.address) : null;
       if (
         master &&

@@ -1,4 +1,6 @@
-# Prisma PDF 6.1, Writer 1.1 y Sheets 0.1
+# Prisma PDF 6.2, Writer 1.2 y Sheets 0.2
+
+Las tres webs pueden instalarse desde **Instalar app**. Consulta la [guía de instalación y uso sin conexión](README-install.md) y la [revisión de los 17 proyectos de referencia](README-references.md).
 
 Editor de PDF y creador de documentos en español. Web, PWA, Android y Windows; todos procesan los documentos en el dispositivo.
 
@@ -32,7 +34,7 @@ Los documentos nuevos y la escritura flexible admiten tablas con celdas unidas, 
 
 **Exportar** permite elegir PDF, Word DOCX, HTML, Markdown, TXT y PNG. Varias páginas PNG se descargan en un ZIP. PDF y PNG admiten rangos; los otros formatos exportan el documento completo. Todos se generan en el dispositivo.
 
-DOCX conserva texto y tablas editables, estilos, vínculos, comentarios, secciones, encabezados, numeración y fuentes incrustadas. Ecuaciones, formas y gráficos se exportan como imágenes. La tabla de contenido incluye un campo TOC actualizable en Word, niveles, entradas y páginas; los demás índices son una copia del contenido generado. Las viñetas/números se exportan como texto. HTML incorpora fuentes e imágenes para lectura sin conexión, con un diseño continuo. Markdown y TXT priorizan el contenido. Para reproducir el diseño final utiliza PDF. También se pueden abrir DOCX y TXT localmente; los objetos avanzados de Word requieren revisión. Convertir un PDF de posiciones fijas a DOCX requiere revisar el orden de lectura y los saltos; no incluye OCR ni garantiza reconstruir cada tabla original.
+DOCX conserva texto y tablas editables, estilos, vínculos, comentarios, secciones, encabezados, numeración y fuentes incrustadas. Ecuaciones, formas y gráficos se exportan como imágenes. Los índices de contenidos, tablas y figuras incluyen campos TOC actualizables en Word. El índice de apéndices se exporta como una copia del contenido generado. Las viñetas/números se exportan como texto. HTML incorpora fuentes e imágenes para lectura sin conexión, con un diseño continuo. Markdown y TXT priorizan el contenido. Para reproducir el diseño final utiliza PDF. También se pueden abrir DOCX y TXT localmente; los objetos avanzados de Word requieren revisión. Convertir un PDF de posiciones fijas a DOCX requiere revisar el orden de lectura y los saltos; no incluye OCR ni garantiza reconstruir cada tabla original.
 
 En PDF cargados, cambiar márgenes ajusta la página completa al área útil conservando su diseño. Unir PDF convierte un documento de texto en PDF antes de añadir otros archivos. Las páginas PDF admiten extracción por rangos, reordenar, girar, duplicar, eliminar, numeración y conversión de imágenes a páginas. Una página en blanco puede ir arriba, abajo o al final; hereda las marcas de agua del proyecto, artefactos PDF identificados como marca de agua o textos grandes reconocidos como «BORRADOR»/«CONFIDENCIAL». Marcas no identificadas o integradas en un escaneo requieren añadirlas manualmente. Optimizar aplica compresión sin pérdida; no garantiza que todos los archivos reduzcan su tamaño.
 

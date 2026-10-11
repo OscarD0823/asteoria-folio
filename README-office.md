@@ -2,6 +2,8 @@
 
 El desarrollo sigue este orden: Writer y PDF, Sheets, Slides, Data y Publisher.
 
+Consulta la [revisión de proyectos de referencia](README-references.md) y la [guía de instalación, fuentes y diccionario local](README-install.md).
+
 | Programa | Aplicación Prisma | Estado y formato de intercambio |
 | --- | --- | --- |
 | Word | Prisma Writer | Disponible. DOCX, PDF, HTML, TXT y Markdown. |

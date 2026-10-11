@@ -10,6 +10,8 @@ const files = [
   "README-writer.md",
   "README-office.md",
   "README-sheets.md",
+  "README-install.md",
+  "README-references.md",
   "package.json",
   "pnpm-lock.yaml",
   "pnpm-workspace.yaml",
