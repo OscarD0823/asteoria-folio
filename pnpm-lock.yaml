@@ -70,6 +70,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.31.4
         version: 3.31.4
+      '@xmldom/xmldom':
+        specifier: 0.9.12
+        version: 0.9.12
       bidi-js:
         specifier: 1.0.3
         version: 1.0.3
@@ -79,9 +82,39 @@ importers:
       citeproc:
         specifier: 2.4.63
         version: 2.4.63
+      dictionary-ca:
+        specifier: ^3.0.0
+        version: 3.0.0
+      dictionary-de:
+        specifier: ^3.0.0
+        version: 3.0.0
+      dictionary-en:
+        specifier: ^4.0.0
+        version: 4.0.0
+      dictionary-en-gb:
+        specifier: ^3.0.0
+        version: 3.0.0
       dictionary-es:
         specifier: 4.0.0
         version: 4.0.0
+      dictionary-es-co:
+        specifier: ^2.0.0
+        version: 2.0.0
+      dictionary-fr:
+        specifier: ^3.0.0
+        version: 3.0.0
+      dictionary-it:
+        specifier: ^2.0.0
+        version: 2.0.0
+      dictionary-nl:
+        specifier: ^2.0.0
+        version: 2.0.0
+      dictionary-pt:
+        specifier: ^4.0.0
+        version: 4.0.0
+      dictionary-pt-pt:
+        specifier: ^2.0.0
+        version: 2.0.0
       docx:
         specifier: 9.9.0
         version: 9.9.0
@@ -94,6 +127,9 @@ importers:
       fflate:
         specifier: 0.8.3
         version: 0.8.3
+      hunspell-asm:
+        specifier: 4.0.2
+        version: 4.0.2
       hyperformula:
         specifier: 3.5.0
         version: 3.5.0
@@ -167,9 +203,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.6.0
         version: 4.7.0(supports-color@7.2.0)(vite@7.3.7(@types/node@22.20.5)(jiti@2.7.0)(tsx@4.23.15))
-      '@xmldom/xmldom':
-        specifier: 0.9.12
-        version: 0.9.12
       electron:
         specifier: 44.7.0
         version: 44.7.0(supports-color@7.2.0)
@@ -1482,8 +1515,38 @@ packages:
   detect-node@2.1.0:
     resolution: {integrity: sha512-T0NIuQpnTvFDATNuHN5roPwSBG83rFsuO+MXXH9/3N1eFbn4wcPjttvjMLEPWJ0RGUYgQE7cGgS3tNxbqCGM7g==}
 
+  dictionary-ca@3.0.0:
+    resolution: {integrity: sha512-h+crBYqX/X7cEU3cFAEgwIojOZTAw1wW4ybYN5Aum9f1oZ+8ULO/GGglLs8m8UBBGtSVLyoYf0CdvX8WKt8VDg==}
+
+  dictionary-de@3.0.0:
+    resolution: {integrity: sha512-0Xbq+YpWTscAL1e18aPPaqfG4goC2o9T595L/54v2OvOPC0/TJFFlclYanxuUoK73wutM5f9EgSuWGkvQXlOXw==}
+
+  dictionary-en-gb@3.0.0:
+    resolution: {integrity: sha512-gU/dwC9xGYPh/0CCcmGNXO8OwSgOySAqevcSXxADCsgUD+tr6OJ52u7XaC7No7dNssvdUSfVjkzcqLrRZq3kPA==}
+
+  dictionary-en@4.0.0:
+    resolution: {integrity: sha512-3NHnE1uq33ZE/CIwaZ6gqxa4BnglHnxeAcTM0GJ7cmtRGcvX9InMK/IqLtYcUMFCUpUNgybH+DzkqdgAo3F1zg==}
+
+  dictionary-es-co@2.0.0:
+    resolution: {integrity: sha512-ZEmmq2ogKRnJ6W3gqoOF5VTs+AGkrWrQTAlJ1JDcuR5O/Pf7oLArOQftyP88SHFnOoxs2HJoYh7AeP15Pxh8wA==}
+
   dictionary-es@4.0.0:
     resolution: {integrity: sha512-8J3IYdaHYmkojxqhB+DneQpek6N/s3MwbVk3bPNGQSTBT5kxJtmbuiT0LSDP0Al6K9Vevo1sjspG8AGP9Yvxiw==}
+
+  dictionary-fr@3.0.0:
+    resolution: {integrity: sha512-fhDRX1cRyHPA69GJg8R4XgNYgSQvbNHj3kr5UqvEG1OS5pJqH6P3GbO7wpTCwvr5KMQ0NxGIsXps9P5NyXRVEg==}
+
+  dictionary-it@2.0.0:
+    resolution: {integrity: sha512-klTygBjKRYKEeDmqLfDpI9eDCj334TQhbq2zExKREV4CMPiUsnXnO/0CGMTiRTRL+Wk+qXd0fKfEZbgw+gnjHw==}
+
+  dictionary-nl@2.0.0:
+    resolution: {integrity: sha512-BJRu3jT52mEjDunbpC9Y1UiQJy22VUuA/N6s2Oc5KuN+hHS3MDCoTQiyjifePd2rlHtZSy0fGZaB0qXiCGh7Vw==}
+
+  dictionary-pt-pt@2.0.0:
+    resolution: {integrity: sha512-N44fxg2uDhF71Ql20zpe6BpdMlVkOT7oyjltuOhRwb2mx2SX3CJ/lqUE6+/HKZdqaxggqNbM/qv02a+Sa1XQiA==}
+
+  dictionary-pt@4.0.0:
+    resolution: {integrity: sha512-ryJRhAtsaunBWw9grYXmVFftfab8+BCQ5wwh7fUzWO0oYEeMuR1lW2ubu1AHdvxOL32XP+u5wW/XhbFuoFuq8Q==}
 
   dir-compare@4.2.0:
     resolution: {integrity: sha512-2xMCmOoMrdQIPHdsTawECdNPwlVFB9zGcz3kuhmBO6U3oU+UQjsue0i8ayLKpgBcm+hcXPMVSGUN9d+pvJ6+VQ==}
@@ -1544,6 +1607,10 @@ packages:
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
+
+  emscripten-wasm-loader@3.0.3:
+    resolution: {integrity: sha512-fyq2maBt5LOou27LEBlL5H6G04BxgSamXkvmMsAuIT6rd8ioH4BxNQhuyl6jVPeODh6U8Wk1BoFZxzHpg3o8wA==}
+    engines: {node: '>=10'}
 
   end-of-stream@1.4.5:
     resolution: {integrity: sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==}
@@ -1743,6 +1810,10 @@ packages:
     resolution: {integrity: sha512-w9UMqWwJxHNOvoNzSJ2oPF5wvYcvP7jUvYzhp67yEhTi17ZDBBC1z9pTdGuzjD+EFIqLSYRweZjqfiPzQ06Ebg==}
     engines: {node: '>= 0.4'}
 
+  getroot@1.0.0:
+    resolution: {integrity: sha512-W9Q31kOv921dQuZBeAbK4R/dAPbC0WkhZD3alLcdVwjSkEtS1aX8twrzG3I5yo0sQ88M/d4JOqVbRiCuI/XPNA==}
+    engines: {node: '>=4.2.4', npm: '>=3.0.0'}
+
   glob@13.0.6:
     resolution: {integrity: sha512-Wjlyrolmm8uDpm/ogGyXZXb1Z+Ca2B8NbJwqBVg0axK9GbBeoS7yGV6vjXnYdGm6X53iehEuxxbyiKp8QmN4Vw==}
     engines: {node: 18 || 20 || >=22}
@@ -1821,6 +1892,10 @@ packages:
 
   https@1.0.0:
     resolution: {integrity: sha512-4EC57ddXrkaF0x83Oj8sM6SLQHAWXw90Skqu2M4AEWENZ3F02dFJE/GARA8igO79tcgYqGrD7ae4f5L3um2lgg==}
+
+  hunspell-asm@4.0.2:
+    resolution: {integrity: sha512-u3ZuEYKGYnLZlIs+k5S+KdY+Q57mYD46fTwZJCiSXdES+fhxcLNF5mJ0nxjqrPAgE/8Kow6XLxRdRd/HDUPQZg==}
+    engines: {node: '>=4'}
 
   hyperformula@3.5.0:
     resolution: {integrity: sha512-wV0IpiVEG1L36UGUR2vAROEWNVgOQDlTUyZTL67v75JuzSWh0ANEONuoKqdhHdhd94Uo2A1EVk9q8LZabYNDkw==}
@@ -2198,6 +2273,9 @@ packages:
   mupdf@1.28.1:
     resolution: {integrity: sha512-Gi11Ow2G1SlrXKJNZBL1eAIGFVih5+4ZKqjptamTVaj/5hnlrcVrVbyb7lHE2lfFKdxZPyv9ZtfOOq7XgjzEig==}
 
+  nanoid@2.1.11:
+    resolution: {integrity: sha512-s/snB+WGm6uwi0WjsZdaVcuf3KJXlfGl2LcxgwkEwJF0D/BWzVWAZW/XY4bFaiR7s0Jk3FPvlnepg1H1b1UwlA==}
+
   nanoid@3.3.20:
     resolution: {integrity: sha512-uKdg2G3GNCKQn9byYOpxbGqrT2fGO5KRt5J/8b3pok8rT6qxGWF6hxMyJiEYtAf+FVyYuD9hRaDqX5uPFYJ4ZQ==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -2245,6 +2323,10 @@ packages:
     resolution: {integrity: sha512-Zhq3a+yFKrYwSBluL4H9XP3m3y5uvQkB/09CwDruCiRmR/UJYnn9W4R48ry0uGC70aeTPKLynBtscP9efFFcPw==}
     engines: {node: ^20.17.0 || >=22.9.0}
     hasBin: true
+
+  normalize-path@2.1.1:
+    resolution: {integrity: sha512-3pKJwH184Xo/lnH6oyP1q2pMd7HcypqqmRs91/6/i2CGtWwIKGCkOOMTm/zXbgTEWHw1uNpNi/igc3ePOYHb6w==}
+    engines: {node: '>=0.10.0'}
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -2488,6 +2570,9 @@ packages:
   regexp.prototype.flags@1.5.4:
     resolution: {integrity: sha512-dYqgNSZbDwkaJ2ceRd9ojCGjBq+mOm9LmtXnAnEGyHhN/5R7iDW2TRw3h+o/jCFxus3P2LfWIIiwowAjANm7IA==}
     engines: {node: '>= 0.4'}
+
+  remove-trailing-separator@1.1.0:
+    resolution: {integrity: sha512-/hS+Y0u3aOfIETiaiirUFwDBDzmXPvO+jAfKTitUngIPzdKc6Z0LoFjM/CK5PL4C+eKwHohlHAb6H0VFfmmUsw==}
 
   require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
@@ -2849,6 +2934,10 @@ packages:
   universalify@2.0.1:
     resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}
     engines: {node: '>= 10.0.0'}
+
+  unixify@1.0.0:
+    resolution: {integrity: sha512-6bc58dPYhCMHHuwxldQxO3RRNZ4eCogZ/st++0+fcC1nr0jiGUtAdBJ2qzmLQWSxbtz42pWt4QQMiZ9HvZf5cg==}
+    engines: {node: '>=0.10.0'}
 
   untildify@4.0.0:
     resolution: {integrity: sha512-KK8xQ1mkzZeg9inewmFVDNkg3l5LUhoq9kN6iWYB/CC9YMG8HA+c1Q8HwDe6dEX7kErrEVNVBO3fWsVq5iDgtw==}
@@ -4430,7 +4519,27 @@ snapshots:
   detect-node@2.1.0:
     optional: true
 
+  dictionary-ca@3.0.0: {}
+
+  dictionary-de@3.0.0: {}
+
+  dictionary-en-gb@3.0.0: {}
+
+  dictionary-en@4.0.0: {}
+
+  dictionary-es-co@2.0.0: {}
+
   dictionary-es@4.0.0: {}
+
+  dictionary-fr@3.0.0: {}
+
+  dictionary-it@2.0.0: {}
+
+  dictionary-nl@2.0.0: {}
+
+  dictionary-pt-pt@2.0.0: {}
+
+  dictionary-pt@4.0.0: {}
 
   dir-compare@4.2.0:
     dependencies:
@@ -4542,6 +4651,12 @@ snapshots:
       sax: 1.1.4
 
   emoji-regex@8.0.0: {}
+
+  emscripten-wasm-loader@3.0.3:
+    dependencies:
+      getroot: 1.0.0
+      nanoid: 2.1.11
+      unixify: 1.0.0
 
   end-of-stream@1.4.5:
     dependencies:
@@ -4848,6 +4963,10 @@ snapshots:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
 
+  getroot@1.0.0:
+    dependencies:
+      tslib: 1.14.1
+
   glob@13.0.6:
     dependencies:
       minimatch: 10.2.6
@@ -4949,6 +5068,11 @@ snapshots:
       - supports-color
 
   https@1.0.0: {}
+
+  hunspell-asm@4.0.2:
+    dependencies:
+      emscripten-wasm-loader: 3.0.3
+      nanoid: 2.1.11
 
   hyperformula@3.5.0:
     dependencies:
@@ -5278,6 +5402,8 @@ snapshots:
 
   mupdf@1.28.1: {}
 
+  nanoid@2.1.11: {}
+
   nanoid@3.3.20: {}
 
   nanoid@6.0.2: {}
@@ -5330,6 +5456,10 @@ snapshots:
   nopt@9.0.0:
     dependencies:
       abbrev: 4.0.0
+
+  normalize-path@2.1.1:
+    dependencies:
+      remove-trailing-separator: 1.1.0
 
   normalize-path@3.0.0: {}
 
@@ -5625,6 +5755,8 @@ snapshots:
       get-proto: 1.0.1
       gopd: 1.2.0
       set-function-name: 2.0.2
+
+  remove-trailing-separator@1.1.0: {}
 
   require-directory@2.1.1: {}
 
@@ -6073,6 +6205,10 @@ snapshots:
   universalify@0.1.2: {}
 
   universalify@2.0.1: {}
+
+  unixify@1.0.0:
+    dependencies:
+      normalize-path: 2.1.1
 
   untildify@4.0.0: {}
 

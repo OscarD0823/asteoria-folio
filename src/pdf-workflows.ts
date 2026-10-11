@@ -1,5 +1,4 @@
-import {PDFDocument,PDFTextField,PDFCheckBox,PDFDropdown,PDFRadioGroup,pushGraphicsState,popGraphicsState} from 'pdf-lib';
-import * as craft from '../vendor/pdfcraft/dist/index.mjs';
+import {PDFDocument,PDFTextField,PDFCheckBox,PDFDropdown,PDFRadioGroup,pushGraphicsState,popGraphicsState,degrees,type PDFPage,type PDFEmbeddedPage} from 'pdf-lib';
 export const pdfWorkflows=[
  {id:'reverse',name:'Invertir páginas',description:'Cambiar el orden desde la última página a la primera. Los valores de formulario se fijan en las páginas.'},
  {id:'nup',name:'Varias páginas por hoja',description:'Preparar 2, 4, 9 o 16 páginas por hoja para impresión.'},
@@ -36,9 +35,38 @@ export async function processPdfWorkflow(id:PdfWorkflow,files:File[],options:Rec
   if(!pdf.getForm().getFields().length)throw new Error('Este PDF no contiene campos de formulario.');
   pdf.getForm().flatten();progress(100);return pdf.save();
  }
- const constructors={reverse:craft.ReversePagesPDFProcessor,nup:craft.NUpPDFProcessor,booklet:craft.BookletPDFProcessor,divide:craft.DividePagesPDFProcessor,alternate:craft.AlternateMergePDFProcessor,metadata:craft.EditMetadataPDFProcessor,forms:craft.FormFillerProcessor};
- const processor=new constructors[id]();
- const result=await processor.process({files:prepared,options},(value:number)=>progress(value));
- if(!result.success||!(result.result instanceof Blob))throw new Error([result.error?.message??'No se pudo procesar el PDF.',result.error?.details].filter(Boolean).join(' '));
- return new Uint8Array(await result.result.arrayBuffer());
+ const documents=await Promise.all(prepared.map(async file=>PDFDocument.load(await file.arrayBuffer()))),source=documents[0];
+ if(id==='metadata'){
+  const metadata=(options.metadata??{}) as Record<string,unknown>;
+  for(const [key,set] of [['title',source.setTitle],['author',source.setAuthor],['subject',source.setSubject]] as const)if(metadata[key]!==undefined)set.call(source,String(metadata[key]).slice(0,10000));
+  if(Array.isArray(metadata.keywords))source.setKeywords(metadata.keywords.map(String).slice(0,100));progress(100);return source.save();
+ }
+ if(id==='forms'){
+  const form=source.getForm();for(const change of (Array.isArray(options.fields)?options.fields:[]) as {fieldName:string;value:unknown}[]){const field=form.getFieldMaybe(change.fieldName);if(!field)throw Error('No se encontró el campo '+change.fieldName);if(field instanceof PDFTextField)field.setText(String(change.value??''));else if(field instanceof PDFCheckBox){if(change.value===true)field.check();else field.uncheck();}else if(field instanceof PDFDropdown||field instanceof PDFRadioGroup){if(change.value==='')field.clear();else field.select(String(change.value));}else throw Error('El tipo del campo '+change.fieldName+' todavía no se puede editar.');}
+  if(options.flatten===true)form.flatten();progress(100);return source.save();
+ }
+ const result=await PDFDocument.create();result.setProducer('Prisma PDF · motor propio');result.setTitle(source.getTitle()??'Documento Prisma');
+ if(id==='reverse'||id==='alternate'){
+  if(id==='alternate'&&documents.length!==2)throw Error('Elige dos PDF para intercalarlos.');
+  if(id==='reverse'){for(const page of await result.copyPages(source,source.getPageIndices().reverse()))result.addPage(page);}
+  else{const pages=await Promise.all(documents.map(doc=>result.copyPages(doc,doc.getPageIndices())));for(let i=0;i<Math.max(...pages.map(p=>p.length));i++)for(const file of pages)if(file[i])result.addPage(file[i]);}
+ }else if(id==='divide'){
+  const spec=String(options.divisionType??'vertical'),columns=spec==='vertical'?2:spec==='horizontal'?1:spec==='grid-3x3'?3:2,rows=spec==='horizontal'?2:spec==='vertical'?1:columns;
+  if(!['vertical','horizontal','grid-2x2','grid-3x3'].includes(spec))throw Error('División no válida.');
+  for(let i=0;i<source.getPageCount();i++){const box=source.getPage(i).getCropBox();for(let r=0;r<rows;r++)for(let c=0;c<columns;c++){const [page]=await result.copyPages(source,[i]),x=box.x+c*box.width/columns,y=box.y+(rows-r-1)*box.height/rows;page.setMediaBox(x,y,box.width/columns,box.height/rows);page.setCropBox(x,y,box.width/columns,box.height/rows);result.addPage(page);}progress(100*(i+1)/source.getPageCount());}
+ }else{
+  const papers:Record<string,[number,number]>={A4:[595.28,841.89],A3:[841.89,1190.55],Letter:[612,792],Legal:[612,1008]};
+  const size=papers[String(options.pageSize??'A4')];if(!size)throw Error('Papel no válido.');
+  const count=id==='booklet'?2:Number(options.pagesPerSheet??2);if(![2,4,9,16].includes(count))throw Error('Elige 2, 4, 9 o 16 páginas por hoja.');
+  const columns=count===2?2:Math.sqrt(count),rows=count===2?1:columns,width=count===2?size[1]:size[0],height=count===2?size[0]:size[1];
+  const sequence:(number|null)[]=[];
+  if(id==='booklet'){const padded=Math.ceil(source.getPageCount()/4)*4;for(let k=0;k<padded/4;k++)for(const index of [padded-1-k*2,k*2,k*2+1,padded-2-k*2])sequence.push(index<source.getPageCount()?index:null);}
+  else sequence.push(...source.getPageIndices());
+  for(let offset=0;offset<sequence.length;offset+=count){const page=result.addPage([width,height]);for(let cell=0;cell<count;cell++){const index=sequence[offset+cell];if(index===undefined||index===null)continue;const original=source.getPage(index),box=original.getCropBox(),embedded=await result.embedPage(original,{left:box.x,bottom:box.y,right:box.x+box.width,top:box.y+box.height});placePdfPage(page,embedded,original.getRotation().angle,{x:(cell%columns)*width/columns,y:(rows-1-Math.floor(cell/columns))*height/rows,width:width/columns,height:height/rows});}progress(100*Math.min(sequence.length,offset+count)/sequence.length);}
+ }
+ progress(100);return result.save();
+}
+function placePdfPage(page:PDFPage,embedded:PDFEmbeddedPage,rotation:number,box:{x:number;y:number;width:number;height:number}){
+ const angle=((rotation%360)+360)%360,turned=angle===90||angle===270,width=turned?embedded.height:embedded.width,height=turned?embedded.width:embedded.height,scale=Math.min(box.width/width,box.height/height),x=box.x+(box.width-width*scale)/2,y=box.y+(box.height-height*scale)/2;
+ page.drawPage(embedded,{x:x+(angle===180?embedded.width*scale:angle===270?embedded.height*scale:0),y:y+(angle===90?embedded.width*scale:angle===180?embedded.height*scale:0),xScale:scale,yScale:scale,rotate:degrees(-angle)});
 }

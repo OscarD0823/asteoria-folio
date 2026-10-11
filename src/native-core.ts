@@ -70,12 +70,22 @@ function inspect(
   const bounds = page.getBounds();
   const objects: NativeObject[] = [];
   const structured = page.toStructuredText("preserve-images,preserve-spans");
+  // MuPDF's JS walk callback currently uses fromCharCode for a Unicode rune,
+  // which truncates supplementary characters. Its JSON serializer retains
+  // UTF-8 text, so use those characters alongside the walk geometry/font data.
+  const unicodeLines:string[][]=[];
+  try {
+    const collect=(value:any)=>{if(!value||typeof value!=='object')return;if(Array.isArray(value)){value.forEach(collect);return;}if(value.type==='text'&&Array.isArray(value.lines))for(const line of value.lines)unicodeLines.push(Array.from(String(line.text??'')));else if(value.blocks)collect(value.blocks);};
+    collect(JSON.parse(structured.asJSON()));
+  } catch { /* Retain the normal walk path for an unsupported JSON layout. */ }
+  let lineCharacters:string[]|undefined,charIndex=0;
   let current: NativeObject | undefined;
   let lineCount = 0,
     imageCount = 0;
   try {
     structured.walk({
       beginLine: (box, wmode, dir) => {
+        lineCharacters=unicodeLines[lineCount];charIndex=0;
         current = {
           id: `text-${lineCount++}`,
           kind: "text",
@@ -107,7 +117,7 @@ function inspect(
           current.color = colorHex(color);
           current.baseline = origin[1];
         }
-        current.text += c;
+        current.text += lineCharacters?.[charIndex++] ?? c;
       },
       endLine: () => {
         if (current?.text?.trim()) objects.push(current);

@@ -1,3 +1,4 @@
+import {proofingLanguages} from './proofing-languages';
 import { unzipSync, strFromU8 } from "fflate";
 import {
   defaultLayout,
@@ -96,9 +97,10 @@ export function importDocx(bytes: Uint8Array): {
 } {
   if (bytes.length > 100 * 1024 * 1024)
     throw new Error("Elige un DOCX de hasta 100 MB.");
-  let expanded = 0;
+  let expanded = 0, containsVba = false;
   const parts = unzipSync(bytes, {
     filter(file) {
+      if(file.name==="word/vbaProject.bin")containsVba=true;
       expanded += file.originalSize;
       if (expanded > 160 * 1024 * 1024)
         throw new Error("El DOCX descomprimido supera los 160 MB.");
@@ -901,7 +903,10 @@ export function importDocx(bytes: Uint8Array): {
     warnings.add(
       "Word no declara una norma académica reconocida. No se deduce APA, IEEE u otra norma solo por la fuente o los márgenes.",
     );
+  const declaredLanguage = (parts["word/styles.xml"] ? strFromU8(parts["word/styles.xml"]) : "").match(/<(?:\w+:)?lang\b[^>]*(?:\w+:)?val=["']([^"']+)/)?.[1];
+  if(containsVba)warnings.add("El documento contiene VBA. Sus macros no se ejecutan; se conservan con el original y las ediciones de texto compatibles. La reconstrucción DOCX crea una copia sin VBA.");
   const flow: FlowDocument = {
+    language: proofingLanguages.find(language=>language.locale.toLowerCase()===declaredLanguage?.toLowerCase())?.id ?? "es",
     layout: layouts[0] ?? defaultLayout(),
     academicStyle: style,
     references: [],

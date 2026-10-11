@@ -4,16 +4,13 @@ directories:
   output: release-writer
 extraMetadata:
   name: prisma-writer
-  version: 1.3.0
+  version: 1.4.0
   prismaProduct: writer
 files:
   - dist-writer/**/*
   - desktop/**/*
   - engines/**/*
-  - vendor/genoffice/dist/*.cjs
-  - vendor/genoffice/LICENSE
-  - vendor/genoffice/NOTICE
-  - vendor/genoffice/SOURCE.json
+  - engines/dist/*.cjs
   - products.json
   - package.json
   - "!node_modules/**/*"

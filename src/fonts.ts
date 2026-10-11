@@ -401,6 +401,7 @@ export const fontFamilies: FontFamily[] = [
     css: "Courier New, monospace",
     category: "monospace",
   },
+  {value:"NotoEmoji",label:"Noto Emoji · símbolos y emoji",css:"NotoEmoji, sans-serif",category:"sans-serif",styles:{Regular:"NotoEmoji/NotoEmoji-Regular.ttf"},fallback:true},
   ...extraFontFamilies,
   ...referenceFontFamilies,
 ];
@@ -409,6 +410,7 @@ const fallbacks = [
   "NotoSans",
   "NotoSansMath",
   "NotoSansSymbols2",
+  "NotoEmoji",
   "NotoSansArabic",
   "NotoSansHebrew",
   "NotoSansThai",
@@ -424,7 +426,7 @@ function fallbackOrder(text: string): string[] {
   if (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text))
     preferred.push("NotoSansSC");
   if (/\p{Extended_Pictographic}/u.test(text))
-    preferred.push("NotoSansSymbols2");
+    preferred.push("NotoEmoji", "NotoSansSymbols2");
   if (/\p{Math}/u.test(text)) preferred.push("NotoSansMath");
   return [...new Set([...preferred, ...fallbacks])];
 }

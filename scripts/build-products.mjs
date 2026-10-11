@@ -16,7 +16,7 @@ const run = (args, env = {}) => {
   if (result.status !== 0)
     throw new Error("No se pudo completar: " + args.join(" "));
 };
-run(["scripts/bundle-upstreams.mjs"]);
+run(["scripts/bundle-prisma-engines.mjs"]);
 run(["scripts/prepare-assets.mjs"]);
 run(["node_modules/typescript/bin/tsc", "--noEmit"]);
 run(["node_modules/vite/bin/vite.js", "build"],{VITE_PRODUCT:'pdf'});
@@ -82,6 +82,12 @@ cpSync(realpathSync("dist-sheets"), "dist-site/sheets", { recursive: true,derefe
 cpSync(realpathSync('dist-slides'),'dist-site/slides',{recursive:true,dereference:true});
 cpSync(realpathSync('dist-data'),'dist-site/data',{recursive:true,dereference:true});
 cpSync(realpathSync('dist-publisher'),'dist-site/publisher',{recursive:true,dereference:true});
+// These applications do not expose PDF OCR; keep its models in PDF and Writer.
+for (const kind of ['sheets','slides','data','publisher']) {
+  const productOutput=resolve(siteOutput,kind);
+  rmSync(resolve(productOutput,'ocr'),{recursive:true,force:true});
+  run(['scripts/build-offline.mjs'],{PRISMA_OUTDIR:productOutput});
+}
 console.log(
   "Prisma PDF: dist · Prisma Writer: dist-writer · Prisma Sheets: dist-sheets · Web pública: dist-site",
 );

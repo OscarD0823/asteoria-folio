@@ -4,16 +4,13 @@ directories:
   output: release-sheets
 extraMetadata:
   name: prisma-sheets
-  version: 0.3.0
+  version: 0.4.0
   prismaProduct: sheets
 files:
   - dist-sheets/**/*
   - desktop/**/*
   - engines/**/*
-  - vendor/genoffice/dist/*.cjs
-  - vendor/genoffice/LICENSE
-  - vendor/genoffice/NOTICE
-  - vendor/genoffice/SOURCE.json
+  - engines/dist/*.cjs
   - products.json
   - package.json
   - "!node_modules/**/*"

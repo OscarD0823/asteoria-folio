@@ -8,6 +8,7 @@ import {
   type WordLocation,
 } from "./spelling";
 import { readPreference, writePreference } from "./preferences";
+import {proofingLanguages,proofingLanguage,type ProofingLanguage} from './proofing-languages';
 import { LexiconManager } from "./LexiconManager";
 import { loadLexicon, saveLexicon, mergeLexicon, spellingTerm, type LexiconEntry } from "./lexicon";
 export const spellingKey = new PluginKey("prismaSpelling");
@@ -15,11 +16,18 @@ export function SpellingReview({
   editor,
   onClose,
   onConvert,
+  language:documentLanguage,
+  onLanguage,
 }: {
   editor: Editor | null;
   onClose: () => void;
   onConvert: () => Promise<void>;
+  language?:string;
+  onLanguage?:(language:ProofingLanguage)=>void;
 }) {
+  const [language,setLanguage]=useState<ProofingLanguage>(()=>proofingLanguage(documentLanguage??readPreference('proofing-language','es')).id);
+  const canonical=(word:string)=>canonicalWord(word,language);
+  useEffect(()=>{if(documentLanguage)setLanguage(proofingLanguage(documentLanguage).id);},[documentLanguage]);
   const [issues, setIssues] = useState<WordLocation[]>([]),
     [index, setIndex] = useState(0),
     [status, setStatus] = useState(""),
@@ -68,8 +76,8 @@ export function SpellingReview({
             (
               await spellRequest("check", [
                 ...new Set(locations.map((w) => w.word)),
-              ])
-            ).map(canonicalWord),
+              ],language)
+            ).map(canonical),
           );
           if (
             id !== revision.current ||
@@ -77,11 +85,11 @@ export function SpellingReview({
             editor.state.doc !== snapshot
           )
             return;
-          const allowed = new Set([...accepted, ...ignored].map(canonicalWord));
+          const allowed = new Set([...accepted, ...ignored].map(canonical));
           const next = locations.filter(
             (w) =>
-              bad.has(canonicalWord(w.word)) &&
-              !allowed.has(canonicalWord(w.word)),
+              bad.has(canonical(w.word)) &&
+              !allowed.has(canonical(w.word)),
           );
           setIssues(next);
           setIndex((i) => Math.min(i, Math.max(0, next.length - 1)));
@@ -111,13 +119,13 @@ export function SpellingReview({
       clearTimeout(timer);
       editor.off("transaction", changed);
     };
-  }, [editor, accepted, ignored, refresh]);
+  }, [editor, accepted, ignored, refresh,language]);
   useEffect(() => {
     setSuggestions([]);
     setLoadingSuggestions(!!current);
     if (!current) return;
     let live = true;
-    void spellRequest("suggest", [current.word])
+    void spellRequest("suggest", [current.word],language)
       .then((result) => {
         if (live) {
           setSuggestions(result);
@@ -130,7 +138,7 @@ export function SpellingReview({
     return () => {
       live = false;
     };
-  }, [current?.word]);
+  }, [current?.word,language]);
   const locate = (issue: WordLocation) => {
     if (!editor || editor.isDestroyed) return;
     editor
@@ -168,7 +176,8 @@ export function SpellingReview({
           ✕
         </button>
       </header>
-      <p className="review-language">Español · diccionario local</p>
+      <label className="review-language">Idioma de revisión<select aria-label="Idioma de revisión" value={language} onChange={e=>{const next=proofingLanguage(e.target.value).id;setLanguage(next);setIgnored([]);setIssues([]);setSuggestions([]);writePreference('proofing-language',next);onLanguage?.(next);if(editor&&!editor.isDestroyed)editor.view.dispatch(editor.state.tr.setMeta(spellingKey,[]));}}>{proofingLanguages.map(l=><option key={l.id} value={l.id}>{l.label}</option>)}</select></label>
+      <p>Diccionario local · no se envía tu texto.</p>
       <button disabled={!lexiconReady || lexiconBusy} onClick={() => setLexiconOpen(true)}>Diccionario personal · {lexicon.length} entradas</button>
       {lexiconError && <p role="alert">{lexiconError}</p>}
       {lexiconOpen && <LexiconManager entries={lexicon} onSave={updateLexicon} onClose={() => setLexiconOpen(false)} />}
@@ -259,7 +268,7 @@ export function SpellingReview({
         </>
       )}
       <footer>
-        La revisión usa un diccionario de español. Las decisiones sobre
+        La revisión usa el diccionario del idioma seleccionado. Las decisiones sobre
         gramática y contexto requieren tu revisión.
       </footer>
     </aside>

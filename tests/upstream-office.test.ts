@@ -4,16 +4,16 @@ import {DOMParser} from '@xmldom/xmldom';
 import {unzipSync,zipSync,strToU8,strFromU8} from 'fflate';
 import {importOfficeDocx} from '../src/document-import';
 import {preserveOfficeDocx} from '../src/office-engines';
-import * as docx from '../vendor/genoffice/dist/docx.mjs';
+import {Document,Packer} from 'docx';
 Object.assign(globalThis,{DOMParser});
 async function original(){
- const parts=unzipSync(await docx.buildBlankDocx());
+ const parts=unzipSync(new Uint8Array(await Packer.toBuffer(new Document({sections:[{children:[]}]}))));
  parts['word/document.xml']=strToU8(strFromU8(parts['word/document.xml']).replace('<w:body>','<w:body><w:p><w:r><w:t>Hola original</w:t></w:r><w:r><w:footnoteReference w:id="1"/></w:r></w:p>'));
  parts['word/footnotes.xml']=strToU8('<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:footnote w:id="1"><w:p><w:r><w:t>Nota original</w:t></w:r></w:p></w:footnote></w:footnotes>');
  parts['customXml/unknown.xml']=strToU8('<datos>Conservar exactamente</datos>');
  return zipSync(parts);
 }
-test('GenOffice keeps an unedited DOCX byte identical and unknown parts through a text edit',async()=>{
+test('Prisma keeps an unedited DOCX byte identical and unknown parts through a text edit',async()=>{
  const bytes=await original(),{flow}=await importOfficeDocx(bytes);
  for(const node of flow.content.content??[])node.attrs={...node.attrs,page:1,indexLevel:1,indexLeader:'dots'};
  assert.deepEqual(await preserveOfficeDocx(flow),bytes);

@@ -8,6 +8,7 @@ import {
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 const require = createRequire(import.meta.url);
+await import('./prepare-proofing.mjs');
 const {gunzipSync}=require('node:zlib');
 const {unlinkSync}=require('node:fs');
 const writer = process.env.VITE_PRODUCT === "writer";
@@ -18,7 +19,7 @@ const appVersion=products[kind].version;
 const releaseTag =
   (kind==='pdf'?'v':kind+'-v')+appVersion;
 const assetName=products[kind].name.replace(' ','-');
-const suiteFeatures={pdf:['OCR español e inglés sin subir documentos','Taller PDF: formularios, imposición, división y metadatos','94 familias de fuentes y diccionarios locales'],writer:['Conservación de partes originales DOCX en cambios de texto compatibles','Revisión de notas al pie, notas finales y comentarios de Word','94 familias de fuentes y biblioteca StarDict/ODict'],sheets:['Hojas XLSX, fórmulas, formatos y exportación','94 familias de fuentes locales'],slides:['Edición local de PPTX con texto, imágenes, tablas, formas y notas','Objetos movibles, reglas y exportación PDF'],data:['SQLite en el navegador con tablas, relaciones y consultas SQL','Importación CSV/XLSX y exportación SQLite, CSV, JSON y XLSX'],publisher:['Publicaciones A4, plantillas, reglas y objetos movibles','Guardado local y exportación PPTX editable o PDF']};
+const suiteFeatures={pdf:['Motores propios y taller PDF local','Macros Prisma en vista de escritura y corrector en 8 idiomas','Exportación DOCX, ODT, RTF y PDF'],writer:['Motor propio de conservación DOCX/DOCM','Macros portables y corrector en 8 idiomas con 11 diccionarios','Exportación DOCX, ODT, RTF, HTML, Markdown y PDF'],sheets:['Macros locales para celdas, cálculos y reemplazos','Corrector en 8 idiomas','Exportación XLSX, CSV, TSV, JSON, ODS de valores, DOCX y PDF'],slides:['Motor propio PPTX/PPTM y conservación de partes','Macros locales y corrector en 8 idiomas','Exportación PPTX, PDF y SVG'],data:['Macros Prisma y SQL con transacciones locales','Tablas, registros y relaciones SQLite','Exportación SQLite, CSV, JSON y XLSX'],publisher:['Motor propio para publicaciones y páginas A4','Macros y corrector en 8 idiomas','Exportación PPTX, PDF y SVG']};
 const release = "https://github.com/OscarD0823/prisma-pdf/releases/";
 writeFileSync(
   "public/version.json",
@@ -117,6 +118,8 @@ for (const dependency of [
   "exceljs",
   "hyperformula",
   "typo-js",
+  "hunspell-asm",
+  "@xmldom/xmldom",
   "jszip",
   "fast-xml-parser",
   "utif2",
@@ -155,7 +158,6 @@ for (const dependency of [
       ),
     );
 }
-for(const engine of ['genoffice','pdfcraft'])for(const file of ['LICENSE','NOTICE','SOURCE.json'])if(existsSync('vendor/'+engine+'/'+file))cpSync('vendor/'+engine+'/'+file,'public/third-party/'+engine+'-'+file+'.txt');
 const pmRequire = createRequire(
   createRequire(require.resolve("@tiptap/core")).resolve("@tiptap/pm/model"),
 );

@@ -64,6 +64,7 @@ export type Watermark = {
   image?: string;
 };
 export type FlowDocument = {
+  language?:string;
   officeOriginal?: import('./office-engines').OfficeOriginal;
   importReport?: OfficeImportReport;
   fonts?: LocalFont[];

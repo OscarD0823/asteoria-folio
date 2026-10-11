@@ -5,7 +5,7 @@ test('PC bridge restricts endpoints and origins, authenticates and preserves loc
  const {server,port,token}=await startLocalEngine();try{
  const base='http://127.0.0.1:'+port,headers={Origin:'http://127.0.0.1:4305',Authorization:'Bearer '+token,'Content-Type':'application/json'};
  assert.equal((await fetch(base+'/capabilities',{headers:{...headers,Origin:'https://example.com'}})).status,403);assert.equal((await fetch(base+'/capabilities',{headers:{Origin:headers.Origin}})).status,401);
- const engine=require('../vendor/genoffice/dist/pptx.cjs'),bytes=await engine.createBlankPptx(),response=await fetch(base+'/run',{method:'POST',headers,body:JSON.stringify({engine:'genoffice',extension:'pptx',bytes:Buffer.from(bytes).toString('base64')})}),result=await response.json();assert.equal(response.status,200);assert.equal(result.slides,1);assert.deepEqual(Buffer.from(result.bytes,'base64'),Buffer.from(bytes));
+ const engine=require('../engines/dist/pptx.cjs'),bytes=await engine.createBlankPptx(),response=await fetch(base+'/run',{method:'POST',headers,body:JSON.stringify({engine:'prisma',extension:'pptx',bytes:Buffer.from(bytes).toString('base64')})}),result=await response.json();assert.equal(response.status,200);assert.equal(result.slides,1);assert.deepEqual(Buffer.from(result.bytes,'base64'),Buffer.from(bytes));
  }finally{await new Promise<void>(r=>server.close(()=>r()));}
 });
 test('PC bridge keeps an operation locked when capabilities are read concurrently',async()=>{

@@ -1,0 +1,12 @@
+{
+  "id": "en",
+  "package": "dictionary-en",
+  "version": "4.0.0",
+  "license": "(MIT AND BSD)",
+  "source": "https://github.com/wooorm/dictionaries/tree/main/dictionaries/en",
+  "files": {
+    "index.aff": "8ae1f19d4840d957728ad90555d5a8dff6cc5c046279c95ff0c00fc0a0136c7b",
+    "index.dic": "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647",
+    "license": "2a7e8d8ae9e8facc84818546ae2a8d83aec5e9c80a675ff789acd1c338b53b3d"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "id": "pt",
+  "package": "dictionary-pt",
+  "version": "4.0.0",
+  "license": "(LGPL-3.0 OR MPL-2.0)",
+  "source": "https://github.com/wooorm/dictionaries/tree/main/dictionaries/pt",
+  "files": {
+    "index.aff": "a9f3621b94eb4d6838474bf9982027758e77dcb248815f49409b1a4a477dbd27",
+    "index.dic": "32e2edd83541d58613bcc83ef731a79aadf85ed57e977a16c6b5f711a7a36cee",
+    "license": "bb064f3db7ba5f5536da7d079773f692c5f928822e8aebc3d78259ff6cceb9e5"
+  }
+}

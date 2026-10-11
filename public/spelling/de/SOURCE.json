@@ -1,0 +1,12 @@
+{
+  "id": "de",
+  "package": "dictionary-de",
+  "version": "3.0.0",
+  "license": "(GPL-2.0 OR GPL-3.0)",
+  "source": "https://github.com/wooorm/dictionaries/tree/main/dictionaries/de",
+  "files": {
+    "index.aff": "57fdd1b16aac2131003c91e0cf2a488becb970382a402a9ce089307301cb3ef0",
+    "index.dic": "b5c781a0cf6f285fb6b9b8ab02fbea104b987104a1efdda8a835837e89e3ec77",
+    "license": "03abf202c6e207d41f054083cafccbb174a30f6b330ea8dba3aeef0a279cb83e"
+  }
+}

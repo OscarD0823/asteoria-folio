@@ -4,16 +4,13 @@ directories:
   output: release
 extraMetadata:
   name: prisma-pdf
-  version: 6.3.0
+  version: 6.4.0
   prismaProduct: pdf
 files:
   - dist/**/*
   - desktop/**/*
   - engines/**/*
-  - vendor/genoffice/dist/*.cjs
-  - vendor/genoffice/LICENSE
-  - vendor/genoffice/NOTICE
-  - vendor/genoffice/SOURCE.json
+  - engines/dist/*.cjs
   - products.json
   - package.json
   - "!node_modules/**/*"

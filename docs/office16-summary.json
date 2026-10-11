@@ -1,0 +1,273 @@
+{
+  "date": "2026-10-11T14:57:19.849179+00:00",
+  "totalFiles": 2317,
+  "totalBytes": 1518340779,
+  "groups": [
+    {
+      "name": "1027",
+      "files": 1,
+      "bytes": 1556
+    },
+    {
+      "name": "1033",
+      "files": 1,
+      "bytes": 37740
+    },
+    {
+      "name": "1036",
+      "files": 1,
+      "bytes": 43448
+    },
+    {
+      "name": "1046",
+      "files": 1,
+      "bytes": 7418
+    },
+    {
+      "name": "1069",
+      "files": 1,
+      "bytes": 2826
+    },
+    {
+      "name": "3082",
+      "files": 431,
+      "bytes": 65272584
+    },
+    {
+      "name": "ACCWIZ",
+      "files": 6,
+      "bytes": 33406976
+    },
+    {
+      "name": "ADDINS",
+      "files": 233,
+      "bytes": 264962696
+    },
+    {
+      "name": "AI",
+      "files": 8,
+      "bytes": 8466247
+    },
+    {
+      "name": "AccessWeb",
+      "files": 3,
+      "bytes": 68553
+    },
+    {
+      "name": "AugLoop",
+      "files": 2,
+      "bytes": 306223
+    },
+    {
+      "name": "BORDERS",
+      "files": 15,
+      "bytes": 532632
+    },
+    {
+      "name": "Bibliography",
+      "files": 18,
+      "bytes": 3503761
+    },
+    {
+      "name": "CONVERT",
+      "files": 21,
+      "bytes": 1226624
+    },
+    {
+      "name": "Configuration",
+      "files": 5,
+      "bytes": 455224
+    },
+    {
+      "name": "Document Parts",
+      "files": 1,
+      "bytes": 3003854
+    },
+    {
+      "name": "FORMS",
+      "files": 103,
+      "bytes": 202160
+    },
+    {
+      "name": "FPA_FA000000006",
+      "files": 1,
+      "bytes": 8322
+    },
+    {
+      "name": "FPA_FA000000008",
+      "files": 1,
+      "bytes": 2383
+    },
+    {
+      "name": "FPA_FA000000009",
+      "files": 1,
+      "bytes": 2445
+    },
+    {
+      "name": "FPA_FA000000011",
+      "files": 1,
+      "bytes": 17555
+    },
+    {
+      "name": "FPA_FA000000050",
+      "files": 1,
+      "bytes": 1807
+    },
+    {
+      "name": "FPA_FA000000055",
+      "files": 1,
+      "bytes": 5324
+    },
+    {
+      "name": "FPA_FA000000064",
+      "files": 1,
+      "bytes": 1249
+    },
+    {
+      "name": "FPA_f14",
+      "files": 1,
+      "bytes": 1261
+    },
+    {
+      "name": "FPA_f2",
+      "files": 1,
+      "bytes": 19499
+    },
+    {
+      "name": "FPA_f3",
+      "files": 1,
+      "bytes": 2568
+    },
+    {
+      "name": "FPA_f33",
+      "files": 1,
+      "bytes": 2100
+    },
+    {
+      "name": "FPA_f4",
+      "files": 1,
+      "bytes": 4058
+    },
+    {
+      "name": "FPA_f7",
+      "files": 1,
+      "bytes": 1910
+    },
+    {
+      "name": "FPA_w1",
+      "files": 1,
+      "bytes": 1736
+    },
+    {
+      "name": "FloodgateExperiences",
+      "files": 2,
+      "bytes": 1450
+    },
+    {
+      "name": "Library",
+      "files": 8,
+      "bytes": 2517768
+    },
+    {
+      "name": "LivePersonaCard",
+      "files": 9,
+      "bytes": 1917982
+    },
+    {
+      "name": "LivePersonaCardRollback",
+      "files": 9,
+      "bytes": 1906721
+    },
+    {
+      "name": "LogoImages",
+      "files": 192,
+      "bytes": 400352
+    },
+    {
+      "name": "MEDIA",
+      "files": 19,
+      "bytes": 407780
+    },
+    {
+      "name": "MSIPC",
+      "files": 49,
+      "bytes": 5543994
+    },
+    {
+      "name": "ODBC Drivers",
+      "files": 31,
+      "bytes": 94226836
+    },
+    {
+      "name": "OneNote",
+      "files": 10,
+      "bytes": 191976
+    },
+    {
+      "name": "OutlookAutoDiscover",
+      "files": 45,
+      "bytes": 36441
+    },
+    {
+      "name": "OutlookReactNative",
+      "files": 2,
+      "bytes": 278394
+    },
+    {
+      "name": "PAGESIZE",
+      "files": 83,
+      "bytes": 15780207
+    },
+    {
+      "name": "PROOF",
+      "files": 53,
+      "bytes": 89698396
+    },
+    {
+      "name": "PUBBA",
+      "files": 15,
+      "bytes": 545116
+    },
+    {
+      "name": "PUBWIZ",
+      "files": 234,
+      "bytes": 59097149
+    },
+    {
+      "name": "PersonaSpy",
+      "files": 6,
+      "bytes": 500348
+    },
+    {
+      "name": "SAMPLES",
+      "files": 1,
+      "bytes": 116224
+    },
+    {
+      "name": "SkypeSrv",
+      "files": 4,
+      "bytes": 13443412
+    },
+    {
+      "name": "TextInputIntelligence",
+      "files": 10,
+      "bytes": 4294504
+    },
+    {
+      "name": "[raíz]",
+      "files": 352,
+      "bytes": 810370377
+    },
+    {
+      "name": "osfFPA",
+      "files": 1,
+      "bytes": 16583
+    },
+    {
+      "name": "sdxs",
+      "files": 317,
+      "bytes": 35476030
+    }
+  ],
+  "scope": "File inventory and bounded PE metadata; role assignments are inferences, not proof of internal algorithms."
+}

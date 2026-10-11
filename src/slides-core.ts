@@ -1,5 +1,5 @@
-import * as engine from '../vendor/genoffice/dist/pptx.mjs';
-import * as renderer from '../vendor/genoffice/dist/render.mjs';
+import * as engine from './prisma-presentation';
+import {renderPrismaSlide} from './prisma-slide-render';
 import {fontFile} from './fonts';
 import {resolveOfficeFont} from './office-fonts';
 import {encodeOfficeBytes} from './office-bytes';
@@ -25,7 +25,7 @@ async function slideMetrics(slide:any){
  const {parse}=await import('opentype.js'),names=new Set<string>(['Carlito','Calibri']);
  const scan=(element:any)=>{for(const p of element.text?.paragraphs??[])for(const run of p.runs??[])if(run.fontFamily)names.add(run.fontFamily);for(const row of element.rows??[])for(const cell of row??[])scan(cell);for(const child of element.children??[])scan(child);};slide.elements.forEach(scan);
  await Promise.all([...names].flatMap(name=>[false,true].flatMap(bold=>[false,true].map(async italic=>{const family=resolveOfficeFont(name)??resolveOfficeFont('Calibri')!,file=fontFile(family.value,bold,italic);if(!file||metricFonts.has(file))return;try{const response=await fetch(new URL('./fonts/'+file,document.baseURI));if(response.ok)metricFonts.set(file,parse(await response.arrayBuffer()));}catch{/* Unavailable fonts retain the engine's fallback metrics. */}}))));
- return new renderer.OpentypeMetrics((style:any)=>{const family=resolveOfficeFont(style.fontFamily)??resolveOfficeFont('Calibri')!,file=fontFile(family.value,style.bold,style.italic);return file?metricFonts.get(file):undefined;});
+ return (text:string,style:any)=>{const family=resolveOfficeFont(style.fontFamily)??resolveOfficeFont('Calibri')!,file=fontFile(family.value,style.bold,style.italic),font=file?metricFonts.get(file):undefined;return font?font.getAdvanceWidth(text,style.fontSize??18,{kerning:true}):Array.from(text).length*(style.fontSize??18)*.52;};
 }
 async function fontCss(names:Set<string>){let css='';for(const name of names){const family=resolveOfficeFont(name)??resolveOfficeFont('Calibri')!;for(const [bold,italic] of [[false,false],[true,false],[false,true],[true,true]]){const file=fontFile(family.value,bold,italic);if(!file)continue;let result=fontCache.get(file);if(!result){result=fetch(new URL('./fonts/'+file,document.baseURI)).then(async response=>{if(!response.ok)throw new Error('Fuente sin conexión: '+name);return encodeOfficeBytes(new Uint8Array(await response.arrayBuffer()));});fontCache.set(file,result);result.catch(()=>fontCache.delete(file));}try{css+=`@font-face{font-family:${JSON.stringify(name)};font-weight:${bold?700:400};font-style:${italic?'italic':'normal'};src:url(data:font/ttf;base64,${await result})} `;}catch{/* Preserve source font names; unavailable fonts use system substitution. */}}}return css;}
 export function collectRenderFonts(nodes:any[]){const names=new Set<string>(['Carlito','Calibri']);const scan=(node:any)=>{for(const line of node.text?.lines??[])for(const run of line.runs??[])if(run.fontFamily)names.add(run.fontFamily);for(const child of node.children??[])scan(child);for(const cell of node.cells??[])scan(cell);};nodes.forEach(scan);return names;}
@@ -33,10 +33,10 @@ export async function presentationSvg(opened:any,index:number,width=1280){
  const mediaCache=new Map<string,string>(),images=new Map<string,HTMLImageElement>(),names=new Set<string>(['Carlito','Calibri']);
  const media=(path:string)=>{if(mediaCache.has(path))return mediaCache.get(path);const bytes=opened.archive.readBytes(path);if(!bytes)return;const extension=path.split('.').at(-1)?.toLowerCase(),mime=extension==='svg'?'image/svg+xml':extension==='jpg'||extension==='jpeg'?'image/jpeg':extension==='gif'?'image/gif':extension==='webp'?'image/webp':extension==='png'?'image/png':undefined;if(!mime)return;const url=`data:${mime};base64,${encodeOfficeBytes(bytes)}`;mediaCache.set(path,url);return url;};
  const metrics=await slideMetrics(opened.deck.slides[index]);
- const tree=renderer.buildRenderSlide(opened.deck.slides[index],opened.deck.size,{fitWidthPx:width,slideNo:index+1,media,metrics});
- for(const name of collectRenderFonts(tree.nodes))names.add(name);
+ const page=renderPrismaSlide(opened.deck.slides[index],{width,size:opened.deck.size,media,measure:metrics});
+ for(const name of page.fonts)names.add(name);
  await Promise.all([...mediaCache.values()].map(async url=>{const image=new Image();image.src=url;try{await image.decode();images.set(url,image);}catch{/* Unsupported images retain their original package parts. */}}));
- const page=await renderer.renderSlideToSvg(tree,images,{idPrefix:'prisma-slide-'+index+'-'}),css=await fontCss(names);
+ const css=await fontCss(names);
  page.svg=page.svg.replace(/(<svg\b[^>]*>)/,`$1<style>${css.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}</style>`);return page;
 }
 export async function presentationPdf(opened:any){

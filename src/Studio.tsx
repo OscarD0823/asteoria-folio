@@ -102,6 +102,9 @@ import {
 } from "./local-fonts";
 import { RichEditor, type RichEditorInstance } from "./LazyRichEditor";
 import { SpellingReview } from "./SpellingReview";
+import {MacroStudio} from './MacroStudio';
+import {applyEditorMacro,editorMacroSnapshot} from './macro-adapters';
+import {proofingLanguage} from './proofing-languages';
 import { CharacterInspector } from "./CharacterInspector";
 import { product } from "./product";
 import PdfWorkbench from './PdfWorkbench';
@@ -202,6 +205,7 @@ export default function Studio() {
     [rows, setRows] = useState(3),
     [cols, setCols] = useState(3),
     [link, setLink] = useState("https://");
+  useEffect(()=>{if(editor&&!editor.isDestroyed)editor.view.dom.lang=proofingLanguage(workspace.flow?.language).locale;},[editor,workspace.flow?.language]);
   const [history, setHistory] = useState<{
       past: Workspace[];
       future: Workspace[];
@@ -571,10 +575,10 @@ export default function Studio() {
         );
       let total = next.sources.reduce((n, s) => n + s.bytes.length, 0);
       for (const f of Array.from(files)) {
-        if (/\.(docx|txt)$/i.test(f.name)) {
+        if (/\.(docx|docm|txt)$/i.test(f.name)) {
           if (append || files.length !== 1)
-            throw new Error("Abre un solo documento DOCX o TXT.");
-          const imported = /\.docx$/i.test(f.name)
+            throw new Error("Abre un solo documento DOCX, DOCM o TXT.");
+          const imported = /\.(docx|docm)$/i.test(f.name)
             ? await importOfficeDocx(new Uint8Array(await f.arrayBuffer()))
             : { flow: importText(await f.text()), warnings: [] };
           const name = f.name.replace(/\.[^.]+$/, "");
@@ -1251,7 +1255,7 @@ export default function Studio() {
   async function exportPdf() {
     setBusy("Preparando PDF…");
     try {
-      if (["docx", "html", "md", "txt"].includes(exportFormat)) {
+      if (["docx", "html", "md", "txt", "rtf", "odt"].includes(exportFormat)) {
         const [{ documentForExport }, exporter] = await Promise.all([
           import("./export-source"),
           import("./document-export"),
@@ -1261,7 +1265,7 @@ export default function Studio() {
           mime =
             exportFormat === "docx"
               ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              : exportFormat === "html"
+              : exportFormat === "odt" ? "application/vnd.oasis.opendocument.text" : exportFormat === "rtf" ? "application/rtf" : exportFormat === "html"
                 ? "text/html;charset=utf-8"
                 : exportFormat === "md"
                   ? "text/markdown;charset=utf-8"
@@ -1270,14 +1274,16 @@ export default function Studio() {
         const bytes =
           exportFormat === "docx"
             ? await exporter.exportDocx(flow, name, state.current.fonts)
-            : exportFormat === "html"
+            : exportFormat === "odt" ? (await import("./open-formats")).exportOdt(flow,name) : exportFormat === "rtf" ? (await import("./open-formats")).exportRtf(flow) : exportFormat === "html"
               ? await exporter.exportHtml(flow, name, state.current.fonts)
               : exportFormat === "md"
                 ? exporter.exportMarkdown(flow)
                 : new TextEncoder().encode(academicPlainText(flow.content));
-        await download(bytes, name + "." + exportFormat, mime);
+        const format=exportFormat==="docx"?(await import("./office-formats")).officePackageFormat(bytes,"docx"):{extension:exportFormat,mime};
+        await download(bytes, name + "." + format.extension, format.mime);
+        if("macro" in format&&format.macro)inform("Documento DOCM conservado. Sus macros VBA permanecen inactivas.");
         setDialog(null);
-        inform("Documento exportado como " + exportFormat.toUpperCase() + ".");
+        inform("Documento exportado como " + format.extension.toUpperCase() + "."+("macro" in format&&format.macro?" VBA conservado e inactivo.":""));
         return;
       }
       const ids =
@@ -1631,7 +1637,7 @@ export default function Studio() {
         ref={openInput}
         hidden
         type="file"
-        accept=".pdf,.docx,.txt,.prisma,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        accept=".pdf,.docx,.docm,.txt,.prisma,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         multiple
         onChange={(e) => void openFiles(e.target.files)}
       />
@@ -1941,6 +1947,7 @@ export default function Studio() {
               {icon("Rehacer", Redo2, redo)}
               <span className="header-divider" />
               {icon("Guardar proyecto", Save, () => void saveNamed())}
+              <MacroStudio kind={product.writer?'writer':'pdf'} bridge={writing&&rich?{operations:['replaceText','appendParagraph'],snapshot:()=>editorMacroSnapshot(rich),apply:async(operations,revision)=>{applyEditorMacro(rich,operations,revision);}}:null}/>
               {icon("Imprimir", Printer, () => void beginPrint())}
               <InstallApp />
               <Updates
@@ -2911,6 +2918,8 @@ export default function Studio() {
             {reviewPanel === "spelling" && (
               <SpellingReview
                 editor={workspace.flow ? rich : null}
+                  language={workspace.flow?.language}
+                  onLanguage={language=>{if(state.current.flow)commit({...state.current,flow:{...state.current.flow,language}});}}
                 onClose={() => setReviewPanel("")}
                 onConvert={flexibleDocument}
               />
@@ -3085,6 +3094,7 @@ export default function Studio() {
                     <option value="html">
                       HTML · documento con fuentes e imágenes
                     </option>
+                    <option value="odt">OpenDocument · ODT editable</option><option value="rtf">Texto enriquecido · RTF</option>
                     <option value="md">Markdown · MD</option>
                     <option value="txt">Texto sin formato · TXT</option>
                     <option value="png">Imágenes · PNG / ZIP</option>
@@ -3094,7 +3104,7 @@ export default function Studio() {
                   <p className="export-limit">
                     Se exporta todo el documento. En DOCX el texto y las tablas
                     son editables; las ecuaciones y gráficos se conservan como
-                    imágenes. HTML ofrece una lectura continua; Markdown y TXT
+                    imágenes. ODT y RTF ofrecen compatibilidad básica y pueden simplificar elementos avanzados; RTF representa las imágenes como etiquetas. HTML ofrece una lectura continua; Markdown y TXT
                     priorizan el contenido. PDF conserva el diseño final. Al
                     convertir un PDF de posiciones fijas, revisa el orden de
                     lectura y los saltos en el archivo exportado.

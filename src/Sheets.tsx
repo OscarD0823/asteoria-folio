@@ -35,6 +35,9 @@ import {
 } from "./sheets-core";
 import { download } from "./download";
 import { Updates } from "./Updates";
+import {TextProofing} from './TextProofing';
+import {MacroStudio} from './MacroStudio';
+import {applySheetMacro,sheetMacroSnapshot} from './macro-adapters';
 import { InstallApp } from "./InstallApp";
 import { FontPicker } from "./FontPicker";
 import { fontFamilies } from "./fonts";
@@ -235,11 +238,11 @@ export default function Sheets() {
       if (file.size > sheetLimits.fileBytes)
         throw new Error("El límite de apertura es de 40 MB.");
       let next: SheetsBook;
-      if (/\.csv$/i.test(file.name)) {
+      if (/\.(csv|tsv)$/i.test(file.name)) {
         next = new SheetsBook();
         const text = await file.text(),
           line = text.split(/\r?\n/)[0];
-        const separator = line.includes(";") ? ";" : ",";
+        const separator = /\.tsv$/i.test(file.name)?"\t":line.includes(";") ? ";" : ",";
         const rows = parseDelimited(text.replace(/^\uFEFF/, ""), separator);
         if (
           rows.length > sheetLimits.rows ||
@@ -424,10 +427,14 @@ export default function Sheets() {
         if (book.original)
           await download(
             book.original,
-            title + "-original.xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            title + "-original." + (await import("./office-formats")).officePackageFormat(book.original,"xlsx").extension,
+            (await import("./office-formats")).officePackageFormat(book.original!,"xlsx").mime,
           );
-      } else if (kind === "csv") {
+      } else if (kind === "ods") {
+        const {exportOds}=await import("./open-formats");await download(exportOds(book,title),title+".ods","application/vnd.oasis.opendocument.spreadsheet");setMessage("ODS conserva los valores de todas las hojas. Usa XLSX para conservar fórmulas y formato.");
+      } else if (kind === "json") {
+        const data=book.workbook.worksheets.map(current=>({name:current.name,rows:Array.from({length:current.rowCount},(_,r)=>Array.from({length:current.columnCount},(_,c)=>({input:book.input(current.name,r,c),value:book.value(current.name,r,c)})))}));await download(new TextEncoder().encode(JSON.stringify({version:1,sheets:data},null,2)),title+".json","application/json");
+      } else if (kind === "csv" || kind === "tsv") {
         const rows: unknown[][] = [];
         for (let r = 0; r < (selected?.rowCount ?? 0); r++) {
           const row = [];
@@ -438,9 +445,9 @@ export default function Sheets() {
           rows.push(row);
         }
         await download(
-          new TextEncoder().encode("\uFEFF" + encodeDelimited(rows, ";")),
-          title + "-" + sheet + ".csv",
-          "text/csv;charset=utf-8",
+          new TextEncoder().encode("\uFEFF" + encodeDelimited(rows, kind==="tsv"?"\t":";")),
+          title + "-" + sheet + "." + kind,
+          kind==="tsv"?"text/tab-separated-values;charset=utf-8":"text/csv;charset=utf-8",
         );
       } else if (kind === "writer" || kind === "pdf" || kind === "print") {
         const { sheetFlow } = await import("./sheets-document");
@@ -570,7 +577,7 @@ export default function Sheets() {
         hidden
         ref={input}
         type="file"
-        accept=".xlsx,.csv"
+        accept=".xlsx,.xlsm,.csv,.tsv"
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) void open(f);
@@ -618,6 +625,8 @@ export default function Sheets() {
           </>
         )}
         <div className="sheets-header-actions">
+          <MacroStudio kind="sheets" bridge={book?{operations:['setCell','replaceText'],snapshot:()=>sheetMacroSnapshot(book),apply:async(operations,revision)=>{const previous=structuredClone(book.workbook.model);applySheetMacro(book,operations,revision);history.current.push(previous);if(history.current.length>20)history.current.shift();future.current=[];changed();}}:null}/>
+          <TextProofing bridge={book?{operations:['setCell','replaceText'],snapshot:()=>sheetMacroSnapshot(book),apply:async(operations,revision)=>{const previous=structuredClone(book.workbook.model);applySheetMacro(book,operations,revision);history.current.push(previous);if(history.current.length>20)history.current.shift();future.current=[];changed();}}:null} text={()=>{const values:string[]=[];for(const current of book?.workbook.worksheets??[])current.eachRow(row=>row.eachCell(cell=>{if(typeof cell.value==="string")values.push(cell.value);}));return values.join("\n");}}/>
           <InstallApp />
           <Updates beforeReload={persist} onError={fail} />
           {book && (
@@ -1564,6 +1573,7 @@ export default function Sheets() {
               <button role="menuitem" onClick={() => void exportFile("csv")}>
                 Hoja actual (.csv)
               </button>
+              {["tsv","json","ods"].map(kind=><button role="menuitem" key={kind} onClick={()=>void exportFile(kind)}>{kind.toUpperCase()}{kind==="ods"?" · valores de todas las hojas":""}</button>)}
               <button role="menuitem" onClick={() => void exportFile("writer")}>
                 Selección como tabla para Word (.docx)
               </button>

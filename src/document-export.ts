@@ -1,3 +1,4 @@
+import {proofingLanguage} from './proofing-languages';
 import { PDFDocument } from "pdf-lib";
 import {preserveOfficeDocx} from './office-engines';
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
@@ -795,7 +796,7 @@ export async function exportDocx(
           run: {
             font: "Liberation Sans",
             size: 22,
-            language: { value: "es-CO" },
+            language: { value: proofingLanguage(flow.language).locale },
           },
         },
       },
@@ -1057,7 +1058,7 @@ export async function exportHtml(
       .join("\n");
   const layout = flow.layout,
     html =
-      '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\';style-src \'unsafe-inline\';img-src data:;font-src data:"><title>' +
+      '<!doctype html><html lang="'+proofingLanguage(flow.language).locale+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\';style-src \'unsafe-inline\';img-src data:;font-src data:"><title>' +
       escape(title) +
       "</title><style>" +
       css +

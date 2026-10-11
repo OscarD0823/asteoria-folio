@@ -1,0 +1,12 @@
+{
+  "id": "es-CO",
+  "package": "dictionary-es-co",
+  "version": "2.0.0",
+  "license": "(GPL-3.0 OR LGPL-3.0 OR MPL-1.1)",
+  "source": "https://github.com/wooorm/dictionaries/tree/main/dictionaries/es-co",
+  "files": {
+    "index.aff": "4dc9ddafc140e0fc27a40fe808ff3d77138e12bf3db5748832f03d780aadecfa",
+    "index.dic": "3fbc134bbdd2c6724e6f8cc5375bdaef05b33e59aefb007a2ed1864b5a4f6d8e",
+    "license": "9220057fa1d872f6ffeea65f7cbf4d9ecc69bc9b276771f6eb77cf8dbdf41d2b"
+  }
+}

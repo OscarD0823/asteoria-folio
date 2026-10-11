@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {createPresentation,presentationEngine as engine,openPresentation,changeSlideText,EMU,slideText,collectRenderFonts} from '../src/slides-core';
-import * as renderer from '../vendor/genoffice/dist/render.mjs';
+import {renderPrismaSlide} from '../src/prisma-slide-render';
 import {unzipSync} from 'fflate';
 test('Prisma Slides creates editable PPTX and preserves untouched parts after text, table and image edits',async()=>{
  const model=await createPresentation(),slide=model.deck.slides[0];
@@ -12,6 +12,6 @@ test('Prisma Slides creates editable PPTX and preserves untouched parts after te
  const saved=await engine.savePptx(reopened),parts=unzipSync(saved),base=unzipSync(original);assert.deepEqual(parts['ppt/theme/theme1.xml'],base['ppt/theme/theme1.xml']);
  const again=await openPresentation(saved);assert.ok(again.deck.slides[0].elements.some((e:any)=>slideText(e)==='Título editado'));assert.equal(engine.getSlideNotes(again.archive,again.deck.slides[0].path),'Nota del presentador');assert.ok(again.deck.slides[0].elements.some((e:any)=>e.type==='table'));
  assert.ok(again.deck.slides[0].elements.some((e:any)=>e.type==='picture'));assert.ok(Object.entries(parts).some(([name,bytes])=>name.startsWith('ppt/media/')&&Buffer.from(bytes).equals(Buffer.from(png))));
- const render=renderer.buildRenderSlide(again.deck.slides[0],again.deck.size,{fitWidthPx:1280,slideNo:1});assert.ok(render.nodes.some((n:any)=>n.type==='table'));assert.ok(collectRenderFonts(render.nodes).has('Carlito'));
+ const render=renderPrismaSlide(again.deck.slides[0],{width:1280,size:again.deck.size,media:()=>undefined});assert.match(render.svg.replace(/<[^>]*>/g,''),/Tabla 1/);assert.ok(render.fonts.has('Carlito'));
  engine.insertBlankSlide(again,0);engine.duplicateSlide(again,0);assert.equal((await openPresentation(await engine.savePptx(again))).deck.slides.length,3);
 });

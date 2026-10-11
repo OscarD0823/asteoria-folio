@@ -1,0 +1,60 @@
+import {zipSync,strToU8} from 'fflate';
+import type {FlowDocument,RichNode} from './flow';
+import {pageSize,plainText,safeColor} from './flow';
+import {normalizeAcademicDocument} from './academic';
+import {xmlEscape as x} from './prisma-ooxml';
+import {proofingLanguage} from './proofing-languages';
+import type {SheetsBook} from './sheets-core';
+
+const odfNamespaces='xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:xlink="http://www.w3.org/1999/xlink"';
+function odfPackage(type:string,content:string,styles:string,assets:Record<string,Uint8Array>={},title='Documento Prisma'){
+ const mime='application/vnd.oasis.opendocument.'+type;
+ const manifest='<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3"><manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="'+mime+'"/>'+['content.xml','styles.xml','meta.xml',...Object.keys(assets)].map(path=>'<manifest:file-entry manifest:full-path="'+x(path)+'" manifest:media-type="'+(path.endsWith('.xml')?'text/xml':path.endsWith('.png')?'image/png':'image/jpeg')+'"/>').join('')+'</manifest:manifest>';
+ return zipSync({mimetype:[strToU8(mime),{level:0}], 'content.xml':strToU8('<?xml version="1.0" encoding="UTF-8"?><office:document-content '+odfNamespaces+' office:version="1.3">'+content+'</office:document-content>'),'styles.xml':strToU8('<?xml version="1.0" encoding="UTF-8"?><office:document-styles '+odfNamespaces+' office:version="1.3">'+styles+'</office:document-styles>'),'meta.xml':strToU8('<?xml version="1.0"?><office:document-meta xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" xmlns:dc="http://purl.org/dc/elements/1.1/" office:version="1.3"><office:meta><meta:generator>Prisma</meta:generator><dc:title>'+x(title)+'</dc:title></office:meta></office:document-meta>'),'META-INF/manifest.xml':strToU8(manifest),...assets},{level:6});
+}
+const odfText=(value:string)=>value.split(/( +|\t|\n)/).map(part=>/^ +$/.test(part)?'<text:s text:c="'+part.length+'"/>':part==='\t'?'<text:tab/>':part==='\n'?'<text:line-break/>':x(part)).join('');
+export function exportOdt(flow:FlowDocument,title='Documento Prisma'){
+ const locale=proofingLanguage(flow.language).locale.split('-'),styles:string[]=[],assets:Record<string,Uint8Array>={};let counter=0,table=0;
+ function style(n:RichNode,inline=false){const id='S'+ ++counter,a=n.attrs??{},props:string[]=[];let font='';
+  for(const mark of n.marks??[]){if(mark.type==='bold')props.push('fo:font-weight="bold"');if(mark.type==='italic')props.push('fo:font-style="italic"');if(mark.type==='underline')props.push('style:text-underline-style="solid"');if(mark.type==='strike')props.push('style:text-line-through-style="solid"');if(mark.type==='textStyle'){if(mark.attrs?.fontFamily)font=String(mark.attrs.fontFamily);if(mark.attrs?.fontSize)props.push('fo:font-size="'+x(mark.attrs.fontSize)+'"');if(mark.attrs?.color)props.push('fo:color="'+safeColor(mark.attrs.color)+'"');}}
+  if(font)props.push('fo:font-family="'+x(font)+'"');
+  const paragraph=!inline?'<style:paragraph-properties '+(a.textAlign?'fo:text-align="'+x(a.textAlign==='justify'?'justify':a.textAlign)+'" ':'')+(a.lineHeight?'fo:line-height="'+Number(a.lineHeight)*100+'%" ':'')+(a.firstLineIndent?'fo:text-indent="'+Number(a.firstLineIndent)+'pt" ':'')+(a.spacingBefore?'fo:margin-top="'+Number(a.spacingBefore)+'pt" ':'')+(a.spacingAfter?'fo:margin-bottom="'+Number(a.spacingAfter)+'pt" ':'')+'/>':'';
+  styles.push('<style:style style:name="'+id+'" style:family="'+(inline?'text':'paragraph')+'"'+(!inline?' style:parent-style-name="Standard"':'')+'>'+paragraph+'<style:text-properties '+props.join(' ')+'/></style:style>');return id;
+ }
+ function render(n:RichNode):string{
+  if(n.type==='text'){const text=odfText(n.text??'');let value=n.marks?.length?'<text:span text:style-name="'+style(n,true)+'">'+text+'</text:span>':text;const link=n.marks?.find(m=>m.type==='link')?.attrs?.href;if(typeof link==='string'&&/^(https?:|mailto:)/i.test(link))value='<text:a xlink:type="simple" xlink:href="'+x(link)+'">'+value+'</text:a>';return value;}
+  if(n.type==='citation')return odfText(String(n.attrs?.label??''));
+  if(n.type==='hardBreak')return '<text:line-break/>';
+  if(n.type==='pageBreak'||n.type==='sectionBreak')return '<text:p text:style-name="PageBreak"/>';
+  if(n.type==='table')return '<table:table table:name="Table'+ ++table+'">'+(n.content??[]).map(row=>'<table:table-row>'+(row.content??[]).map(cell=>'<table:table-cell office:value-type="string"'+(Number(cell.attrs?.colspan)>1?' table:number-columns-spanned="'+Number(cell.attrs?.colspan)+'"':'')+'>'+(cell.content??[]).map(render).join('')+'</table:table-cell>'+ '<table:covered-table-cell/>'.repeat(Math.max(0,Number(cell.attrs?.colspan??1)-1))).join('')+'</table:table-row>').join('')+'</table:table>';
+  if(['image','chart','shape','equation'].includes(n.type??'')){const source=n.attrs?.src;if(typeof source==='string'){const match=source.match(/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/=]+)$/);if(match){const path='Pictures/image'+ ++counter+'.'+(match[1]==='png'?'png':'jpg'),binary=atob(match[2]);assets[path]=Uint8Array.from(binary,c=>c.charCodeAt(0));return '<text:p><draw:frame draw:name="Image'+counter+'" text:anchor-type="as-char" svg:width="'+(Number(n.attrs?.width)||300)*.0264583+'cm" svg:height="'+(Number(n.attrs?.height)||200)*.0264583+'cm"><draw:image xlink:href="'+path+'" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame></text:p>';}}
+   return '<text:p>'+odfText(String(n.attrs?.latex??n.attrs?.alt??n.type))+'</text:p>';
+  }
+  if(['caption','appendix','generatedIndex'].includes(n.type??''))return '<text:p>'+odfText(plainText(n)||String(n.attrs?.title??''))+'</text:p>';
+  const content=(n.content??[]).map(render).join('');
+  if(n.type==='paragraph'||n.type==='heading'){const tag=n.type==='heading'?'text:h':'text:p';return '<'+tag+' text:style-name="'+style(n)+'"'+(tag==='text:h'?' text:outline-level="'+(Number(n.attrs?.level)||1)+'"':'')+'>'+content+'</'+tag+'>';}
+  if(n.type==='bulletList'||n.type==='orderedList')return '<text:list text:style-name="'+(n.type==='orderedList'?'Numbered':'Bullets')+'">'+content+'</text:list>';
+  if(n.type==='listItem')return '<text:list-item>'+content+'</text:list-item>';return content;
+ }
+ const document=render(normalizeAcademicDocument(flow.content,flow.references??[],flow.academicStyle??'free')),layout=flow.layout,size=pageSize(layout).map(n=>(n*25.4/72).toFixed(3)+'mm');
+ const common='<office:styles><style:default-style style:family="paragraph"><style:text-properties fo:font-family="Carlito" fo:font-size="12pt" fo:language="'+locale[0]+'" fo:country="'+locale[1]+'"/></style:default-style><style:style style:name="Standard" style:family="paragraph" style:master-page-name="Standard"/><style:style style:name="PageBreak" style:family="paragraph"><style:paragraph-properties fo:break-before="page"/></style:style>'+['Numbered','Bullets'].map((name)=>'<text:list-style style:name="'+name+'">'+Array.from({length:10},(_,i)=>name==='Numbered'?'<text:list-level-style-number text:level="'+(i+1)+'" style:num-format="1" style:num-suffix="."/>':'<text:list-level-style-bullet text:level="'+(i+1)+'" text:bullet-char="•"/>').join('')+'</text:list-style>').join('')+'</office:styles>';
+ const page='<office:automatic-styles><style:page-layout style:name="Page"><style:page-layout-properties fo:page-width="'+size[0]+'" fo:page-height="'+size[1]+'" style:print-orientation="'+layout.orientation+'" fo:margin-top="'+layout.top+'mm" fo:margin-bottom="'+layout.bottom+'mm" fo:margin-left="'+layout.left+'mm" fo:margin-right="'+layout.right+'mm"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Standard" style:page-layout-name="Page"><style:header><text:p>'+odfText(layout.header)+'</text:p></style:header><style:footer><text:p>'+odfText(layout.footer)+(layout.numbering?'<text:page-number/>':'')+'</text:p></style:footer></style:master-page></office:master-styles>';
+ return odfPackage('text','<office:automatic-styles>'+styles.join('')+'</office:automatic-styles><office:body><office:text>'+document+'</office:text></office:body>',common+page,assets,title);
+}
+function rtfText(value:string){let result='';for(let i=0;i<value.length;i++){const code=value.charCodeAt(i),char=value[i];result+=char==='\n'?'\\line ':char==='\t'?'\\tab ':/[\\{}]/.test(char)?'\\'+char:code<128?char:'\\u'+(code>32767?code-65536:code)+'?';}return result;}
+export function exportRtf(flow:FlowDocument){
+ const fonts=['Carlito'],font=(name:string)=>{let index=fonts.indexOf(name);if(index<0){index=fonts.length;fonts.push(name);}return index;};
+ function render(n:RichNode):string{
+  if(n.type==='text'){let flags='';for(const mark of n.marks??[]){flags+=mark.type==='bold'?'\\b ':mark.type==='italic'?'\\i ':mark.type==='underline'?'\\ul ':mark.type==='strike'?'\\strike ':'';if(mark.type==='textStyle'){if(mark.attrs?.fontFamily)flags+='\\f'+font(String(mark.attrs.fontFamily))+' ';const size=parseFloat(String(mark.attrs?.fontSize));if(Number.isFinite(size))flags+='\\fs'+Math.round(size*2)+' ';}}return '{'+flags+rtfText(n.text??'')+'}';}
+  if(n.type==='citation')return rtfText(String(n.attrs?.label??''));if(n.type==='hardBreak')return '\\line ';if(['pageBreak','sectionBreak'].includes(n.type??''))return '\\page ';
+  if(n.type==='table')return (n.content??[]).map(row=>'\\trowd '+(row.content??[]).map((_,i)=>'\\cellx'+(i+1)*Math.round(9000/(row.content?.length||1))).join(' ')+' '+(row.content??[]).map(cell=>'\\intbl '+rtfText(plainText(cell))+'\\cell ').join('')+'\\row\n').join('');
+  if(['image','chart','shape','video','equation'].includes(n.type??''))return rtfText('['+String(n.attrs?.alt??n.attrs?.latex??n.type)+']');
+  const content=(n.content??[]).map(render).join('');if(['paragraph','heading','caption','appendix'].includes(n.type??'')){const align=String(n.attrs?.textAlign),flag=align==='center'?'\\qc ':align==='right'?'\\qr ':align==='justify'?'\\qj ':'\\ql ';return '{\\pard '+flag+(n.type==='heading'?'\\b ':'')+content+'\\par}\n';}return content;
+ }
+ const content=render(normalizeAcademicDocument(flow.content,flow.references??[],flow.academicStyle??'free')),size=pageSize(flow.layout),twips=(n:number)=>Math.round(n*1440/25.4),layout=flow.layout;
+ return strToU8('{\\rtf1\\ansi\\ansicpg1252\\uc1\\deff0{\\fonttbl '+fonts.map((name,i)=>'{\\f'+i+' '+rtfText(name)+';}').join('')+'}\\paperw'+Math.round(size[0]*20)+'\\paperh'+Math.round(size[1]*20)+'\\margl'+twips(layout.left)+'\\margr'+twips(layout.right)+'\\margt'+twips(layout.top)+'\\margb'+twips(layout.bottom)+'\\fs24 '+content+'}');
+}
+export function exportOds(book:SheetsBook,title='Libro Prisma'){
+ let content='';for(const sheet of book.workbook.worksheets){content+='<table:table table:name="'+x(sheet.name)+'">';for(let r=0;r<sheet.rowCount;r++){content+='<table:table-row>';for(let c=0;c<sheet.columnCount;c++){const value=book.value(sheet.name,r,c),kind=typeof value==='number'?'float':typeof value==='boolean'?'boolean':'string';content+='<table:table-cell office:value-type="'+kind+'"'+(kind==='float'?' office:value="'+value+'"':kind==='boolean'?' office:boolean-value="'+value+'"':'')+'><text:p>'+odfText(String(value??''))+'</text:p></table:table-cell>';}content+='</table:table-row>';}content+='</table:table>';}
+ return odfPackage('spreadsheet','<office:body><office:spreadsheet>'+content+'</office:spreadsheet></office:body>','<office:styles/>',{},title);
+}

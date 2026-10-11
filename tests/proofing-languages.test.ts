@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import crypto from 'node:crypto';import {loadModule} from 'hunspell-asm';
+import {proofingLanguages,textWords} from '../src/proofing-languages';
+test('all eleven local dictionaries recognize their language, detect misspellings and keep verified licenses',async()=>{
+ const module=await loadModule();
+ const words:Record<string,[string,string]>={es:['documento','docummento'],'es-CO':['documento','docummento'],en:['document','documment'],'en-GB':['colour','colouur'],fr:['bonjour','bonjouur'],pt:['documento','docummento'],'pt-PT':['documento','docummento'],de:['Dokument','Dokumment'],it:['documento','docummento'],nl:['document','documment'],ca:['document','documment']};
+ for(const language of proofingLanguages){const root='public/spelling/'+language.id+'/',aff=fs.readFileSync(root+'index.aff','utf8'),dic=fs.readFileSync(root+'index.dic','utf8'),affPath=module.mountBuffer(new TextEncoder().encode(aff)),dicPath=module.mountBuffer(new TextEncoder().encode(dic)),checker=module.create(affPath,dicPath),[valid,invalid]=words[language.id];assert.ok(checker.spell(valid),language.id+': '+valid);assert.ok(!checker.spell(invalid),language.id+': '+invalid);assert.ok(checker.suggest(invalid).includes(valid),language.id+': suggestions');const source=JSON.parse(fs.readFileSync(root+'SOURCE.json','utf8'));for(const file of ['index.aff','index.dic','license'])assert.equal(crypto.createHash('sha256').update(fs.readFileSync(root+(file==='license'?'LICENSE.txt':file))).digest('hex'),source.files[file]);checker.dispose();module.unmount(affPath);module.unmount(dicPath);}
+});
+test('proofing character positions survive emoji, combining accents, punctuation and exclude URLs',()=>{
+ const text='🧪 Hola, e\u0301tude. l’amour https://google.com x@example.com 漢字';for(const word of textWords(text))assert.equal(text.slice(word.from,word.to),word.word);assert.deepEqual(textWords(text).map(word=>word.word),['Hola','e\u0301tude','l’amour','漢字']);
+});

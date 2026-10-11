@@ -1,0 +1,12 @@
+{
+  "id": "nl",
+  "package": "dictionary-nl",
+  "version": "2.0.0",
+  "license": "(BSD-3-Clause OR CC-BY-3.0)",
+  "source": "https://github.com/wooorm/dictionaries/tree/main/dictionaries/nl",
+  "files": {
+    "index.aff": "b430d9cf5f4170d9e5072397927e1402b34aa877d1f4c8fbc00dab6370d87312",
+    "index.dic": "be192fdc36efd39dde0fb9a5a113143e0a906782e81ed68a74a710edced378d0",
+    "license": "fd9e95c360245eab3c388885062820754785faa4123964994cfdecb950b71948"
+  }
+}

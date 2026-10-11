@@ -1,4 +1,5 @@
 import type { Node } from "@tiptap/pm/model";
+import {proofingLanguage,textWords,type ProofingLanguage} from './proofing-languages';
 export type WordLocation = { word: string; from: number; to: number };
 export function spellingWords(doc: Node): WordLocation[] {
   const words: WordLocation[] = [];
@@ -10,27 +11,19 @@ export function spellingWords(doc: Node): WordLocation[] {
     node.forEach((child) => {
       text += child.isText ? child.text : "\uFFFC".repeat(child.nodeSize);
     });
-    // Exclude URLs, email addresses and identifiers; retain original UTF-16 positions.
-    const masked = text.replace(
-      /(?:https?:\/\/|www\.)\S+|[\w.+-]+@[\w.-]+\.[\p{L}]+/gu,
-      (m) => " ".repeat(m.length),
-    );
-    for (const match of masked.matchAll(
-      /[\p{L}\p{M}]+(?:['’][\p{L}\p{M}]+)*/gu,
-    )) {
-      if (match[0].length > 64 || match[0].length < 2) continue;
+    for (const match of textWords(text)) {
       words.push({
-        word: match[0],
-        from: pos + 1 + match.index,
-        to: pos + 1 + match.index + match[0].length,
+        word: match.word,
+        from: pos + 1 + match.from,
+        to: pos + 1 + match.to,
       });
     }
     return false;
   });
   return words;
 }
-export function canonicalWord(word: string) {
-  return word.normalize("NFC").toLocaleLowerCase("es");
+export function canonicalWord(word: string,language:ProofingLanguage='es') {
+  return word.normalize("NFC").toLocaleLowerCase(proofingLanguage(language).locale);
 }
 let worker: Worker | undefined,
   sequence = 0;
@@ -41,6 +34,7 @@ const pending = new Map<
 export function spellRequest(
   action: "check" | "suggest",
   words: string[],
+  language:ProofingLanguage='es',
 ): Promise<string[]> {
   if (!worker) {
     worker = new Worker(new URL("./spelling.worker.ts", import.meta.url), {
@@ -63,6 +57,6 @@ export function spellRequest(
   const id = ++sequence;
   return new Promise((resolve, reject) => {
     pending.set(id, { resolve, reject });
-    worker!.postMessage({ id, action, words, baseUrl: document.baseURI });
+    worker!.postMessage({ id, action, words, language:proofingLanguage(language).id,baseUrl: document.baseURI });
   });
 }

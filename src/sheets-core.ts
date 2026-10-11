@@ -198,10 +198,7 @@ export class SheetsBook {
     });
     if (!zip["xl/workbook.xml"])
       throw new Error("Selecciona un archivo XLSX válido.");
-    if (zip["xl/vbaProject.bin"])
-      throw new Error(
-        "Las macros no son compatibles. Abre una copia XLSX sin macros.",
-      );
+
     const wb = new ExcelJS.Workbook();
     const normalized = normalizedSpreadsheetParts(zip);
     await wb.xlsx.load(
@@ -209,6 +206,7 @@ export class SheetsBook {
     );
     const book = new SheetsBook(wb);
     book.original = new Uint8Array(bytes);
+    if(zip["xl/vbaProject.bin"])book.warnings.push("Este XLSM contiene VBA inactivo. Descarga el original para conservar las macros. Exportar una copia XLSX conserva las celdas compatibles y elimina VBA.");
     const paths = Object.keys(zip);
     const unsupported: [RegExp, string][] = [
       [/xl\/charts\//, "Gráficos nativos de Excel"],
