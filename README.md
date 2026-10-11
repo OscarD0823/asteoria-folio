@@ -4,11 +4,11 @@ Las seis webs pueden instalarse desde **Instalar app**. Consulta la [guía de in
 
 Editor de PDF y creador de documentos en español. Web, PWA, Android y Windows; todos procesan los documentos en el dispositivo.
 
-**[Prisma](https://oscard0823.github.io/prisma-pdf/prisma/)** reúne los seis editores en una aplicación general, con biblioteca local y apertura de archivos. **Prisma PDF, Writer, Sheets, Slides, Data y Publisher** conservan sus aplicaciones e instaladores independientes. Consulta [la arquitectura y el orden de desarrollo propio](README-prisma.md).
+**[Prisma](https://oscard0823.github.io/prisma/)** reúne los seis editores en una aplicación general, con biblioteca local y apertura de archivos. **Prisma PDF, Writer, Sheets, Slides, Data y Publisher** conservan sus aplicaciones e instaladores independientes. Consulta [la arquitectura y el orden de desarrollo propio](README-prisma.md).
 
 - [Abrir editor](https://oscard0823.github.io/prisma-pdf/)
-- [Abrir Prisma Writer](https://oscard0823.github.io/prisma-pdf/writer/) · [Guía y compatibilidad](README-writer.md)
-- [Abrir Prisma Sheets](https://oscard0823.github.io/prisma-pdf/sheets/) · [Funciones y límites de XLSX](README-sheets.md)
+- [Abrir Prisma Writer](https://oscard0823.github.io/prisma-writer/) · [Guía y compatibilidad](README-writer.md)
+- [Abrir Prisma Sheets](https://oscard0823.github.io/prisma-sheets/) · [Funciones y límites de XLSX](README-sheets.md)
 - [Compatibilidad y orden de desarrollo de la suite Prisma](README-office.md)
 - [Descargar APK y EXE](https://github.com/OscarD0823/prisma-pdf/releases/latest)
 
@@ -118,4 +118,4 @@ AGPL-3.0-or-later. El código de esta versión se publica en GitHub y en `prisma
 
 ## Integración de motores
 
-[Slides](https://oscard0823.github.io/prisma-pdf/slides/), [Data](https://oscard0823.github.io/prisma-pdf/data/) y [Publisher](https://oscard0823.github.io/prisma-pdf/publisher/) están disponibles en primeras versiones. Consulte [funciones, límites y conexión de motores locales](README-integrations.md). Incluye OCR local, taller PDF, preservación DOCX/PPTX compatible, 94 familias de fuentes y biblioteca de diccionarios. No sustituye todavía todas las funciones de Office.
+[Slides](https://oscard0823.github.io/prisma-slides/), [Data](https://oscard0823.github.io/prisma-data/) y [Publisher](https://oscard0823.github.io/prisma-publisher/) están disponibles en primeras versiones. Consulte [funciones, límites y conexión de motores locales](README-integrations.md). Incluye OCR local, taller PDF, preservación DOCX/PPTX compatible, 94 familias de fuentes y biblioteca de diccionarios. No sustituye todavía todas las funciones de Office.

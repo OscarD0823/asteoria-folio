@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import products from "./products.json";
 // Older Hunspell bindings call nanoid's CommonJS export. Make that import
 // explicit for Rollup, including the separately compiled spelling worker.
 const proofingInterop = () => ({
@@ -18,6 +19,9 @@ export default defineConfig({
     {
       name: "prisma-product",
       transformIndexHtml(html) {
+        const kind=process.env.VITE_PRODUCT as keyof typeof products;
+        const canonical='https://oscard0823.github.io/'+(products[kind]??products.pdf).siteSlug+'/';
+        html=html.replace('<head>','<head>\n    <link rel="canonical" href="'+canonical+'" />');
         const more:Record<string,string>={slides:'Prisma Slides',data:'Prisma Data',publisher:'Prisma Publisher',prisma:'Prisma'};
         if(process.env.VITE_PRODUCT&&more[process.env.VITE_PRODUCT])return html.replaceAll('Prisma PDF',more[process.env.VITE_PRODUCT]);
         if (process.env.VITE_PRODUCT === "sheets")

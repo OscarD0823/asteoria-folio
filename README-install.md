@@ -3,12 +3,12 @@
 Cada web es una aplicación instalable independiente:
 
 - [Prisma PDF](https://oscard0823.github.io/prisma-pdf/)
-- [Prisma Writer](https://oscard0823.github.io/prisma-pdf/writer/)
-- [Prisma Sheets](https://oscard0823.github.io/prisma-pdf/sheets/)
-- [Prisma Slides](https://oscard0823.github.io/prisma-pdf/slides/)
-- [Prisma Data](https://oscard0823.github.io/prisma-pdf/data/)
-- [Prisma Publisher](https://oscard0823.github.io/prisma-pdf/publisher/)
-- [Prisma, aplicación general](https://oscard0823.github.io/prisma-pdf/prisma/)
+- [Prisma Writer](https://oscard0823.github.io/prisma-writer/)
+- [Prisma Sheets](https://oscard0823.github.io/prisma-sheets/)
+- [Prisma Slides](https://oscard0823.github.io/prisma-slides/)
+- [Prisma Data](https://oscard0823.github.io/prisma-data/)
+- [Prisma Publisher](https://oscard0823.github.io/prisma-publisher/)
+- [Prisma, aplicación general](https://oscard0823.github.io/prisma/)
 
 Pulsa **Instalar app**. En Chrome/Edge, cuando el navegador ofrece la instalación, aparece un botón para abrir su diálogo. También se muestran las instrucciones para Android, Windows, Linux, iPhone/iPad y Mac. La disponibilidad depende del navegador; Firefox de escritorio no instala PWAs mediante el manifiesto. [Documentación de instalación de MDN](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable).
 

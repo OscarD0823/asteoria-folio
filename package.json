@@ -10,6 +10,8 @@
     "dev": "node scripts/prepare-assets.mjs && vite --host 127.0.0.1 --port 4178",
     "build": "node scripts/bundle-prisma-engines.mjs && node scripts/prepare-assets.mjs && tsc --noEmit && vite build && node scripts/package-source.mjs && node scripts/build-offline.mjs",
     "build:products": "node scripts/build-products.mjs",
+    "build:product": "node scripts/build-product.mjs",
+    "publish:pages": "node scripts/publish-pages.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 4178",
     "test": "node scripts/bundle-prisma-engines.mjs && tsx --test tests/*.test.ts",
     "desktop:build": "pnpm build && electron-builder --win nsis --x64",

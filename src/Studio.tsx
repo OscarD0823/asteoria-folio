@@ -1915,7 +1915,7 @@ export default function Studio() {
               Código abierto
               <ArrowRight size={13} />
             </a>
-            <a href="https://oscard0823.github.io/prisma-pdf/sheets/">
+            <a href="https://oscard0823.github.io/prisma-sheets/">
               Abrir Prisma Sheets <ArrowRight size={13} />
             </a>
           </footer>

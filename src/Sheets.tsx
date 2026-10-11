@@ -756,7 +756,7 @@ export default function Sheets() {
             Prisma Sheets {product.version} · Primera versión{" "}
             <nav>
               <a
-                href="https://oscard0823.github.io/prisma-pdf/writer/"
+                href="https://oscard0823.github.io/prisma-writer/"
                 target="_blank"
                 rel="noopener noreferrer"
               >

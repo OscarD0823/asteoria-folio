@@ -19,7 +19,7 @@ export function productInfo(kind: ProductKind) {
     assetName: products[kind].name.replaceAll(' ', '-'),
     logo: kind === 'pdf' ? './pdf-logo.svg' : './' + kind + '-logo.svg',
     tagPrefix: kind === 'pdf' ? 'v' : kind + '-v',
-    website: 'https://oscard0823.github.io/prisma-pdf/' + (kind === 'pdf' ? '' : kind + '/'),
-    repository: 'https://github.com/OscarD0823/prisma-pdf',
+    website: 'https://oscard0823.github.io/' + products[kind].siteSlug + '/',
+    repository: 'https://github.com/OscarD0823/' + products[kind].siteSlug,
   };
 }

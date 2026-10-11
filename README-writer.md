@@ -4,7 +4,7 @@ La versión 1.2 añade instalación mejorada y diccionario personal con definici
 
 Procesador de documentos para escribir, revisar y presentar trabajos desde la web, Android y Windows. Comparte el motor local con Prisma PDF y tiene identidad de aplicación y biblioteca independientes.
 
-- Web: https://oscard0823.github.io/prisma-pdf/writer/
+- Web: https://oscard0823.github.io/prisma-writer/
 - Archivos: abrir DOCX, TXT, PDF y proyectos `.prisma`; exportar DOCX, PDF, HTML, Markdown, TXT y PNG.
 - Escritura: cinta de herramientas, estilos de párrafo, tablas, imágenes, ecuaciones, citas, índices, comentarios, reglas, secciones, encabezados y pies.
 - Revisión: diccionario de español Hunspell/Typo.js ejecutado en un worker local; sugerencias, omisiones, diccionario personal y subrayado. No incluye un motor completo de gramática.

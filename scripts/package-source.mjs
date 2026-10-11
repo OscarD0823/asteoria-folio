@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { copyFileSync } from "node:fs";
-copyFileSync("LICENSE", "dist/LICENSE.txt");
+import { resolve, join } from "node:path";
+const output = resolve(process.env.PRISMA_OUTDIR || "dist");
+copyFileSync("LICENSE", join(output, "LICENSE.txt"));
 const files = [
   ".gitignore",
   "LICENSE",
@@ -76,7 +78,7 @@ const excludes = [
 ].map((path) => "--exclude=" + path);
 const result = spawnSync(
   process.platform === "win32" ? "tar.exe" : "tar",
-  ["-czf", "dist/prisma-pdf-source.tar.gz", ...excludes, ...files],
+  ["-czf", join(output, "prisma-pdf-source.tar.gz"), ...excludes, ...files],
   { stdio: "inherit" },
 );
 if (result.status !== 0)

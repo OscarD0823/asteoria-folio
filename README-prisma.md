@@ -2,7 +2,21 @@
 
 **Prisma** es la aplicación general. Reúne seis editores propios: **Prisma Writer**, **Prisma Sheets**, **Prisma Slides**, **Prisma PDF**, **Prisma Data** y **Prisma Publisher**. Cada editor también conserva su página, PWA, APK, instalador Windows, icono, identificador y actualización independientes. Prisma tiene su propio identificador `com.oscard.prisma`, versión y distribución.
 
-Prisma se publica en [/prisma/](https://oscard0823.github.io/prisma-pdf/prisma/). La dirección existente del editor PDF permanece en la raíz para conservar las instalaciones y los proyectos anteriores.
+Cada aplicación tiene una página y un repositorio de publicación con su propio nombre. Prisma general se publica en [/prisma/](https://oscard0823.github.io/prisma/).
+
+| Aplicación | Página |
+|---|---|
+| Prisma | https://oscard0823.github.io/prisma/ |
+| Prisma PDF | https://oscard0823.github.io/prisma-pdf/ |
+| Prisma Writer | https://oscard0823.github.io/prisma-writer/ |
+| Prisma Sheets | https://oscard0823.github.io/prisma-sheets/ |
+| Prisma Slides | https://oscard0823.github.io/prisma-slides/ |
+| Prisma Data | https://oscard0823.github.io/prisma-data/ |
+| Prisma Publisher | https://oscard0823.github.io/prisma-publisher/ |
+
+Las direcciones anteriores bajo `/prisma-pdf/writer/`, `/prisma-pdf/prisma/` y las demás subcarpetas permanecen como accesos compatibles. No se modifica la identidad de los proyectos locales. Las páginas nuevas empaquetan sus propios recursos, manifiesto y caché de aplicación; no necesitan cargar fuentes o diccionarios desde la página PDF.
+
+El código compartido y los instaladores se mantienen en este repositorio. Cada repositorio de publicación compila el producto correspondiente desde el código público de `main`. Después de subir una actualización del código compartido, `pnpm publish:pages` inicia los siete despliegues con GitHub CLI autenticado. Se puede publicar una aplicación con `pnpm publish:pages writer`. Para compilar una página individual: `pnpm build:product writer` en una carpeta de salida vacía.
 
 ## Uso y almacenamiento
 
