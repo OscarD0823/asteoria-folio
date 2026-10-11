@@ -1,0 +1,8 @@
+{
+ "pdf":{"name":"Prisma PDF","version":"6.3.0","description":"Editor PDF local y privado"},
+ "writer":{"name":"Prisma Writer","version":"1.3.0","description":"Procesador de documentos local y privado"},
+ "sheets":{"name":"Prisma Sheets","version":"0.3.0","description":"Hojas de cálculo locales compatibles con XLSX"},
+ "slides":{"name":"Prisma Slides","version":"0.1.0","description":"Presentaciones locales compatibles con PPTX"},
+ "data":{"name":"Prisma Data","version":"0.1.0","description":"Bases de datos, tablas y consultas locales"},
+ "publisher":{"name":"Prisma Publisher","version":"0.1.0","description":"Diseño de publicaciones y páginas para imprimir"}
+}

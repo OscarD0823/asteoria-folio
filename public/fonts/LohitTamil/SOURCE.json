@@ -1,0 +1,18 @@
+{
+  "family": "Lohit Tamil",
+  "upstream": "https://github.com/ONLYOFFICE/core-fonts",
+  "revision": "7030c6681fb5bbed560675cb42422f91df15d5c9",
+  "derivation": "Original font files, without modification. Per-family license included.",
+  "files": [
+    {
+      "file": "LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/lohit-tamil/LICENSE.txt",
+      "sha256": "dd3f2d7ebf100a70cd00d81ee0c3a470ef931dc2ac070d302a49d94e9927b553"
+    },
+    {
+      "file": "Lohit-Tamil.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/lohit-tamil/Lohit-Tamil.ttf",
+      "sha256": "36e331a9ba7e7b1b4c6a544f4f99785ba38bd5a8b3899a514e3f946da9161896"
+    }
+  ]
+}

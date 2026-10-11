@@ -1,0 +1,23 @@
+{
+  "family": "Padauk",
+  "upstream": "https://github.com/ONLYOFFICE/core-fonts",
+  "revision": "7030c6681fb5bbed560675cb42422f91df15d5c9",
+  "derivation": "Original font files, without modification. Per-family license included.",
+  "files": [
+    {
+      "file": "LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/padauk/LICENSE.txt",
+      "sha256": "dd3f2d7ebf100a70cd00d81ee0c3a470ef931dc2ac070d302a49d94e9927b553"
+    },
+    {
+      "file": "Padauk.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/padauk/Padauk.ttf",
+      "sha256": "31f2e29e41ba49f6dcf92f72b14678939ac6f04a728b7f0ce286249c5d21260a"
+    },
+    {
+      "file": "Padauk-bold.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/padauk/Padauk-bold.ttf",
+      "sha256": "2d382b8113c78fa895695339a9de473feeabd8194bed3118775962d4e267f848"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "family": "Arvo",
+  "upstream": "https://github.com/wachin/Alternative-to-privative-Microsoft-Windows-Fonts",
+  "revision": "ae393b1a52ac40f916125cfca4d9b2a779ed6bcd",
+  "derivation": "Original font files, without modification. Per-family license included.",
+  "files": [
+    {
+      "file": "OFL.txt",
+      "url": "https://raw.githubusercontent.com/wachin/Alternative-to-privative-Microsoft-Windows-Fonts/ae393b1a52ac40f916125cfca4d9b2a779ed6bcd/Arvo/OFL.txt",
+      "sha256": "71c23be75beeeb7258e8462cb2d91f8c459db0dcb2545a659780d12a7a82e9f2"
+    },
+    {
+      "file": "Arvo-Regular.ttf",
+      "url": "https://raw.githubusercontent.com/wachin/Alternative-to-privative-Microsoft-Windows-Fonts/ae393b1a52ac40f916125cfca4d9b2a779ed6bcd/Arvo/Arvo-Regular.ttf",
+      "sha256": "caaf4698cc8b8978c162b09bb4f12f7f42ffbc9c8e94eb4ac024c0f0b28d4349"
+    },
+    {
+      "file": "Arvo-Bold.ttf",
+      "url": "https://raw.githubusercontent.com/wachin/Alternative-to-privative-Microsoft-Windows-Fonts/ae393b1a52ac40f916125cfca4d9b2a779ed6bcd/Arvo/Arvo-Bold.ttf",
+      "sha256": "c90fbf2e7da3bb74e38cf01e8e56aaebf5d030b1191cf416fc5b979b45f5fbb2"
+    },
+    {
+      "file": "Arvo-Italic.ttf",
+      "url": "https://raw.githubusercontent.com/wachin/Alternative-to-privative-Microsoft-Windows-Fonts/ae393b1a52ac40f916125cfca4d9b2a779ed6bcd/Arvo/Arvo-Italic.ttf",
+      "sha256": "d155931160f68ffa5fa9a6c3608969bac1e1e2213c9a18145f23d1359f5f02d1"
+    },
+    {
+      "file": "Arvo-BoldItalic.ttf",
+      "url": "https://raw.githubusercontent.com/wachin/Alternative-to-privative-Microsoft-Windows-Fonts/ae393b1a52ac40f916125cfca4d9b2a779ed6bcd/Arvo/Arvo-BoldItalic.ttf",
+      "sha256": "f0d6c54806bc9d79680d9a940de8b8e74eb2dc62f685530c42894db966a5796f"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "runtime": "tesseract.js@7.0.0",
+  "core": "tesseract.js-core@7.0.0",
+  "models": [
+    {
+      "language": "spa",
+      "package": "@tesseract.js-data/spa@1.0.0",
+      "variant": "4.0.0_best_int",
+      "sha256": "0062377729b81cc268b1822f09eb1c08c09f3f7f1c6b422540b51555a7eeea70",
+      "packageGzipSha256": "40be52f97b5d4eb7460073dc1f94cd546b27150333c0bf854ed7e7132db6bceb",
+      "file": "lang/spa.traineddata",
+      "delivery": "Uncompressed original model; avoids Android asset gzip renaming."
+    },
+    {
+      "language": "eng",
+      "package": "@tesseract.js-data/eng@1.0.0",
+      "variant": "4.0.0_best_int",
+      "sha256": "5dc5d8d640a212c9d6184921ba103b186f50e0fed9ee716c53e6b312b400d747",
+      "packageGzipSha256": "45b4cb346724ac1774f1c36f42f182b887bcdb28ebe63e6fff90ac41f3fcff91",
+      "file": "lang/eng.traineddata",
+      "delivery": "Uncompressed original model; avoids Android asset gzip renaming."
+    }
+  ],
+  "upstreamModels": "https://github.com/tesseract-ocr/tessdata_best",
+  "licenseRevision": "e12c65a915945e4c28e237a9b52bc4a8f39a0cec",
+  "license": "Apache-2.0"
+}

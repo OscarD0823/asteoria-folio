@@ -1,0 +1,55 @@
+{
+  "repository": "https://github.com/PDFCraftTool/pdfcraft",
+  "commit": "a30070241c82ae9f03b8ce6398a29182387c1764",
+  "license": "AGPL-3.0",
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "8486a10c4393cee1c25392769ddd3b2d6c242d6ec7928e1414efff7dfb2f07ef"
+    },
+    {
+      "path": "src/types/pdf.ts",
+      "sha256": "5d72ed867c78f436704b9bb1354db3d1885b9b1275d59269025a2fe2696809ed"
+    },
+    {
+      "path": "src/lib/pdf/processor.ts",
+      "sha256": "b70626e40e3b388f4ff5c1e3e72ca840e7b220b7f1f51183d660303659299e46"
+    },
+    {
+      "path": "src/lib/pdf/processors/reverse.ts",
+      "sha256": "84244da8f2adafb3fb1d945db4836c6aae9e38b545348916a768b8edc4d8331b"
+    },
+    {
+      "path": "src/lib/pdf/processors/n-up.ts",
+      "sha256": "c2657787d8206ddc8c482f29b8d674b52f35d423a0afa059079e9e86cc7ecf34"
+    },
+    {
+      "path": "src/lib/pdf/processors/booklet.ts",
+      "sha256": "67daf369f40fce321b8eb244096b05327a58dd793d59fe8b02fa4094ec6b8be5"
+    },
+    {
+      "path": "src/lib/pdf/processors/divide.ts",
+      "sha256": "78c1ff090419e9b2215bb41fe89509855416395bf3ccb57b7e93c9f0360476e6"
+    },
+    {
+      "path": "src/lib/pdf/processors/alternate-merge.ts",
+      "sha256": "947a019f2d639f21e0919abe56f9553a760be968000961368dba034fcbba13c0"
+    },
+    {
+      "path": "src/lib/pdf/processors/crop.ts",
+      "sha256": "82a82f1f51c2e0a368830772d5c9495fd3dbf30f079800aa46b25c6cd5c042c7"
+    },
+    {
+      "path": "src/lib/pdf/processors/edit-metadata.ts",
+      "sha256": "e868d2f0fd19bd04a6d4100de5b5a83a2359d67a4f34b00f0d25277d32691ad3"
+    },
+    {
+      "path": "src/lib/pdf/processors/form-filler.ts",
+      "sha256": "ece57465fa11660c085db57c5df4bcc04623dc3ac20c2282a3c3f242367a5189"
+    },
+    {
+      "path": "src/lib/pdf/processors/form-creator.ts",
+      "sha256": "d0c65bce874cee5f210f0b2717e241477b3e9489cd5c45de6f6cf76b4608e191"
+    }
+  ]
+}

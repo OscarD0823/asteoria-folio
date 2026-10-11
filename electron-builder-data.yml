@@ -1,0 +1,33 @@
+appId: com.oscard.prismadata
+productName: Prisma Data
+directories:
+  output: release-data
+extraMetadata:
+  name: prisma-data
+  version: 0.1.0
+  prismaProduct: data
+files:
+  - dist-data/**/*
+  - desktop/**/*
+  - engines/**/*
+  - vendor/genoffice/dist/*.cjs
+  - vendor/genoffice/LICENSE
+  - vendor/genoffice/NOTICE
+  - vendor/genoffice/SOURCE.json
+  - products.json
+  - package.json
+  - "!node_modules/**/*"
+asar: true
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: public/data-icons/prisma.ico
+  signExecutable: false
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: Prisma-Data-${version}-Windows-Setup.exe

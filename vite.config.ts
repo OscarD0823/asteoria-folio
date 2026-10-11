@@ -6,6 +6,8 @@ export default defineConfig({
     {
       name: "prisma-product",
       transformIndexHtml(html) {
+        const more:Record<string,string>={slides:'Prisma Slides',data:'Prisma Data',publisher:'Prisma Publisher'};
+        if(process.env.VITE_PRODUCT&&more[process.env.VITE_PRODUCT])return html.replaceAll('Prisma PDF',more[process.env.VITE_PRODUCT]);
         if (process.env.VITE_PRODUCT === "sheets")
           return html
             .replaceAll("Prisma PDF", "Prisma Sheets")

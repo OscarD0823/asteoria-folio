@@ -8,20 +8,17 @@ import {
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 const require = createRequire(import.meta.url);
+const {gunzipSync}=require('node:zlib');
+const {unlinkSync}=require('node:fs');
 const writer = process.env.VITE_PRODUCT === "writer";
 const sheets = process.env.VITE_PRODUCT === "sheets";
-const appVersion = writer
-  ? "1.2.0"
-  : sheets
-    ? "0.2.0"
-    : JSON.parse(readFileSync("package.json", "utf8")).version;
+const products=JSON.parse(readFileSync('products.json','utf8'));
+const kind=process.env.VITE_PRODUCT&&products[process.env.VITE_PRODUCT]?process.env.VITE_PRODUCT:'pdf';
+const appVersion=products[kind].version;
 const releaseTag =
-  (sheets ? "sheets-v" : writer ? "writer-v" : "v") + appVersion;
-const assetName = sheets
-  ? "Prisma-Sheets"
-  : writer
-    ? "Prisma-Writer"
-    : "Prisma-PDF";
+  (kind==='pdf'?'v':kind+'-v')+appVersion;
+const assetName=products[kind].name.replace(' ','-');
+const suiteFeatures={pdf:['OCR español e inglés sin subir documentos','Taller PDF: formularios, imposición, división y metadatos','94 familias de fuentes y diccionarios locales'],writer:['Conservación de partes originales DOCX en cambios de texto compatibles','Revisión de notas al pie, notas finales y comentarios de Word','94 familias de fuentes y biblioteca StarDict/ODict'],sheets:['Hojas XLSX, fórmulas, formatos y exportación','94 familias de fuentes locales'],slides:['Edición local de PPTX con texto, imágenes, tablas, formas y notas','Objetos movibles, reglas y exportación PDF'],data:['SQLite en el navegador con tablas, relaciones y consultas SQL','Importación CSV/XLSX y exportación SQLite, CSV, JSON y XLSX'],publisher:['Publicaciones A4, plantillas, reglas y objetos movibles','Guardado local y exportación PPTX editable o PDF']};
 const release = "https://github.com/OscarD0823/prisma-pdf/releases/";
 writeFileSync(
   "public/version.json",
@@ -47,7 +44,7 @@ writeFileSync(
         "-" +
         appVersion +
         "-Windows-Setup.exe",
-      features: sheets
+      features: suiteFeatures[kind] ?? (sheets
         ? [
             "Aplicación instalable y biblioteca completa de fuentes con favoritas",
             "Editor local de hojas XLSX y CSV",
@@ -65,7 +62,7 @@ writeFileSync(
             "Revisor ortográfico de español e inspector Unicode locales",
             "Escritura con separación de páginas e importación de DOCX",
             "Comprobación de actualizaciones sin enviar documentos",
-          ],
+          ]),
     },
     null,
     2,
@@ -76,6 +73,10 @@ mkdirSync("public/pdfjs", { recursive: true });
 for (const name of ["cmaps", "standard_fonts", "wasm"])
   cpSync(join(base, name), join("public/pdfjs", name), { recursive: true });
 const engine = dirname(require.resolve("mupdf"));
+const ocr=dirname(require.resolve('tesseract.js/package.json')),ocrCore=dirname(require.resolve('tesseract.js-core/package.json'));
+mkdirSync('public/ocr/lang',{recursive:true});cpSync(join(ocr,'dist/worker.min.js'),'public/ocr/worker.min.js');
+for(const file of ['tesseract-core-lstm.wasm.js','tesseract-core-lstm.wasm'])cpSync(join(ocrCore,file),'public/ocr/'+file);
+for(const lang of ['spa','eng']){const packed=join(dirname(require.resolve('@tesseract.js-data/'+lang+'/package.json')),'4.0.0_best_int',lang+'.traineddata.gz');writeFileSync('public/ocr/lang/'+lang+'.traineddata',gunzipSync(readFileSync(packed)));if(existsSync('public/ocr/lang/'+lang+'.traineddata.gz'))unlinkSync('public/ocr/lang/'+lang+'.traineddata.gz');}
 mkdirSync("public/engine", { recursive: true });
 for (const name of ["mupdf.js", "mupdf-wasm.js", "mupdf-wasm.wasm"])
   cpSync(join(engine, name), join("public/engine", name));
@@ -116,6 +117,17 @@ for (const dependency of [
   "exceljs",
   "hyperformula",
   "typo-js",
+  "jszip",
+  "fast-xml-parser",
+  "utif2",
+  "buffer",
+  "@noble/hashes",
+  "pptxgenjs",
+  "sql.js",
+  "tesseract.js",
+  "tesseract.js-core",
+  "opentype.js",
+  "bidi-js",
 ]) {
   let root;
   if (dependency === "mupdf") root = dirname(engine);
@@ -143,6 +155,7 @@ for (const dependency of [
       ),
     );
 }
+for(const engine of ['genoffice','pdfcraft'])for(const file of ['LICENSE','NOTICE','SOURCE.json'])if(existsSync('vendor/'+engine+'/'+file))cpSync('vendor/'+engine+'/'+file,'public/third-party/'+engine+'-'+file+'.txt');
 const pmRequire = createRequire(
   createRequire(require.resolve("@tiptap/core")).resolve("@tiptap/pm/model"),
 );

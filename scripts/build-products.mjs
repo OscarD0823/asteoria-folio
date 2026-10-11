@@ -5,6 +5,7 @@ import {
   writeFileSync,
   mkdirSync,
   rmSync,
+  realpathSync,
 } from "node:fs";
 import { resolve, dirname, basename } from "node:path";
 const run = (args, env = {}) => {
@@ -15,9 +16,10 @@ const run = (args, env = {}) => {
   if (result.status !== 0)
     throw new Error("No se pudo completar: " + args.join(" "));
 };
+run(["scripts/bundle-upstreams.mjs"]);
 run(["scripts/prepare-assets.mjs"]);
 run(["node_modules/typescript/bin/tsc", "--noEmit"]);
-run(["node_modules/vite/bin/vite.js", "build"]);
+run(["node_modules/vite/bin/vite.js", "build"],{VITE_PRODUCT:'pdf'});
 run(["scripts/package-source.mjs"]);
 run(["scripts/build-offline.mjs"]);
 try {
@@ -28,6 +30,9 @@ try {
       "Prisma Sheets",
       "Hojas de cálculo locales compatibles con XLSX",
     ],
+    ['slides','Prisma Slides','Presentaciones locales compatibles con PPTX'],
+    ['data','Prisma Data','Bases de datos y consultas locales'],
+    ['publisher','Prisma Publisher','Diseño de publicaciones y páginas para imprimir'],
   ]) {
     const output = "dist-" + kind;
     run(["scripts/prepare-assets.mjs"], { VITE_PRODUCT: kind });
@@ -71,9 +76,12 @@ if (
   throw new Error("Directorio de publicación no válido");
 rmSync(siteOutput, { recursive: true, force: true });
 mkdirSync("dist-site", { recursive: true });
-cpSync("dist", "dist-site", { recursive: true });
-cpSync("dist-writer", "dist-site/writer", { recursive: true });
-cpSync("dist-sheets", "dist-site/sheets", { recursive: true });
+cpSync(realpathSync("dist"), "dist-site", { recursive: true,dereference:true });
+cpSync(realpathSync("dist-writer"), "dist-site/writer", { recursive: true,dereference:true });
+cpSync(realpathSync("dist-sheets"), "dist-site/sheets", { recursive: true,dereference:true });
+cpSync(realpathSync('dist-slides'),'dist-site/slides',{recursive:true,dereference:true});
+cpSync(realpathSync('dist-data'),'dist-site/data',{recursive:true,dereference:true});
+cpSync(realpathSync('dist-publisher'),'dist-site/publisher',{recursive:true,dereference:true});
 console.log(
   "Prisma PDF: dist · Prisma Writer: dist-writer · Prisma Sheets: dist-sheets · Web pública: dist-site",
 );

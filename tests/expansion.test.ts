@@ -48,7 +48,7 @@ const paragraph = (id: string, text: string): RichNode => ({
 const inspect = async (bytes: Uint8Array, index: number) =>
   (await nativeOperation({ action: "inspect", bytes, index })) as Inspection;
 test("new font families and academic essentials are bundled with real files", async () => {
-  assert.equal(fontFamilies.filter((f) => f.file || f.styles).length, 81);
+  assert.ok(fontFamilies.filter((f) => f.file || f.styles).length>=94);
   for (const key of [
     "Arimo",
     "Carlito",

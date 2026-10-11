@@ -1,0 +1,33 @@
+{
+  "family": "DejaVu Sans Mono",
+  "upstream": "https://github.com/kiwi0fruit/open-fonts",
+  "revision": "deb211dd1e08becf3b9300b02365cd79415c64d4",
+  "derivation": "Original font files, without modification. Per-family license included.",
+  "files": [
+    {
+      "file": "LICENSE",
+      "url": "https://raw.githubusercontent.com/kiwi0fruit/open-fonts/deb211dd1e08becf3b9300b02365cd79415c64d4/Fonts/DejaVu/LICENSE",
+      "sha256": "7a083b136e64d064794c3419751e5c7dd10d2f64c108fe5ba161eae5e5958a93"
+    },
+    {
+      "file": "DejaVuSansMono.ttf",
+      "url": "https://raw.githubusercontent.com/kiwi0fruit/open-fonts/deb211dd1e08becf3b9300b02365cd79415c64d4/Fonts/DejaVu/DejaVuSansMono.ttf",
+      "sha256": "b4a6c3e4faab8773f4ff761d56451646409f29abedd68f05d38c2df667d3c582"
+    },
+    {
+      "file": "DejaVuSansMono-Bold.ttf",
+      "url": "https://raw.githubusercontent.com/kiwi0fruit/open-fonts/deb211dd1e08becf3b9300b02365cd79415c64d4/Fonts/DejaVu/DejaVuSansMono-Bold.ttf",
+      "sha256": "bce60f1b4421acd9ea51ba6623d7024ecbe6817a953e3654df62a5e6bdf8f769"
+    },
+    {
+      "file": "DejaVuSansMono-Oblique.ttf",
+      "url": "https://raw.githubusercontent.com/kiwi0fruit/open-fonts/deb211dd1e08becf3b9300b02365cd79415c64d4/Fonts/DejaVu/DejaVuSansMono-Oblique.ttf",
+      "sha256": "742097840c541870e8d6dc5c9b37bb1ceeea6c0dedd1d475faf903ef9df734b0"
+    },
+    {
+      "file": "DejaVuSansMono-BoldOblique.ttf",
+      "url": "https://raw.githubusercontent.com/kiwi0fruit/open-fonts/deb211dd1e08becf3b9300b02365cd79415c64d4/Fonts/DejaVu/DejaVuSansMono-BoldOblique.ttf",
+      "sha256": "91713a71d550bba22c2a6b2bb2a9ad8f9a159e12e4e9f0a5b2677998ba21213e"
+    }
+  ]
+}

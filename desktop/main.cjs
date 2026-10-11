@@ -22,13 +22,15 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 let window;
-const writer = require("../package.json").prismaProduct === "writer";
-const sheets = require("../package.json").prismaProduct === "sheets";
-if (writer) app.setName("Prisma Writer");
-if (sheets) app.setName("Prisma Sheets");
+const products=require('../products.json');const productKind=require('../package.json').prismaProduct||'pdf';
+const productInfo=products[productKind]||products.pdf;app.setName(productInfo.name);
 const smoke = process.argv.includes("--smoke-test");
 app.whenReady().then(() => {
-  const root = path.resolve(__dirname, sheets ? "../dist-sheets" : writer ? "../dist-writer" : "../dist");
+  if(process.argv.includes('--local-engine')){require('../engines/server.cjs').startLocalEngine().then(result=>{void shell.openExternal(result.url);app.on('before-quit',()=>result.server.close());}).catch(error=>{console.error(error.message);app.exit(1);});return;}
+  const validEngineOrigin=event=>{if(event.sender!==window?.webContents||!event.sender.getURL().startsWith('prisma://app/'))throw new Error('Origen del motor no válido.');};
+  ipcMain.handle('prisma-engine-capabilities',event=>{validEngineOrigin(event);return require('../engines/local.cjs').capabilities();});
+  ipcMain.handle('prisma-engine-run',(event,payload)=>{validEngineOrigin(event);return require('../engines/local.cjs').run(payload);});
+  const root=path.resolve(__dirname,productKind==='pdf'?'../dist':'../dist-'+productKind);
   protocol.handle("prisma", (request) => {
     const url = new URL(request.url);
     if (url.host !== "app") return new Response("Not found", { status: 404 });
@@ -46,7 +48,7 @@ app.whenReady().then(() => {
     minWidth: 760,
     minHeight: 600,
     backgroundColor: "#f7f8fc",
-    title: sheets ? "Prisma Sheets" : writer ? "Prisma Writer" : "Prisma PDF",
+    title:productInfo.name,
     icon: path.join(root, "icons/prisma-512.png"),
     autoHideMenuBar: true,
     webPreferences: {
@@ -123,17 +125,19 @@ app.whenReady().then(() => {
     }
   });
   if (smoke) {
+    let rendererFailed=false;
     window.webContents.on("did-fail-load", (_event, code, description) => {
       console.error("Desktop load failed:", code, description);
       app.exit(1);
     });
     window.webContents.on("console-message", (_event, details) => {
-      if (details.level === "error")
-        console.error("Renderer:", details.message);
+      if (details.level === "error"){
+        rendererFailed=true;console.error("Renderer:", details.message);
+      }
     });
     window.webContents.on("did-finish-load", () => {
       console.log("Desktop application loaded from bundled assets.");
-      setTimeout(() => app.exit(0), 3000);
+      setTimeout(() => app.exit(rendererFailed?1:0), 6000);
     });
   }
   window.webContents.setWindowOpenHandler(({ url }) => {

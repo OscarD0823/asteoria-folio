@@ -7,6 +7,9 @@ for (const [logo, folder, color] of [
   ["logo.svg", "icons", "#171f39"],
   ["writer-logo.svg", "writer-icons", "#edf8f5"],
   ["sheets-logo.svg", "sheets-icons", "#eaf5ee"],
+  ['slides-logo.svg','slides-icons','#f4ecfc'],
+  ['data-logo.svg','data-icons','#fceff0'],
+  ['publisher-logo.svg','publisher-icons','#e9f4f6'],
 ]) {
   const source = readFileSync("public/" + logo).toString("base64");
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="${color}"/><image href="data:image/svg+xml;base64,${source}" x="92" y="92" width="328" height="328"/></svg>`;

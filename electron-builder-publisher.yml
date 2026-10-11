@@ -1,0 +1,33 @@
+appId: com.oscard.prismapublisher
+productName: Prisma Publisher
+directories:
+  output: release-publisher
+extraMetadata:
+  name: prisma-publisher
+  version: 0.1.0
+  prismaProduct: publisher
+files:
+  - dist-publisher/**/*
+  - desktop/**/*
+  - engines/**/*
+  - vendor/genoffice/dist/*.cjs
+  - vendor/genoffice/LICENSE
+  - vendor/genoffice/NOTICE
+  - vendor/genoffice/SOURCE.json
+  - products.json
+  - package.json
+  - "!node_modules/**/*"
+asar: true
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: public/publisher-icons/prisma.ico
+  signExecutable: false
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: Prisma-Publisher-${version}-Windows-Setup.exe

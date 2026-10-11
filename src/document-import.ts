@@ -8,6 +8,7 @@ import {
 } from "./flow";
 import { fontFamilies } from "./fonts";
 import { encodeFont } from "./local-fonts";
+import {attachOfficeOriginal} from './office-engines';
 import {
   normalizeAcademicDocument,
   academicPresets,
@@ -79,6 +80,14 @@ export function importText(text: string): FlowDocument {
       "free",
     ),
   };
+}
+export async function importOfficeDocx(bytes:Uint8Array){
+ const result=importDocx(bytes);
+ await attachOfficeOriginal(result.flow,bytes);
+ result.warnings=result.warnings.filter(w=>!/historial de cambios|notas al pie o finales/.test(w));
+ result.warnings.push('El original de Word se conserva. Los cambios de texto y notas mantienen sus partes; cambios de diseño o estructura requieren reconstrucción.');
+ if(result.flow.importReport)result.flow.importReport.warnings=result.warnings;
+ return result;
 }
 /** Parse OOXML locally. No remote relationships, embedded programs or macros are executed. */
 export function importDocx(bytes: Uint8Array): {

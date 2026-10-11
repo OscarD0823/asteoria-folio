@@ -174,6 +174,10 @@ export async function buildPdf(
     ? state.pages.filter((p) => onlyIds.includes(p.id))
     : state.pages;
   if (!chosen.length) throw new Error("Añade al menos una página.");
+  if(!onlyIds&&!state.layout&&state.sources.length===1&&chosen.every((p,i)=>p.sourceId===state.sources[0].id&&p.index===i&&p.rotation===0&&!p.marks.length&&!p.originalText?.length)){
+    const original=await PDFDocument.load(state.sources[0].bytes);
+    if(original.getPageCount()===chosen.length)return new Uint8Array(state.sources[0].bytes);
+  }
   const output = await PDFDocument.create();
   const getFont = createFontProvider(output, state.fonts);
   const docs = new Map<string, PDFDocument>();

@@ -1,4 +1,5 @@
 import { PDFDocument } from "pdf-lib";
+import {preserveOfficeDocx} from './office-engines';
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import {
   Document,
@@ -172,6 +173,8 @@ export async function exportDocx(
   title: string,
   fonts: LocalFont[] = [],
 ): Promise<Uint8Array> {
+  const preserved=await preserveOfficeDocx(flow);
+  if(preserved)return preserved;
   const normalized = {
     ...flow,
     content: normalizeAcademicDocument(

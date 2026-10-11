@@ -24,6 +24,15 @@ jobs:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
       - run: pnpm test
       - run: pnpm build:products
+      - name: Evitar duplicar el archivo fuente en GitHub Pages
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          for (const kind of ['writer','sheets','slides','data','publisher']) fs.unlinkSync(`dist-site/${kind}/prisma-pdf-source.tar.gz`);
+          const size=dir=>fs.readdirSync(dir,{withFileTypes:true}).reduce((total,entry)=>total+(entry.isDirectory()?size(`${dir}/${entry.name}`):fs.statSync(`${dir}/${entry.name}`).size),0);
+          const bytes=size('dist-site');if(bytes>950_000_000)throw Error('La publicación supera el presupuesto de tamaño de Pages.');
+          console.log(`Sitio publicado: ${Math.round(bytes/1_000_000)} MB. Fuente completa disponible en la raíz y en cada instalador.`);
+          JS
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

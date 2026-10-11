@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { exportLexicon, lexiconEntry, lookupKey, mergeLexicon, parseLexicon, spellingTerm, termKey, type LexiconEntry } from "./lexicon";
+import {DictionaryLibrary} from './DictionaryLibrary';
 export function LexiconManager({ entries, onSave, onClose }: {
   entries: LexiconEntry[]; onSave: (entries: LexiconEntry[]) => Promise<void>; onClose: () => void;
 }) {
+  const [library,setLibrary]=useState(false);
   const [query, setQuery] = useState(""), [term, setTerm] = useState(""), [definition, setDefinition] = useState(""),
     [spelling, setSpelling] = useState(true), [editing, setEditing] = useState<string | null>(null),
     [page, setPage] = useState(0), [busy, setBusy] = useState(false), [message, setMessage] = useState("");
@@ -21,6 +23,7 @@ export function LexiconManager({ entries, onSave, onClose }: {
     finally { setBusy(false); }
   }
   function reset() { setTerm(""); setDefinition(""); setSpelling(true); setEditing(null); }
+  if(library)return <DictionaryLibrary onClose={()=>setLibrary(false)} onAccept={term=>onSave(mergeLexicon(entries,[{term,definition:'',spelling:true}]))}/>;
   return createPortal(<div className="modal-backdrop">
     <section className="modal lexicon-modal" role="dialog" aria-modal="true" aria-labelledby="lexicon-title" onKeyDown={event => {
       if (event.key === "Escape") { event.stopPropagation(); if (!busy) onClose(); }
@@ -31,7 +34,7 @@ export function LexiconManager({ entries, onSave, onClose }: {
     }}>
       <header className="lexicon-heading"><div><span className="eyebrow">REVISAR · VOCABULARIO LOCAL</span><h2 id="lexicon-title">Diccionario personal</h2></div>
         <button disabled={busy} aria-label="Cerrar diccionario" onClick={onClose}>✕</button></header>
-      <p>Consulta tus términos, añade definiciones y decide cuáles acepta el corrector. Se guarda en este dispositivo. Las webs de PDF y Writer lo comparten cuando usas el mismo navegador.</p>
+      <p>Consulta tus términos, añade definiciones y decide cuáles acepta el corrector. Se guarda en este dispositivo. Las webs de PDF y Writer lo comparten cuando usas el mismo navegador.</p><button onClick={()=>setLibrary(true)}>Biblioteca StarDict / ODict / XML</button>
       <div className="lexicon-actions">
         <button disabled={busy} onClick={() => input.current?.click()}>Importar TXT / TSV / JSON</button>
         <button onClick={() => {

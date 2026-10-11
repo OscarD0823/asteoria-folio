@@ -61,6 +61,7 @@ import {
 import { replaceText, replacementMatches } from "./find-replace";
 import { StyleGallery } from "./StyleGallery";
 import { fontFamilies } from "./fonts";
+import {WordParts} from './WordParts';
 type Props = {
   tab: string;
   flow?: FlowDocument;
@@ -103,6 +104,7 @@ const emptyRef = (): ReferenceRecord => ({
   accessed: new Date().toISOString().slice(0, 10),
 });
 export function WordTools(p: Props) {
+  const [partsOpen,setPartsOpen]=useState(false);
   const [dialog, setDialog] = useState(""),
     [fields, setFields] = useState<Record<string, string>>({}),
     [ref, setRef] = useState<ReferenceRecord>(emptyRef),
@@ -986,6 +988,7 @@ export function WordTools(p: Props) {
                 !editor,
               )}
               {action("Buscar en documento", Search, p.onNavigate)}
+              {p.flow?.officeOriginal&&action('Notas y comentarios de Word',BookOpen,()=>setPartsOpen(true))}
               {p.flow?.importReport &&
                 action("Compatibilidad con Office", BookOpen, () =>
                   open("compatibility"),
@@ -2181,6 +2184,7 @@ export function WordTools(p: Props) {
     <>
       {tools}
       {modal}
+      {partsOpen&&p.flow&&<WordParts flow={p.flow} onChange={p.onFlow} onClose={()=>setPartsOpen(false)}/>}
     </>
   );
 }

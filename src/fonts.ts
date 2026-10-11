@@ -9,6 +9,7 @@ import {
 } from "pdf-lib";
 import { decodeFont, type LocalFont } from "./local-fonts";
 import { extraFontFamilies } from "./extra-fonts";
+import {referenceFontFamilies} from './reference-fonts';
 
 export type FontStyle = "Regular" | "Bold" | "Italic" | "BoldItalic";
 export type FontFamily = {
@@ -401,6 +402,7 @@ export const fontFamilies: FontFamily[] = [
     category: "monospace",
   },
   ...extraFontFamilies,
+  ...referenceFontFamilies,
 ];
 
 const fallbacks = [

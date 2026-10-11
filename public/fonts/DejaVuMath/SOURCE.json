@@ -1,0 +1,18 @@
+{
+  "family": "DejaVu Math TeX Gyre",
+  "upstream": "https://github.com/ONLYOFFICE/core-fonts",
+  "revision": "7030c6681fb5bbed560675cb42422f91df15d5c9",
+  "derivation": "Original font files, without modification. Per-family license included.",
+  "files": [
+    {
+      "file": "LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/LICENSE.txt",
+      "sha256": "e84d0b1b9b76ade93fc62b604857210205a10c1036c69ead08474c7c82fc3eb0"
+    },
+    {
+      "file": "DejaVuMathTeXGyre.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/DejaVuMathTeXGyre.ttf",
+      "sha256": "ed1d86174500e40a993c368d17cfa30fe3fe6c20c76cd43c393ea451f9bab1b1"
+    }
+  ]
+}

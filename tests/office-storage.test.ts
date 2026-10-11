@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {IDBFactory} from 'fake-indexeddb';import {saveOfficeFile,listOfficeFiles,loadOfficeFile,deleteOfficeFile} from '../src/office-storage';
+test('suite libraries migrate old drafts and list metadata without loading document bytes',async()=>{
+ Object.assign(globalThis,{indexedDB:new IDBFactory()});const first=await new Promise<IDBDatabase>((resolve,reject)=>{const request=indexedDB.open('prisma-office-local-v1',1);request.onupgradeneeded=()=>request.result.createObjectStore('files',{keyPath:'id'});request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+ const old={id:'old',product:'slides',name:'Anterior',updated:1,bytes:new Uint8Array([1,2,3])};await new Promise<void>(resolve=>{const tx=first.transaction('files','readwrite');tx.objectStore('files').put(old);tx.oncomplete=()=>resolve();});first.close();
+ assert.deepEqual(await listOfficeFiles('slides'),[{id:'old',product:'slides',name:'Anterior',updated:1}]);assert.deepEqual((await loadOfficeFile('old'))?.bytes,old.bytes);
+ await saveOfficeFile({id:'new',product:'data',name:'Base local',bytes:new Uint8Array([9]),updated:2});assert.equal((await listOfficeFiles('slides')).length,1);assert.equal((await listOfficeFiles('data'))[0].id,'new');await deleteOfficeFile('new');assert.equal((await listOfficeFiles('data')).length,0);assert.equal(await loadOfficeFile('new'),undefined);
+});

@@ -1,4 +1,4 @@
-# Prisma Sheets 0.2.0
+# Prisma Sheets 0.3.0
 
 La versión 0.2 incorpora la biblioteca compartida de 81 familias con búsqueda, favoritas, recientes y vista previa. Conserva los nombres de fuentes en XLSX y utiliza alternativas incluidas para nombres conocidos de Office. [Instalación y uso sin conexión](README-install.md).
 

@@ -1,0 +1,22 @@
+{
+  "repository": "terasum/medict",
+  "commit": "face4a4011b2cdfed9cfdcfbbcdcb4df4e58c660",
+  "files": [
+    {
+      "path": "internal/libs/go-stardict/LICENSE",
+      "sha256": "debae91016a6a8a4641299ef03fe2d75434187656bff78788cd6d42bf11c58e6"
+    },
+    {
+      "path": "internal/libs/go-stardict/stardict/dict.go",
+      "sha256": "51bdd9940e0daae7d286f96c395b87586f64dc4f191d9eff6c4c13160851c86e"
+    },
+    {
+      "path": "internal/libs/go-stardict/stardict/idx.go",
+      "sha256": "0fa613a4b4d937af51749a7ffb0afd655ec236331164c0b4105dba5e22cad373"
+    },
+    {
+      "path": "internal/libs/go-stardict/stardict/ifo.go",
+      "sha256": "487179ab6c0d1653e9226fd5ab228f43b78b4d985cd40f5a7ff05a0845f75753"
+    }
+  ]
+}

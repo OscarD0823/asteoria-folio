@@ -784,3 +784,39 @@
   font-style: normal;
   font-display: swap;
 }
+/* Prisma reference fonts */
+@font-face{font-family:"DejaVuSans";src:url("./DejaVuSans/DejaVuSans.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"DejaVuSans";src:url("./DejaVuSans/DejaVuSans-Bold.ttf");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"DejaVuSans";src:url("./DejaVuSans/DejaVuSans-Oblique.ttf");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"DejaVuSans";src:url("./DejaVuSans/DejaVuSans-BoldOblique.ttf");font-weight:700;font-style:italic;font-display:swap}
+@font-face{font-family:"DejaVuSerif";src:url("./DejaVuSerif/DejaVuSerif.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"DejaVuSerif";src:url("./DejaVuSerif/DejaVuSerif-Bold.ttf");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"DejaVuSerif";src:url("./DejaVuSerif/DejaVuSerif-Italic.ttf");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"DejaVuSerif";src:url("./DejaVuSerif/DejaVuSerif-BoldItalic.ttf");font-weight:700;font-style:italic;font-display:swap}
+@font-face{font-family:"DejaVuSansCondensed";src:url("./DejaVuSansCondensed/DejaVuSansCondensed.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"DejaVuSansCondensed";src:url("./DejaVuSansCondensed/DejaVuSansCondensed-Bold.ttf");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"DejaVuSansCondensed";src:url("./DejaVuSansCondensed/DejaVuSansCondensed-Oblique.ttf");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"DejaVuSansCondensed";src:url("./DejaVuSansCondensed/DejaVuSansCondensed-BoldOblique.ttf");font-weight:700;font-style:italic;font-display:swap}
+@font-face{font-family:"DejaVuSerifCondensed";src:url("./DejaVuSerifCondensed/DejaVuSerifCondensed.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"DejaVuSerifCondensed";src:url("./DejaVuSerifCondensed/DejaVuSerifCondensed-Bold.ttf");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"DejaVuSerifCondensed";src:url("./DejaVuSerifCondensed/DejaVuSerifCondensed-Italic.ttf");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"DejaVuSerifCondensed";src:url("./DejaVuSerifCondensed/DejaVuSerifCondensed-BoldItalic.ttf");font-weight:700;font-style:italic;font-display:swap}
+@font-face{font-family:"DejaVuMath";src:url("./DejaVuMath/DejaVuMathTeXGyre.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"AbyssinicaSIL";src:url("./AbyssinicaSIL/AbyssinicaSIL-R.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"LohitDevanagari";src:url("./LohitDevanagari/Lohit-Devanagari.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"LohitTamil";src:url("./LohitTamil/Lohit-Tamil.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Padauk";src:url("./Padauk/Padauk.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Padauk";src:url("./Padauk/Padauk-bold.ttf");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"DejaVuSansMono";src:url("./DejaVuSansMono/DejaVuSansMono.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"DejaVuSansMono";src:url("./DejaVuSansMono/DejaVuSansMono-Bold.ttf");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"DejaVuSansMono";src:url("./DejaVuSansMono/DejaVuSansMono-Oblique.ttf");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"DejaVuSansMono";src:url("./DejaVuSansMono/DejaVuSansMono-BoldOblique.ttf");font-weight:700;font-style:italic;font-display:swap}
+@font-face{font-family:"EmbedSerif";src:url("./EmbedSerif/EmbedSerifR-Regular.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"EmbedSerif";src:url("./EmbedSerif/EmbedSerifB-Bold.ttf");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"EmbedSerif";src:url("./EmbedSerif/EmbedSerifIt-Italic.ttf");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"EmbedSerif";src:url("./EmbedSerif/EmbedSerifBIt-BoldItalic.ttf");font-weight:700;font-style:italic;font-display:swap}
+@font-face{font-family:"Arvo";src:url("./Arvo/Arvo-Regular.ttf");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Arvo";src:url("./Arvo/Arvo-Bold.ttf");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"Arvo";src:url("./Arvo/Arvo-Italic.ttf");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"Arvo";src:url("./Arvo/Arvo-BoldItalic.ttf");font-weight:700;font-style:italic;font-display:swap}
+@font-face{font-family:"Anton";src:url("./Anton/Anton-Regular.ttf");font-weight:400;font-style:normal;font-display:swap}

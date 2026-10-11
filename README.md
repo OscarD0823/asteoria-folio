@@ -1,6 +1,6 @@
-# Prisma PDF 6.2, Writer 1.2 y Sheets 0.2
+# Prisma: PDF 6.3, Writer 1.3, Sheets 0.3 y nuevas aplicaciones
 
-Las tres webs pueden instalarse desde **Instalar app**. Consulta la [guía de instalación y uso sin conexión](README-install.md) y la [revisión de los 17 proyectos de referencia](README-references.md).
+Las seis webs pueden instalarse desde **Instalar app**. Consulta la [guía de instalación y uso sin conexión](README-install.md) y la [revisión de los 17 proyectos de referencia](README-references.md).
 
 Editor de PDF y creador de documentos en español. Web, PWA, Android y Windows; todos procesan los documentos en el dispositivo.
 
@@ -113,3 +113,7 @@ Las pruebas verifican edición real de texto conservando líneas vecinas, imáge
 ## Licencia
 
 AGPL-3.0-or-later. El código de esta versión se publica en GitHub y en `prisma-pdf-source.tar.gz`. MuPDF conserva su distribución JavaScript/WASM original. Tiptap, React, docx y pdf-lib usan MIT; PDF.js y MathJax Apache-2.0; Lucide ISC. Los estilos CSL conservan CC BY-SA 3.0 y su atribución original; las fuentes incluyen SIL OFL, Apache 2.0 y GUST Font License según cada familia. Consulta LICENSE, public/licencias.txt, public/third-party, src/csl/SOURCES.json y public/fonts/EXTRA-CATALOG.md.
+
+## Integración de motores
+
+[Slides](https://oscard0823.github.io/prisma-pdf/slides/), [Data](https://oscard0823.github.io/prisma-pdf/data/) y [Publisher](https://oscard0823.github.io/prisma-pdf/publisher/) están disponibles en primeras versiones. Consulte [funciones, límites y conexión de motores locales](README-integrations.md). Incluye OCR local, taller PDF, preservación DOCX/PPTX compatible, 94 familias de fuentes y biblioteca de diccionarios. No sustituye todavía todas las funciones de Office.

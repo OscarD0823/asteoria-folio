@@ -1,0 +1,33 @@
+{
+  "family": "DejaVu Sans Condensed",
+  "upstream": "https://github.com/ONLYOFFICE/core-fonts",
+  "revision": "7030c6681fb5bbed560675cb42422f91df15d5c9",
+  "derivation": "Original font files, without modification. Per-family license included.",
+  "files": [
+    {
+      "file": "LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/LICENSE.txt",
+      "sha256": "e84d0b1b9b76ade93fc62b604857210205a10c1036c69ead08474c7c82fc3eb0"
+    },
+    {
+      "file": "DejaVuSansCondensed.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/DejaVuSansCondensed.ttf",
+      "sha256": "d3da4739efdbe6c878444e2a4faafa3310742d7b6ae012ff211422641b91d5b6"
+    },
+    {
+      "file": "DejaVuSansCondensed-Bold.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/DejaVuSansCondensed-Bold.ttf",
+      "sha256": "8efbc4cb2a90574bbab2d2f03a6e511c05887c74027b79412cc90c8a4c706c85"
+    },
+    {
+      "file": "DejaVuSansCondensed-Oblique.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/DejaVuSansCondensed-Oblique.ttf",
+      "sha256": "ef032849feee651612b628df70f525effe89d724809849ca32713bf6b3c046ac"
+    },
+    {
+      "file": "DejaVuSansCondensed-BoldOblique.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/DejaVuSansCondensed-BoldOblique.ttf",
+      "sha256": "89c83c661b8ce5a718200cb9fbea877d5f69d81b33bc7c39ed6ee5309b2c7b8c"
+    }
+  ]
+}

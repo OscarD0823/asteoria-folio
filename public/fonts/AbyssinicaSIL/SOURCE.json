@@ -1,0 +1,18 @@
+{
+  "family": "Abyssinica SIL",
+  "upstream": "https://github.com/ONLYOFFICE/core-fonts",
+  "revision": "7030c6681fb5bbed560675cb42422f91df15d5c9",
+  "derivation": "Original font files, without modification. Per-family license included.",
+  "files": [
+    {
+      "file": "LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/abyssinica/LICENSE.txt",
+      "sha256": "dd3f2d7ebf100a70cd00d81ee0c3a470ef931dc2ac070d302a49d94e9927b553"
+    },
+    {
+      "file": "AbyssinicaSIL-R.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/abyssinica/AbyssinicaSIL-R.ttf",
+      "sha256": "56d6d601544885e343d93eac738e8cbd30687ff4e70ffc02f19fc588e1d4d458"
+    }
+  ]
+}

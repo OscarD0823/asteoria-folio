@@ -1,15 +1,18 @@
-const writer = import.meta.env?.VITE_PRODUCT === "writer";
-const sheets = import.meta.env?.VITE_PRODUCT === "sheets";
+import products from '../products.json';
+const requested=import.meta.env?.VITE_PRODUCT??'pdf';
+const kind=(requested in products?requested:'pdf') as keyof typeof products;
+const writer=kind==='writer',sheets=kind==='sheets';
 export const product = {
   writer,
   sheets,
-  id: sheets ? "prisma-sheets" : writer ? "prisma-writer" : "prisma-pdf",
-  name: sheets ? "Prisma Sheets" : writer ? "Prisma Writer" : "Prisma PDF",
-  version: sheets ? "0.2.0" : writer ? "1.2.0" : "6.2.0",
-  assetName: sheets ? "Prisma-Sheets" : writer ? "Prisma-Writer" : "Prisma-PDF",
-  tagPrefix: sheets ? "sheets-v" : writer ? "writer-v" : "v",
+  kind,slides:kind==='slides',data:kind==='data',publisher:kind==='publisher',
+  id:'prisma-'+kind,
+  name:products[kind].name,
+  version:products[kind].version,
+  assetName:products[kind].name.replace(' ','-'),
+  tagPrefix:kind==='pdf'?'v':kind+'-v',
   website:
     "https://oscard0823.github.io/prisma-pdf/" +
-    (sheets ? "sheets/" : writer ? "writer/" : ""),
+    (kind==='pdf'?'':kind+'/'),
   repository: "https://github.com/OscarD0823/prisma-pdf",
 };

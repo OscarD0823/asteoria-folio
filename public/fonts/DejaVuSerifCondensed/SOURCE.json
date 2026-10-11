@@ -1,0 +1,33 @@
+{
+  "family": "DejaVu Serif Condensed",
+  "upstream": "https://github.com/ONLYOFFICE/core-fonts",
+  "revision": "7030c6681fb5bbed560675cb42422f91df15d5c9",
+  "derivation": "Original font files, without modification. Per-family license included.",
+  "files": [
+    {
+      "file": "LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/LICENSE.txt",
+      "sha256": "e84d0b1b9b76ade93fc62b604857210205a10c1036c69ead08474c7c82fc3eb0"
+    },
+    {
+      "file": "DejaVuSerifCondensed.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/DejaVuSerifCondensed.ttf",
+      "sha256": "a7b80f2258055c5709754216fad1acc0504d1c095d3d6bc9545919a60a4efda2"
+    },
+    {
+      "file": "DejaVuSerifCondensed-Bold.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/DejaVuSerifCondensed-Bold.ttf",
+      "sha256": "4189c4967fef8007f16455d6c4c76718fa6ea7ba88b5bcd9af11d5eb99f9bb26"
+    },
+    {
+      "file": "DejaVuSerifCondensed-Italic.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/DejaVuSerifCondensed-Italic.ttf",
+      "sha256": "185dab9914eacea267d4cbc23e6e6482321263491b2ce6a83952dab8865f7c7f"
+    },
+    {
+      "file": "DejaVuSerifCondensed-BoldItalic.ttf",
+      "url": "https://raw.githubusercontent.com/ONLYOFFICE/core-fonts/7030c6681fb5bbed560675cb42422f91df15d5c9/dejavu/DejaVuSerifCondensed-BoldItalic.ttf",
+      "sha256": "7021f2507ab797c520516ec4e4a5ca32043226d8eb527491da55d6d78e81dad8"
+    }
+  ]
+}

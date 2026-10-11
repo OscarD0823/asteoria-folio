@@ -15,9 +15,9 @@ try {
   );
 }
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const kind = process.argv.includes("--sheets") ? "sheets" : "pdf";
-const icons = resolve(root, kind === "sheets" ? "public/sheets-icons" : "public/icons");
-const logo = resolve(root, kind === "sheets" ? "public/sheets-logo.svg" : "public/logo.svg");
+const kind=['sheets','slides','data','publisher'].find(value=>process.argv.includes('--'+value))??'pdf';
+const icons=resolve(root,kind==='pdf'?'public/icons':'public/'+kind+'-icons');
+const logo=resolve(root,kind==='pdf'?'public/logo.svg':'public/'+kind+'-logo.svg');
 mkdirSync(icons, { recursive: true });
 for (const size of [192, 512, 1024]) {
   await sharp(logo)
@@ -25,6 +25,7 @@ for (const size of [192, 512, 1024]) {
     .png()
     .toFile(resolve(icons, `prisma-${size}.png`));
 }
+await sharp(logo).resize(180,180).png().toFile(resolve(icons,'apple-touch-icon.png'));
 
 // A Windows ICO contains PNG images at each of the requested resolutions.
 const sizes = [16, 24, 32, 48, 64, 128, 256];

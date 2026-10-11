@@ -2,6 +2,9 @@ node_modules/
 dist/
 dist-writer/
 dist-sheets/
+dist-slides/
+dist-data/
+dist-publisher/
 dist-site/
 .openai/
 public/pdfjs/
@@ -11,6 +14,9 @@ qa/
 release/
 release-writer/
 release-sheets/
+release-slides/
+release-data/
+release-publisher/
 .gradle/
 *.p12
 *.jks

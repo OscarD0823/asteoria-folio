@@ -104,7 +104,9 @@ import { RichEditor, type RichEditorInstance } from "./LazyRichEditor";
 import { SpellingReview } from "./SpellingReview";
 import { CharacterInspector } from "./CharacterInspector";
 import { product } from "./product";
-import { importDocx, importText } from "./document-import";
+import PdfWorkbench from './PdfWorkbench';
+import {OcrDialog} from './OcrDialog';
+import { importOfficeDocx, importText } from "./document-import";
 import { writerExample } from "./writer-example";
 import { PageFrame } from "./PageFrame";
 import { Button, PageThumbnail, Signature } from "./components";
@@ -140,6 +142,8 @@ type Dialog =
   | "link"
   | null;
 export default function Studio() {
+  const [pdfWorkbench,setPdfWorkbench]=useState(false);
+  const [ocrOpen,setOcrOpen]=useState(false);
   const [workspace, setWorkspace] = useState<Workspace>(emptyWorkspace),
     state = useRef(workspace);
   state.current = workspace;
@@ -571,7 +575,7 @@ export default function Studio() {
           if (append || files.length !== 1)
             throw new Error("Abre un solo documento DOCX o TXT.");
           const imported = /\.docx$/i.test(f.name)
-            ? importDocx(new Uint8Array(await f.arrayBuffer()))
+            ? await importOfficeDocx(new Uint8Array(await f.arrayBuffer()))
             : { flow: importText(await f.text()), warnings: [] };
           const name = f.name.replace(/\.[^.]+$/, "");
           next = { ...emptyWorkspace(), name, flow: imported.flow };
@@ -1621,6 +1625,8 @@ export default function Studio() {
         (product.writer ? " writer-app" : "")
       }
     >
+      {pdfWorkbench&&<PdfWorkbench getBytes={()=>buildPdf(state.current)} onClose={()=>setPdfWorkbench(false)} onApply={async bytes=>{const next=await appendPdf(emptyWorkspace(),bytes,state.current.name+'.pdf');commit({...next,name:state.current.name,fonts:state.current.fonts});setView('pdf');inform('Transformación aplicada. Puedes deshacerla.');}}/>}
+      {ocrOpen&&<OcrDialog getBytes={()=>buildPdf(state.current)} onClose={()=>setOcrOpen(false)} onApply={async bytes=>{const next=await appendPdf(emptyWorkspace(),bytes,state.current.name+'.pdf');commit({...next,name:state.current.name,fonts:state.current.fonts});setView('pdf');inform('Capa OCR aplicada al PDF.');}} onText={async text=>{const {importText}=await import('./document-import');const flow=importText(text);commit({...state.current,flow});setView('write');inform('Texto OCR preparado para editar. Revisa el formato y la ortografía.');}}/>}
       <input
         ref={openInput}
         hidden
@@ -2421,6 +2427,8 @@ export default function Studio() {
                         <Layers3 />
                         <span>Unir PDF</span>
                       </Button>
+                      <Button onClick={()=>setPdfWorkbench(true)}><Sparkles/><span>Taller PDF</span></Button>
+                      <Button onClick={()=>setOcrOpen(true)}><FileText/><span>Reconocer texto OCR</span></Button>
                       <Button
                         onClick={() => {
                           setScope("range");

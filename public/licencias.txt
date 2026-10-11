@@ -1,4 +1,4 @@
-Prisma PDF 6.1 / Prisma Writer 1.1 — Copyright (C) 2026 Prisma contributors.
+Prisma PDF 6.3 / Writer 1.3 / Sheets 0.3 / Slides, Data y Publisher 0.1 — Copyright (C) 2026 Prisma contributors.
 Software libre bajo GNU Affero General Public License, version 3 o posterior.
 Sin garantia. Licencia completa: ./LICENSE.txt
 Codigo fuente de esta version: ./prisma-pdf-source.tar.gz
@@ -109,3 +109,13 @@ ExcelJS 4.4.0 — MIT; ./third-party/exceljs-LICENSE.txt.
 HyperFormula 3.5.0 — GPL-3.0; ./third-party/hyperformula-LICENSE.txt.
 Fuentes de estas dependencias: https://github.com/exceljs/exceljs y https://github.com/handsontable/hyperformula.
 El código fuente completo de Prisma se distribuye con la aplicación bajo AGPL-3.0-or-later.
+
+Componentes incorporados en esta entrega:
+GenOffice — Apache-2.0; código original, LICENSE, NOTICE y revisiones en vendor/genoffice.
+PDFCraft — AGPL-3.0; procesadores originales y adaptadores separados en vendor/pdfcraft.
+go-stardict (Vitaly Dyatlov, 2015, incluido en Medict) — MIT; adaptación TypeScript y originales en vendor/dictionaries/medict.
+ODict schema — GPL-3.0; esquema original y licencia en vendor/dictionaries/odict.
+Tesseract.js/core — Apache-2.0; modelos oficiales spa/eng Apache-2.0, licencias y procedencia en ./ocr/.
+sql.js — MIT; motor SQLite WASM, licencia en ./third-party/.
+13 familias de ONLYOFFICE/core-fonts, kiwi0fruit/open-fonts y wachin: originales sin modificar, licencias y SHA-256 por familia en ./fonts/.
+Los servicios ONLYOFFICE, Euro-Office, Stirling y OpenProject son opcionales y no se redistribuyen con Prisma.

@@ -1122,3 +1122,18 @@
 .font-catalog button {
   align-items: flex-start;
 }
+.word-parts nav{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.word-parts nav button[aria-pressed="true"]{background:#e4dcff;color:#503590}
+.word-parts-list{max-height:48vh;overflow:auto;display:grid;gap:16px}
+.word-parts-list label{padding:12px;border:1px solid #e3dff0;border-radius:10px}
+.word-parts textarea{min-height:100px;width:100%;resize:vertical}
+.pdf-workbench{width:min(1050px,calc(100vw - 24px))}
+.pdf-workbench-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;margin:20px 0}
+.pdf-workbench nav{display:flex;flex-direction:column;gap:6px}
+.pdf-workbench nav button{text-align:left;padding:12px}
+.pdf-workbench nav button[aria-pressed="true"]{background:#e9e1ff;color:#52338f}
+.workbench-actions{display:flex;gap:8px;flex-wrap:wrap}.workbench-fields{display:grid;gap:12px;max-height:35vh;overflow:auto}
+.workbench-error{color:#a32240!important}.workbench-preview{width:100%;height:38vh;border:1px solid #ddd;border-radius:10px}
+@media(max-width:650px){.pdf-workbench-grid{grid-template-columns:1fr;gap:12px}.pdf-workbench nav{display:grid;grid-template-columns:1fr 1fr}.pdf-workbench nav button{font-size:12px}.pdf-workbench footer{flex-wrap:wrap}}
+.local-engine-launch{position:fixed;bottom:5px;left:12px;z-index:20;background:#fff;border:1px solid #ddd3ee;border-radius:8px;padding:5px 9px;font-size:11px;color:#594373;box-shadow:0 2px 6px #30224412}.local-engines{display:grid;gap:14px}
+.suite-access{position:fixed;bottom:42px;right:14px;z-index:45;display:flex;gap:6px}.suite-access>button,.suite-access .local-engine-launch{position:static;border:1px solid #d8d8e5;background:#fff;border-radius:9px;padding:6px 10px;font-size:11px;color:#4c4567;box-shadow:0 2px 8px #22222212}.suite-access nav{position:absolute;bottom:36px;right:0;display:grid;min-width:185px;padding:9px;background:white;box-shadow:0 5px 30px #25223e22;border:1px solid #ddd;border-radius:12px}.suite-access nav a{padding:8px;text-decoration:none;color:#49435d;border-radius:6px}.suite-access nav a[aria-current=page]{background:#ece5ff}@media(max-width:600px){.suite-access{bottom:48px;right:7px}}
