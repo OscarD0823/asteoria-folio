@@ -5,12 +5,18 @@ Cada web es una aplicación instalable independiente:
 - [Prisma PDF](https://oscard0823.github.io/prisma-pdf/)
 - [Prisma Writer](https://oscard0823.github.io/prisma-pdf/writer/)
 - [Prisma Sheets](https://oscard0823.github.io/prisma-pdf/sheets/)
+- [Prisma Slides](https://oscard0823.github.io/prisma-pdf/slides/)
+- [Prisma Data](https://oscard0823.github.io/prisma-pdf/data/)
+- [Prisma Publisher](https://oscard0823.github.io/prisma-pdf/publisher/)
+- [Prisma, aplicación general](https://oscard0823.github.io/prisma-pdf/prisma/)
 
 Pulsa **Instalar app**. En Chrome/Edge, cuando el navegador ofrece la instalación, aparece un botón para abrir su diálogo. También se muestran las instrucciones para Android, Windows, Linux, iPhone/iPad y Mac. La disponibilidad depende del navegador; Firefox de escritorio no instala PWAs mediante el manifiesto. [Documentación de instalación de MDN](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable).
 
-Los manifiestos tienen identidad, ámbito e iconos propios, incluidos iconos adaptables de 512 px y acceso para iOS. Los tres ámbitos resuelven sus recursos mediante rutas relativas, también en GitHub Pages.
+Los siete manifiestos tienen identidad, ámbito e iconos propios, incluidos iconos adaptables de 512 px y acceso para iOS. Los ámbitos resuelven sus recursos mediante rutas relativas, también en GitHub Pages. Prisma incluye los seis editores; las otras instalaciones son independientes.
 
 ## Recursos sin conexión
+
+Las páginas de los editores y Prisma comparten la descarga de fuentes y diccionarios desde el mismo sitio; cada PWA conserva su caché y sus documentos independientes. Los paquetes Android y Windows contienen todos los recursos.
 
 La primera apertura prepara el editor, los motores de PDF, el corrector de español y las fuentes esenciales. Las demás fuentes se descargan al usarlas y quedan disponibles localmente. En **Instalar app → Descargar todo para usar sin conexión** se puede preparar toda la biblioteca. El indicador muestra los archivos realmente presentes, la descarga y los errores de conexión o espacio disponible. El botón permite reintentar sin perder lo descargado.
 

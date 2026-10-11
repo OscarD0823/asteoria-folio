@@ -1,4 +1,5 @@
 import type { FlowDocument, RichNode, PageLayout } from "./flow";
+import {applicationResourceBase} from './resource-base';
 type Result = {
   bytes: Uint8Array;
   pageMap: Record<string, number>;
@@ -24,7 +25,7 @@ function dispatch(job: Job) {
     id: job.id,
     flow: job.flow,
     title: job.title,
-    baseUrl: document.baseURI,
+    baseUrl: applicationResourceBase(),
   });
 }
 export function renderFlow(

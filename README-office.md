@@ -1,6 +1,6 @@
 # Prisma y compatibilidad con Office
 
-El desarrollo sigue este orden: Writer y PDF, Sheets, Slides, Data y Publisher.
+Prisma es la aplicación general; Prisma Writer, PDF, Sheets, Slides, Data y Publisher también son aplicaciones independientes. El desarrollo propio sigue este orden: Writer y PDF, Sheets, Slides, Data y Publisher. Primero se cubre la base funcional de Office con motores propios y pruebas de compatibilidad; después se incorporan mejoras inspiradas en los repositorios de referencia. Consulta [la arquitectura y orden acordados](README-prisma.md).
 
 Consulta la [revisión de proyectos de referencia](README-references.md) y la [guía de instalación, fuentes y diccionario local](README-install.md).
 

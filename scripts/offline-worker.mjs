@@ -34,7 +34,7 @@ async function previousCaches(){
 async function status(){
   const cache=await caches.open(CACHE), urls=new Set((await cache.keys()).map(request=>request.url));
   const present=new Set(FILES.filter(name=>urls.has(new URL(name,self.registration.scope).href)));
-  const fonts=FILES.filter(name=>name.startsWith('fonts/')&&/\\.(ttf|otf|woff2?)$/i.test(name));
+  const fonts=FILES.filter(name=>name.replace(/^\\.\\.\\//,'').startsWith('fonts/')&&/\\.(ttf|otf|woff2?)$/i.test(name));
   return {type:'prisma-offline-status',version:'${version}',ready:REQUIRED.every(name=>present.has(name)),
     cached:present.size,total:FILES.length,fontsCached:fonts.filter(name=>present.has(name)).length,
     fontsTotal:fonts.length,downloading:!!download,error:failure};

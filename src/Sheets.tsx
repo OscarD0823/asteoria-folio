@@ -43,6 +43,7 @@ import { FontPicker } from "./FontPicker";
 import { fontFamilies } from "./fonts";
 import { officeFontCss, resolveOfficeFont } from "./office-fonts";
 import { product } from "./product";
+import {usePrismaNavigation} from './prisma-navigation';
 import { loadBook, saveBook } from "./sheets-storage";
 import "./sheets.css";
 type Pos = { row: number; col: number };
@@ -305,6 +306,7 @@ export default function Sheets() {
       fail(e);
     }
   };
+  usePrismaNavigation({save:async()=>{if(busy)throw Error('Espera a que termine la operación.');if(editRef.current!==null)commit();await persist();},file:open,recent:async()=>{await resume();},error:fail});
   const select = (pos: Pos, extend = false) => {
     if (edit !== null) commit();
     if (!extend) setAnchor(pos);

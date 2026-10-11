@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Prisma PDF">
+  <defs>
+    <linearGradient id="tile" x1="25" y1="17" x2="228" y2="246" gradientUnits="userSpaceOnUse"><stop stop-color="#26334f"/><stop offset=".53" stop-color="#171f39"/><stop offset="1" stop-color="#10162b"/></linearGradient>
+    <linearGradient id="paper" x1="76" y1="51" x2="184" y2="210" gradientUnits="userSpaceOnUse"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#e7e9ff"/></linearGradient>
+    <linearGradient id="fold" x1="143" y1="48" x2="185" y2="96" gradientUnits="userSpaceOnUse"><stop stop-color="#d4d1ff"/><stop offset="1" stop-color="#9396f1"/></linearGradient>
+    <linearGradient id="violet" x1="73" y1="177" x2="146" y2="106" gradientUnits="userSpaceOnUse"><stop stop-color="#444be3"/><stop offset="1" stop-color="#a17afa"/></linearGradient>
+    <linearGradient id="blue" x1="136" y1="110" x2="178" y2="183" gradientUnits="userSpaceOnUse"><stop stop-color="#70dcff"/><stop offset="1" stop-color="#5090f2"/></linearGradient>
+    <linearGradient id="rose" x1="76" y1="174" x2="177" y2="194" gradientUnits="userSpaceOnUse"><stop stop-color="#ac8af7"/><stop offset="1" stop-color="#ec9db6"/></linearGradient>
+    <radialGradient id="glow" cx="73" cy="53" r="193" gradientUnits="userSpaceOnUse"><stop stop-color="#8883f5" stop-opacity=".22"/><stop offset="1" stop-color="#8883f5" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-35%" y="-25%" width="180%" height="170%"><feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#060b20" flood-opacity=".28"/></filter>
+  </defs>
+  <rect x="4" y="4" width="248" height="248" rx="59" fill="url(#tile)"/>
+  <rect x="5" y="5" width="246" height="246" rx="58" fill="url(#glow)" stroke="#b2b4e9" stroke-opacity=".19" stroke-width="1.5"/>
+  <g filter="url(#shadow)">
+    <path d="M89 47h54l43 43v102c0 11-9 20-20 20H89c-11 0-20-9-20-20V67c0-11 9-20 20-20Z" fill="url(#paper)"/>
+    <path d="m143 47 43 43h-27c-9 0-16-7-16-16Z" fill="url(#fold)"/>
+    <path d="M143 48v27c0 9 7 16 16 16h26" fill="none" stroke="#fff" stroke-width="1.5" stroke-opacity=".75"/>
+    <path d="M92 79h29M92 91h20" fill="none" stroke="#b8bedb" stroke-width="5" stroke-linecap="round"/>
+    <path d="m127 109 49 73-49 21-49-21Z" fill="url(#violet)"/>
+    <path d="m127 109 49 73-49-19Z" fill="url(#blue)"/>
+    <path d="m78 182 49-19 49 19-49 21Z" fill="url(#rose)"/>
+    <path d="m127 109 0 54-49 19Z" fill="#9c80f3" fill-opacity=".42"/>
+    <path d="m127 109 0 54 49 19M78 182l49-19v40" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.25" stroke-linejoin="round"/>
+    <path d="m130 117 36 54" fill="none" stroke="#f1ffff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <path d="m203 58 2 8 8 2-8 2-2 8-2-8-8-2 8-2Z" fill="#b9b3ff"/>
+</svg>

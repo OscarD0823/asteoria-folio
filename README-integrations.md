@@ -45,7 +45,7 @@ pnpm test
 pnpm build:products
 ```
 
-El código propio, los recursos y las dependencias declaradas permiten compilar Prisma sin clonar otras suites. `vendor` conserva únicamente el lector abierto de diccionarios. `scripts/bundle-prisma-engines.mjs` genera los motores propios de PC; Vite compila el mismo núcleo para web. `products.json` fija nombres/versiones. `scripts/native-products.mjs` regenera configuraciones Windows/Android. Las seis PWA tienen manifiesto, alcance y aviso de actualizaciones independientes. Las aplicaciones nativas ofrecen el instalador de una nueva versión y preservan su identificador de producto; Windows x64 y Android son los destinos nativos disponibles, iOS/macOS/Linux usan la PWA.
+El código propio, los recursos y las dependencias declaradas permiten compilar Prisma sin clonar otras suites. `vendor` conserva únicamente el lector abierto de diccionarios. `scripts/bundle-prisma-engines.mjs` genera los motores propios de PC; Vite compila el mismo núcleo para web. `products.json` fija nombres/versiones. `scripts/native-products.mjs` regenera configuraciones Windows/Android. Las siete PWA (Prisma general y seis editores independientes) tienen manifiesto, alcance y aviso de actualizaciones independientes. Las aplicaciones nativas ofrecen el instalador de una nueva versión y preservan su identificador de producto; Windows x64 y Android son los destinos nativos disponibles, iOS/macOS/Linux usan la PWA.
 
 No todos los repositorios de referencia pueden combinarse como bibliotecas: ONLYOFFICE, Euro-Office y OpenProject necesitan servicios; word-sys tiene un motor de escritorio; topics/fonts es un directorio. Sus arquitecturas y formatos se revisaron, pero no se anuncia su código completo como incorporado.
 

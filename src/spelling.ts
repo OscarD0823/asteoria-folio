@@ -1,4 +1,5 @@
 import type { Node } from "@tiptap/pm/model";
+import {applicationResourceBase} from './resource-base';
 import {proofingLanguage,textWords,type ProofingLanguage} from './proofing-languages';
 export type WordLocation = { word: string; from: number; to: number };
 export function spellingWords(doc: Node): WordLocation[] {
@@ -57,6 +58,6 @@ export function spellRequest(
   const id = ++sequence;
   return new Promise((resolve, reject) => {
     pending.set(id, { resolve, reject });
-    worker!.postMessage({ id, action, words, language:proofingLanguage(language).id,baseUrl: document.baseURI });
+    worker!.postMessage({ id, action, words, language:proofingLanguage(language).id,baseUrl: applicationResourceBase() });
   });
 }

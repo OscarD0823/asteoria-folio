@@ -33,6 +33,7 @@ try {
     ['slides','Prisma Slides','Presentaciones locales compatibles con PPTX'],
     ['data','Prisma Data','Bases de datos y consultas locales'],
     ['publisher','Prisma Publisher','Diseño de publicaciones y páginas para imprimir'],
+    ['prisma','Prisma','Tu espacio de trabajo local con las seis aplicaciones Prisma'],
   ]) {
     const output = "dist-" + kind;
     run(["scripts/prepare-assets.mjs"], { VITE_PRODUCT: kind });
@@ -67,27 +68,4 @@ try {
 } finally {
   run(["scripts/prepare-assets.mjs"]);
 }
-// Keep native packages separate; GitHub Pages receives the combined directory.
-const siteOutput = resolve("dist-site");
-if (
-  dirname(siteOutput) !== resolve(".") ||
-  basename(siteOutput) !== "dist-site"
-)
-  throw new Error("Directorio de publicación no válido");
-rmSync(siteOutput, { recursive: true, force: true });
-mkdirSync("dist-site", { recursive: true });
-cpSync(realpathSync("dist"), "dist-site", { recursive: true,dereference:true });
-cpSync(realpathSync("dist-writer"), "dist-site/writer", { recursive: true,dereference:true });
-cpSync(realpathSync("dist-sheets"), "dist-site/sheets", { recursive: true,dereference:true });
-cpSync(realpathSync('dist-slides'),'dist-site/slides',{recursive:true,dereference:true});
-cpSync(realpathSync('dist-data'),'dist-site/data',{recursive:true,dereference:true});
-cpSync(realpathSync('dist-publisher'),'dist-site/publisher',{recursive:true,dereference:true});
-// These applications do not expose PDF OCR; keep its models in PDF and Writer.
-for (const kind of ['sheets','slides','data','publisher']) {
-  const productOutput=resolve(siteOutput,kind);
-  rmSync(resolve(productOutput,'ocr'),{recursive:true,force:true});
-  run(['scripts/build-offline.mjs'],{PRISMA_OUTDIR:productOutput});
-}
-console.log(
-  "Prisma PDF: dist · Prisma Writer: dist-writer · Prisma Sheets: dist-sheets · Web pública: dist-site",
-);
+run(['scripts/assemble-site.mjs']);

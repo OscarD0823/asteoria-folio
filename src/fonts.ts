@@ -10,6 +10,7 @@ import {
 import { decodeFont, type LocalFont } from "./local-fonts";
 import { extraFontFamilies } from "./extra-fonts";
 import {referenceFontFamilies} from './reference-fonts';
+import {applicationResourceBase} from './resource-base';
 
 export type FontStyle = "Regular" | "Bold" | "Italic" | "BoldItalic";
 export type FontFamily = {
@@ -447,7 +448,7 @@ function localFontBaseUrl() {
   const base =
     fontBaseUrl ??
     (typeof document !== "undefined"
-      ? document.baseURI
+      ? applicationResourceBase()
       : globalThis.location?.href);
   if (!base)
     throw new Error(

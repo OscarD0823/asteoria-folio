@@ -15,6 +15,7 @@ const files = [
   "README-integrations.md",
   "README-office-analysis.md",
   "README-programming.md",
+  "README-prisma.md",
   "docs",
   "package.json",
   "products.json",
@@ -36,6 +37,7 @@ const files = [
   "electron-builder-slides.yml",
   "electron-builder-data.yml",
   "electron-builder-publisher.yml",
+  "electron-builder-prisma.yml",
   ".github",
   "android",
   "public/logo.svg",
@@ -58,6 +60,9 @@ const files = [
   "public/data-icons",
   "public/publisher-logo.svg",
   "public/publisher-icons",
+  "public/prisma-logo.svg",
+  "public/pdf-logo.svg",
+  "public/prisma-icons",
 ];
 const excludes = [
   "scripts/__pycache__",

@@ -4,6 +4,8 @@ Las seis webs pueden instalarse desde **Instalar app**. Consulta la [guía de in
 
 Editor de PDF y creador de documentos en español. Web, PWA, Android y Windows; todos procesan los documentos en el dispositivo.
 
+**[Prisma](https://oscard0823.github.io/prisma-pdf/prisma/)** reúne los seis editores en una aplicación general, con biblioteca local y apertura de archivos. **Prisma PDF, Writer, Sheets, Slides, Data y Publisher** conservan sus aplicaciones e instaladores independientes. Consulta [la arquitectura y el orden de desarrollo propio](README-prisma.md).
+
 - [Abrir editor](https://oscard0823.github.io/prisma-pdf/)
 - [Abrir Prisma Writer](https://oscard0823.github.io/prisma-pdf/writer/) · [Guía y compatibilidad](README-writer.md)
 - [Abrir Prisma Sheets](https://oscard0823.github.io/prisma-pdf/sheets/) · [Funciones y límites de XLSX](README-sheets.md)

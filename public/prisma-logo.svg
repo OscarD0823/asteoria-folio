@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Prisma">
+ <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#393052"/><stop offset="1" stop-color="#1e1b34"/></linearGradient><linearGradient id="light" x2="1" y2="1"><stop stop-color="#e9e1ff"/><stop offset="1" stop-color="#9b82ed"/></linearGradient><linearGradient id="purple" x2="1" y2="1"><stop stop-color="#c3a3fd"/><stop offset="1" stop-color="#7c62d7"/></linearGradient></defs>
+ <rect x="4" y="4" width="248" height="248" rx="57" fill="url(#bg)"/>
+ <path d="M66 66h64l57 44-57 46H98v39H66z" fill="url(#light)"/>
+ <path d="m130 66 57 44-57 46V66z" fill="url(#purple)"/>
+ <path d="M98 96h32l19 14-19 16H98z" fill="#342945"/>
+ <path d="m66 66 32 30v99H66z" fill="#b8baf5"/>
+ <path d="m98 156 32-30v30z" fill="#9de3d3"/>
+ <path d="m130 66 57 44-57-14z" fill="#f1c38d"/>
+</svg>

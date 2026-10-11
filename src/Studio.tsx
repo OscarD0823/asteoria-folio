@@ -107,6 +107,7 @@ import {applyEditorMacro,editorMacroSnapshot} from './macro-adapters';
 import {proofingLanguage} from './proofing-languages';
 import { CharacterInspector } from "./CharacterInspector";
 import { product } from "./product";
+import {usePrismaNavigation} from './prisma-navigation';
 import PdfWorkbench from './PdfWorkbench';
 import {OcrDialog} from './OcrDialog';
 import { importOfficeDocx, importText } from "./document-import";
@@ -562,7 +563,7 @@ export default function Studio() {
       },
     });
   }
-  async function openFiles(files: FileList | null, append = false) {
+  async function openFiles(files: FileList | File[] | null, append = false) {
     if (!files?.length) return;
     setBusy(append ? "Uniendo PDF…" : "Abriendo documento…");
     try {
@@ -634,6 +635,16 @@ export default function Studio() {
       fail(e);
     }
   }
+  usePrismaNavigation({
+    save: async () => {
+      if (busy) throw Error('Espera a que termine la operación antes de cambiar de aplicación.');
+      if (home) return;
+      const id = await saveProject(state.current), next = {...state.current, projectId: id};
+      commit(next, false);
+      await saveSession(next);
+    },
+    file: file => openFiles([file]), recent: async id => enter(await loadProject(id)), error: fail,
+  }, ready);
   async function portable() {
     if (home) return;
     try {
@@ -1668,7 +1679,7 @@ export default function Studio() {
         <>
           <header className="home-header">
             <a href="#" className="brand" onClick={(e) => e.preventDefault()}>
-              <img src="./logo.svg" alt={product.name} />
+              <img src={product.logo} alt={product.name} />
               <span>
                 Prisma <b>{product.writer ? "Writer" : "PDF"}</b>
               </span>
@@ -1733,7 +1744,7 @@ export default function Studio() {
                 <div className="orb orb-two" />
                 <div className="floating-doc">
                   <div className="doc-brand">
-                    <img src="./logo.svg" />
+                    <img src={product.logo} />
                     <span>PRISMA STUDIO</span>
                     <span>01</span>
                   </div>
@@ -1926,7 +1937,7 @@ export default function Studio() {
                   void refresh();
                 }}
               >
-                <img src="./logo.svg" alt={product.name} />
+                <img src={product.logo} alt={product.name} />
               </Button>
               <div>
                 <input

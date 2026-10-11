@@ -1,4 +1,4 @@
-param([string]$SigningDirectory = (Join-Path $PSScriptRoot '..\..\.prisma-signing'), [ValidateSet('pdf','writer','sheets','slides','data','publisher')][string]$Product='pdf')
+param([string]$SigningDirectory = (Join-Path $PSScriptRoot '..\..\.prisma-signing'), [ValidateSet('pdf','writer','sheets','slides','data','publisher','prisma')][string]$Product='pdf')
 $ErrorActionPreference='Stop'
 $prismaRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $prismaKeys=[IO.Path]::GetFullPath($SigningDirectory)

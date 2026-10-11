@@ -23,6 +23,10 @@ function walk(dir) {
   }
 }
 walk(output);
+// Pages stores fonts and dictionaries once; each PWA caches its own verified
+// resource list. Native distributions keep complete local copies.
+if (process.env.PRISMA_SHARED_ROOT)
+  for (const folder of ['fonts','spelling']) walk(path.join(process.env.PRISMA_SHARED_ROOT,folder));
 files.sort();
 const hash = crypto.createHash("sha256");
 const resources = {};

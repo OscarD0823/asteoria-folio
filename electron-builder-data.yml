@@ -4,7 +4,7 @@ directories:
   output: release-data
 extraMetadata:
   name: prisma-data
-  version: 0.2.0
+  version: 0.2.1
   prismaProduct: data
 files:
   - dist-data/**/*

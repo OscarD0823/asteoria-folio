@@ -157,6 +157,8 @@ app.whenReady().then(() => {
       defaultPath: path.join(app.getPath("documents"), item.getFilename()),
     }),
   );
-  window.loadURL("prisma://app/index.html");
+  const editorArgument=process.argv.find(argument=>argument.startsWith('--editor='))?.slice(9);
+  const editor=productKind==='prisma'&&['pdf','writer','sheets','slides','data','publisher'].includes(editorArgument)?editorArgument:undefined;
+  window.loadURL("prisma://app/index.html"+(editor?'?editor='+editor:''));
 });
 app.on("window-all-closed", () => app.quit());

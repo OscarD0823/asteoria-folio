@@ -6,6 +6,7 @@ dist-slides/
 dist-data/
 dist-publisher/
 dist-site/
+dist-prisma/
 .openai/
 public/pdfjs/
 public/engine/
@@ -17,6 +18,7 @@ release-sheets/
 release-slides/
 release-data/
 release-publisher/
+release-prisma/
 .gradle/
 *.p12
 *.jks

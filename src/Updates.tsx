@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import { RefreshCw, X, Download } from "lucide-react";
-import { product } from "./product";
+import { distributionProduct as product } from "./product";
 import {
   checkRelease,
   newerVersion,
@@ -311,9 +311,7 @@ export function Updates({
                   href={
                     release?.releaseUrl ??
                     releaseBase +
-                      (product.writer
-                        ? "tag/writer-v" + product.version
-                        : "latest")
+                      ('tag/' + product.tagPrefix + product.version)
                   }
                   target="_blank"
                   rel="noreferrer"

@@ -1,4 +1,4 @@
-name: Publicar Prisma PDF
+name: Publicar Prisma y aplicaciones independientes
 on:
   push:
     branches: [main]
@@ -28,7 +28,7 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
-          for (const kind of ['writer','sheets','slides','data','publisher']) fs.unlinkSync(`dist-site/${kind}/prisma-pdf-source.tar.gz`);
+          for (const kind of ['writer','sheets','slides','data','publisher','prisma']) fs.unlinkSync(`dist-site/${kind}/prisma-pdf-source.tar.gz`);
           const size=dir=>fs.readdirSync(dir,{withFileTypes:true}).reduce((total,entry)=>total+(entry.isDirectory()?size(`${dir}/${entry.name}`):fs.statSync(`${dir}/${entry.name}`).size),0);
           const bytes=size('dist-site');if(bytes>950_000_000)throw Error('La publicación supera el presupuesto de tamaño de Pages.');
           console.log(`Sitio publicado: ${Math.round(bytes/1_000_000)} MB. Fuente completa disponible en la raíz y en cada instalador.`);

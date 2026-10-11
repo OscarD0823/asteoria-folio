@@ -15,7 +15,7 @@ try {
   );
 }
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const kind=['sheets','slides','data','publisher'].find(value=>process.argv.includes('--'+value))??'pdf';
+const kind=['sheets','slides','data','publisher','prisma'].find(value=>process.argv.includes('--'+value))??'pdf';
 const icons=resolve(root,kind==='pdf'?'public/icons':'public/'+kind+'-icons');
 const logo=resolve(root,kind==='pdf'?'public/logo.svg':'public/'+kind+'-logo.svg');
 mkdirSync(icons, { recursive: true });
@@ -48,7 +48,7 @@ for (let i = 0; i < images.length; i++) {
 }
 writeFileSync(resolve(icons, "prisma.ico"), Buffer.concat([header, ...images]));
 console.log(
-  "Iconos de Prisma PDF exportados: PNG 192, 512 y 1024 px; ICO de 16 a 256 px.",
+  `Iconos de ${kind==='prisma'?'Prisma':'Prisma '+kind} exportados: PNG 192, 512 y 1024 px; ICO de 16 a 256 px.`,
 );
 
 const previewIndex = process.argv.indexOf("--preview");

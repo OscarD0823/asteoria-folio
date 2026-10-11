@@ -4,7 +4,7 @@ directories:
   output: release-writer
 extraMetadata:
   name: prisma-writer
-  version: 1.4.0
+  version: 1.4.1
   prismaProduct: writer
 files:
   - dist-writer/**/*

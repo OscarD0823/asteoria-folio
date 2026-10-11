@@ -5,7 +5,7 @@ export type ReleaseInfo = {
   windowsUrl: string;
   features: string[];
 };
-import { product } from "./product";
+import { distributionProduct as product } from "./product";
 export const updateUrl = product.website + "version.json";
 export const releaseBase = "https://github.com/OscarD0823/prisma-pdf/releases/";
 export function newerVersion(candidate: string, current: string): boolean {
