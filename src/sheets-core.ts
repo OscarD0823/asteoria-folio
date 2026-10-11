@@ -206,7 +206,7 @@ export class SheetsBook {
     );
     const book = new SheetsBook(wb);
     book.original = new Uint8Array(bytes);
-    if(zip["xl/vbaProject.bin"])book.warnings.push("Este XLSM contiene VBA inactivo. Descarga el original para conservar las macros. Exportar una copia XLSX conserva las celdas compatibles y elimina VBA.");
+    if(zip["xl/vbaProject.bin"])book.warnings.push("Este XLSM contiene VBA inactivo. «Conservar formato original» guarda cambios de celdas y conserva las macros para Excel. Una copia XLSX elimina VBA.");
     const paths = Object.keys(zip);
     const unsupported: [RegExp, string][] = [
       [/xl\/charts\//, "Gráficos nativos de Excel"],
@@ -389,6 +389,7 @@ export class SheetsBook {
     this.workbook.model = copy;
     this.rebuild();
   }
+  async compatibleBytes(){if(!this.original)throw Error('Abre primero un archivo de Excel.');const {preserveSpreadsheetCells}=await import('./sheets-office');return preserveSpreadsheetCells(this.original,this.workbook,(name,row,col)=>this.value(name,row,col));}
   async bytes() {
     for (const sheet of this.workbook.worksheets)
       sheet.eachRow((row, r) =>

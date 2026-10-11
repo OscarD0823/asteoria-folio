@@ -45,6 +45,7 @@ const files = [
   "public/fonts",
   "public/manifest.webmanifest",
   "public/licencias.txt",
+  "public/credits.html",
   "public/version.json",
   "public/third-party",
   "public/spelling",

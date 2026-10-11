@@ -7,17 +7,8 @@ import {encodeOfficeBytes} from './office-bytes';
 export {engine as presentationEngine};
 export const EMU=914400;
 export const slideText=(element:any):string=>element.text?.paragraphs?.map((p:any)=>p.runs.map((r:any)=>r.text).join('')).join('\n')??'';
-export async function createPresentation(){return engine.openPptx(await engine.createBlankPptx());}
-export async function createPublication(template='blank'){
- const opened=await createPresentation();engine.setSlideSize(opened,8.2677*EMU,11.6929*EMU);
- if(template!=='blank'){
-  const slide=opened.deck.slides[0];engine.setSlideBackground(opened,slide,'#ffffff');
-  engine.addElement(slide,{kind:'rect',offset:{x:0,y:0,cx:opened.deck.size.cx,cy:1.5*EMU},fillColor:'#3c6470'});
-  engine.addElement(slide,{kind:'textbox',offset:{x:.7*EMU,y:.5*EMU,cx:6.8*EMU,cy:.8*EMU},paragraphs:[{runs:[{text:template==='poster'?'Una gran idea':template==='newsletter'?'Nuestro boletín':'Tu publicación',fontFamily:'Carlito',fontSize:32,color:'#ffffff',bold:true}]}]});
-  engine.addElement(slide,{kind:'textbox',offset:{x:.7*EMU,y:2*EMU,cx:6.8*EMU,cy:3*EMU},paragraphs:[{runs:[{text:template==='poster'?'Escribe el mensaje de tu cartel.':template==='newsletter'?'Título de la primera noticia\nEscribe aquí el contenido de tu boletín.':'Título de la sección\nComienza a diseñar tu publicación.',fontFamily:'Carlito',fontSize:22,color:'#20333b'}]}]});
- }
- return opened;
-}
+export async function createPresentation(template='blank'){const {buildPresentationTemplate}=await import('./slide-designs');return buildPresentationTemplate(await engine.openPptx(await engine.createBlankPptx()),template);}
+export async function createPublication(template='blank'){const {buildPublicationTemplate}=await import('./slide-designs');return buildPublicationTemplate(await createPresentation(),template);}
 export async function openPresentation(bytes:Uint8Array){if(bytes.length>80*1024*1024)throw new Error('Elige una presentación de hasta 80 MB.');return engine.openPptx(bytes);}
 export function changeSlideText(element:any,text:string){if(!element.text)throw new Error('Selecciona un cuadro de texto.');const template=element.text.paragraphs[0]??{runs:[]},run=template.runs[0]??{fontFamily:'Carlito',fontSize:24,color:'#20243b'};element.text.paragraphs=text.split('\n').map((line,index)=>({...element.text.paragraphs[index]??template,runs:[{...run,text:line,rawXml:undefined,fieldId:undefined,fieldType:undefined}]}));element.dirty=true;}
 const fontCache=new Map<string,Promise<string>>();

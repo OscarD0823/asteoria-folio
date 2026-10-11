@@ -36,6 +36,7 @@ export default defineConfig({
     },
   ],
   base: "./",
+  server: {watch: {ignored: ["**/dist/**", "**/dist-*/**", "**/release*/**", "**/qa/**", "**/android/**"]}},
   optimizeDeps: { entries: ["index.html"] },
   worker: { format: "es", plugins:()=>[proofingInterop()] },
   build: { chunkSizeWarningLimit: 1800 },

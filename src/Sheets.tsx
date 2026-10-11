@@ -1,3 +1,6 @@
+import {TemplateGallery} from './TemplateGallery';
+import {createSheetTemplate} from './sheet-templates';
+import {creationTemplate} from './template-catalog';
 import { useEffect, useRef, useState } from "react";
 import type { WorkbookModel, Cell } from "exceljs";
 import {
@@ -183,6 +186,7 @@ export default function Sheets() {
     setRecent(true);
     void persist().catch(fail);
   };
+  const newFromTemplate=async(id:string)=>{try{await enterBook(createSheetTemplate(id),id==='blank'?'Mi libro':creationTemplate('sheets',id).title);}catch(e){fail(e);}};
   const newBook = async (example = false) => {
     try {
       const next = new SheetsBook();
@@ -306,7 +310,7 @@ export default function Sheets() {
       fail(e);
     }
   };
-  usePrismaNavigation({save:async()=>{if(busy)throw Error('Espera a que termine la operación.');if(editRef.current!==null)commit();await persist();},file:open,recent:async()=>{await resume();},error:fail});
+  usePrismaNavigation({save:async()=>{if(busy)throw Error('Espera a que termine la operación.');if(editRef.current!==null)commit();await persist();},template:newFromTemplate,file:open,recent:async()=>{await resume();},error:fail});
   const select = (pos: Pos, extend = false) => {
     if (edit !== null) commit();
     if (!extend) setAnchor(pos);
@@ -418,6 +422,7 @@ export default function Sheets() {
     if (!book) return;
     try {
       if (edit !== null) commit();
+      if (kind === "compatible") {setBusy(true);const title=name.replace(/[<>:"/\\|?*\x00-\x1f]/g,"-")||"Mi libro";const format=(await import("./office-formats")).officePackageFormat(book.original!,"xlsx");await download(await book.compatibleBytes(),title+"."+format.extension,format.mime);await persist();setBusy(false);setExportMenu(false);setMessage("Celdas guardadas; macros y demás partes originales conservadas para Excel.");return;}
       if (kind === "xlsx" && book.warnings.length && !simplified) {
         setExportMenu(false);
         setReport(true);
@@ -601,7 +606,7 @@ export default function Sheets() {
           }}
         >
           <img
-            src={import.meta.env.DEV ? "./sheets-logo.svg" : "./logo.svg"}
+            src={product.logo}
             alt=""
           />
           <span>
@@ -721,6 +726,7 @@ export default function Sheets() {
               </span>
             </div>
           </div>
+          <TemplateGallery kind="sheets" onSelect={id=>void newFromTemplate(id)} disabled={busy}/>
           <div className="sheets-home-cards">
             <button onClick={() => void newBook()}>
               <FilePlus2 />
@@ -1569,6 +1575,7 @@ export default function Sheets() {
               role="menu"
               aria-label="Exportar libro"
             >
+              {book.original&&<button role="menuitem" onClick={()=>void exportFile("compatible")}>Conservar formato original (.xlsx / .xlsm)</button>}
               <button role="menuitem" onClick={() => void exportFile("xlsx")}>
                 Libro de Excel (.xlsx)
               </button>

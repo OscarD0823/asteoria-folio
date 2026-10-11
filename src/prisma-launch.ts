@@ -1,5 +1,5 @@
 import { isEditorKind, type EditorKind } from './product-core';
-export type Launch = { editor: EditorKind; action: 'file' | 'recent'; file?: File; id?: string };
+export type Launch = { editor: EditorKind; action: 'file' | 'recent' | 'template'; file?: File; id?: string };
 async function database(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('prisma-hub-local-v1', 1);

@@ -6,7 +6,7 @@ Prisma se publica en [/prisma/](https://oscard0823.github.io/prisma-pdf/prisma/)
 
 ## Uso y almacenamiento
 
-El panel abre los editores dentro del mismo paquete; no necesita abrir sus páginas públicas ni tener otras aplicaciones instaladas. Se carga un editor a la vez. «Prisma» vuelve al panel; «Cambiar aplicación» abre otro editor después de guardar. Si el guardado falla o hay una operación en curso, el cambio se detiene y muestra el motivo.
+El panel abre los editores dentro del mismo paquete; no necesita abrir sus páginas públicas ni tener otras aplicaciones instaladas. Se carga un editor a la vez. «Inicio de Prisma» vuelve al panel; «Cambiar aplicación» abre otro editor después de guardar. Si el guardado falla o hay una operación en curso, el cambio se detiene y muestra el motivo.
 
 En las páginas públicas, fuentes y diccionarios se publican una sola vez y cada PWA mantiene su propia caché y ámbito. Los APK/EXE incluyen copias completas de estos recursos. No necesitan un servidor local ni descargar fuentes para empezar a trabajar.
 
@@ -25,3 +25,9 @@ Instalación y actualización pertenecen a Prisma cuando se usa el paquete gener
 3. Después de cubrir la base de cada aplicación, revisar los repositorios aportados como referencias adicionales de funciones y mejoras: GenOffice, ONLYOFFICE, Euro-Office, Stirling PDF, word-sys, PDFCraft, OpenProject, los proyectos de diccionarios y fuentes. Implementar las ideas necesarias con interfaces y motores propios; conservar licencias y atribución cuando se utilizan datos o bibliotecas abiertas. Los conectores locales opcionales existentes no sustituyen la implementación propia.
 
 Consulta [la matriz de Office y limitaciones](README-office-analysis.md), [los formatos](README-office.md) y [las macros Prisma](README-programming.md). El panel global no implica que se haya alcanzado toda la funcionalidad de Microsoft Office.
+
+## Plantillas y diseño
+
+El panel permite elegir una aplicación con búsqueda y filtros, abrirla o comenzar desde una plantilla editable. Writer/PDF tienen informes, cartas y otros documentos; Sheets incluye presupuesto, inventario, gastos y planificación; Slides ofrece presentaciones e informes; Data incluye estructuras de contactos, inventario y tareas; Publisher ofrece cartel, boletín, tríptico, invitación y certificado. Slides y Publisher permiten aplicar cinco paletas de diseño sin reemplazar el contenido. Las aplicaciones independientes muestran sus propias plantillas y créditos de OscarD0823, sin el selector global.
+
+Sheets dispone de «Conservar formato original» para cambiar contenido de celdas sin reconstruir el paquete XLSX/XLSM. Conserva partes desconocidas, estilos y el proyecto VBA para Excel. Cambiar estructura, hojas o formato requiere exportar una copia XLSX. Prisma no ejecuta VBA.

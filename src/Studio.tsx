@@ -1,3 +1,7 @@
+import {TemplateGallery} from './TemplateGallery';
+import {createFlowTemplate} from './flow-templates';
+import {creationTemplate} from './template-catalog';
+import './writing-pages.css';
 import { useEffect, useRef, useState } from "react";
 import { PDFDocument } from "pdf-lib";
 import {
@@ -543,6 +547,7 @@ export default function Studio() {
     setView(next.flow ? "write" : "pdf");
     setLayout(next.flow?.layout ?? defaultLayout());
   }
+  async function newFromTemplate(id:string) { const kind=product.writer?'writer':'pdf';const flow=createFlowTemplate(kind,id); await enter({...emptyWorkspace(),flow,name:id==='blank'?'Mi documento':creationTemplate(kind,id).title}); }
   async function newDocument() {
     await enter({
       ...emptyWorkspace(),
@@ -643,7 +648,7 @@ export default function Studio() {
       commit(next, false);
       await saveSession(next);
     },
-    file: file => openFiles([file]), recent: async id => enter(await loadProject(id)), error: fail,
+    template:newFromTemplate, file: file => openFiles([file]), recent: async id => enter(await loadProject(id)), error: fail,
   }, ready);
   async function portable() {
     if (home) return;
@@ -1782,6 +1787,7 @@ export default function Studio() {
                 </div>
               </div>
             </section>
+            <TemplateGallery kind={product.writer?"writer":"pdf"} onSelect={id=>void newFromTemplate(id).catch(fail)} disabled={!!busy}/>
             <section className="start-grid">
               <Button className="start-card" onClick={() => void newDocument()}>
                 <div className="card-icon violet">
@@ -1900,16 +1906,7 @@ export default function Studio() {
             <span>
               {product.name} {product.version} · Hecho para crear.
             </span>
-            <a
-              href={
-                product.writer
-                  ? "https://oscard0823.github.io/prisma-pdf/"
-                  : "https://oscard0823.github.io/prisma-pdf/writer/"
-              }
-            >
-              {product.writer ? "Abrir Prisma PDF" : "Abrir Prisma Writer"}{" "}
-              <ArrowRight size={13} />
-            </a>
+            <a href="https://github.com/OscarD0823" target="_blank" rel="noreferrer">Creado por OscarD0823</a>
             <a
               href="https://github.com/OscarD0823/prisma-pdf"
               target="_blank"

@@ -4,7 +4,7 @@ directories:
   output: release-publisher
 extraMetadata:
   name: prisma-publisher
-  version: 0.2.1
+  version: 0.3.0
   prismaProduct: publisher
 files:
   - dist-publisher/**/*

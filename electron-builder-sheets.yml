@@ -4,7 +4,7 @@ directories:
   output: release-sheets
 extraMetadata:
   name: prisma-sheets
-  version: 0.4.1
+  version: 0.5.0
   prismaProduct: sheets
 files:
   - dist-sheets/**/*

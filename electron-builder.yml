@@ -4,7 +4,7 @@ directories:
   output: release
 extraMetadata:
   name: prisma-pdf
-  version: 6.4.1
+  version: 6.5.0
   prismaProduct: pdf
 files:
   - dist/**/*

@@ -143,6 +143,9 @@ export function importDocx(bytes: Uint8Array): {
     for (const style of all(styleDoc, "style"))
       styles.set(val(style, "styleId"), style);
   const defaults = styleDoc && all(styleDoc, "docDefaults")[0];
+  const themeDoc = xml("word/theme/theme1.xml");
+  const themeFont = (name: string) => {const group = themeDoc && all(themeDoc, name + "Font")[0];return group ? direct(group, "latin")?.getAttribute("typeface") : undefined;};
+  const themeFonts = {major: themeFont("major"), minor: themeFont("minor")};
   function styleChain(
     id: string,
     type: "pPr" | "rPr",
@@ -191,10 +194,13 @@ export function importDocx(bytes: Uint8Array): {
             item.localName,
             item.localName === "u" ? val(item) !== "none" : yes(item),
           );
-        if (item.localName === "rFonts")
-          attrs.fontFamily = fontValue(
-            val(item, "ascii") || val(item, "hAnsi") || "Calibri",
-          );
+        if (item.localName === "rFonts") {
+          const theme = val(item, "asciiTheme") || val(item, "hAnsiTheme");
+          const label = val(item, "ascii") || val(item, "hAnsi") || (theme.startsWith("major") ? themeFonts.major : theme.startsWith("minor") ? themeFonts.minor : "");
+          // An rFonts element can override only complex-script or East Asian
+          // fonts. In that case the inherited Latin font must survive.
+          if (label) attrs.fontFamily = fontValue(label);
+        }
         if (item.localName === "sz")
           attrs.fontSize = Number(val(item)) / 2 + "pt";
         if (item.localName === "color" && /^[a-f0-9]{6}$/i.test(val(item)))
@@ -420,6 +426,7 @@ export function importDocx(bytes: Uint8Array): {
       styleId =
         val(direct(directProps, "pStyle")) || val(defaultParagraph, "styleId"),
       props = [
+        ...(defaults ? all(defaults, "pPr") : []),
         ...styleChain(styleId, "pPr"),
         ...(directProps ? [directProps] : []),
       ];

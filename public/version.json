@@ -1,8 +1,8 @@
 {
-  "version": "6.4.1",
-  "releaseUrl": "https://github.com/OscarD0823/prisma-pdf/releases/tag/v6.4.1",
-  "androidUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.4.1/Prisma-PDF-6.4.1-Android.apk",
-  "windowsUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.4.1/Prisma-PDF-6.4.1-Windows-Setup.exe",
+  "version": "6.5.0",
+  "releaseUrl": "https://github.com/OscarD0823/prisma-pdf/releases/tag/v6.5.0",
+  "androidUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.5.0/Prisma-PDF-6.5.0-Android.apk",
+  "windowsUrl": "https://github.com/OscarD0823/prisma-pdf/releases/download/v6.5.0/Prisma-PDF-6.5.0-Windows-Setup.exe",
   "features": [
     "Motores propios y taller PDF local",
     "Macros Prisma en vista de escritura y corrector en 8 idiomas",

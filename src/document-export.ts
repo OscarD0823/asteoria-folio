@@ -228,7 +228,7 @@ export async function exportDocx(
         text: n.text ?? "",
         font: wordFont(String(attrs.fontFamily ?? "PrismaSans")),
         size: Math.round(size * 2),
-        bold: marks.some((m) => m.type === "bold"),
+        bold: !!attrs.bold || marks.some((m) => m.type === "bold"),
         italics: marks.some((m) => m.type === "italic"),
         underline: marks.some((m) => m.type === "underline") ? {} : undefined,
         strike: marks.some((m) => m.type === "strike"),
@@ -316,6 +316,7 @@ export async function exportDocx(
     layout: PageLayout,
     depth = 0,
     listPrefix = "",
+    tableHeader = false,
   ): Promise<(Paragraph | Table | TableOfContents)[]> => {
     const children: (Paragraph | Table | TableOfContents)[] = [];
     for (const node of withCaptions(parent, normalized)) {
@@ -366,7 +367,7 @@ export async function exportDocx(
             ]
           : node.type === "appendix"
             ? [new TextRun([a.label, a.title].filter(Boolean).join(": "))]
-            : inline(node, a);
+            : inline(node, {...a, bold: tableHeader || node.type === "heading", color: a.color ?? "#20273a"});
         if (listPrefix) content.unshift(new TextRun(listPrefix + " "));
         const first = Number(a.firstLineIndent) || 0,
           hanging = Number(a.hangingIndent) || 0,
@@ -418,7 +419,7 @@ export async function exportDocx(
               : {}),
             spacing: {
               before: Math.round(Number(a.spaceBefore || 0) * 20),
-              after: Math.round(Number(a.spaceAfter ?? 7) * 20),
+              after: Math.round(Number(a.spaceAfter ?? (node.type === "heading" ? 10 : 7)) * 20),
               line: Math.round(Number(a.lineHeight ?? 1.45) * 240),
             },
             indent: {
@@ -441,7 +442,8 @@ export async function exportDocx(
         for (const row of node.content ?? []) {
           const cells: TableCell[] = [];
           for (const cell of row.content ?? []) {
-            const content = await blocks(cell, layout, depth),
+            const cellFlow = {...cell, content: cell.content?.map(child=>['paragraph','heading'].includes(child.type??'')?{...child,attrs:{...child.attrs,spaceAfter:0}}:child)};
+            const content = await blocks(cellFlow, layout, depth, "", cell.type === "tableHeader"),
               academic = a.tableStyle === "academic";
             cells.push(
               new TableCell({
@@ -465,10 +467,11 @@ export async function exportDocx(
                       },
                     }
                   : {}),
-                margins: { top: 90, bottom: 90, left: 90, right: 90 },
+                margins: { top: 140, bottom: 140, left: 160, right: 160 },
+                shading: cell.type === "tableHeader" && !academic ? {fill:"EEEDFF"} : undefined,
                 borders: academic
                   ? { left: none, right: none, top: edge, bottom: edge }
-                  : undefined,
+                  : {left:{...edge,size:5,color:"CCD0DF"},right:{...edge,size:5,color:"CCD0DF"},top:{...edge,size:5,color:"CCD0DF"},bottom:{...edge,size:5,color:"CCD0DF"}},
               }),
             );
           }

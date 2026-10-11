@@ -970,10 +970,37 @@ async function buildFlowPass(
         const groupHeight = heights
           .slice(rowIndex, end)
           .reduce((s, v) => s + v, 0);
-        if (groupHeight > ph - top - bottom)
-          throw new Error(
-            "La fila o las celdas unidas de la tabla son más altas que la página. Divide su contenido o reduce la letra.",
-          );
+        if (groupHeight > ph - top - bottom) {
+          // Continue tall rows and merged cells across pages, consuming each
+          // wrapped line exactly once. Keep the original column geometry.
+          const groupCells = cells.filter(c => c.row >= rowIndex && c.row < end).map(c => ({
+            cell:c, next:0,
+            start:heights.slice(rowIndex,c.row).reduce((sum,height)=>sum+height,0),
+            finish:heights.slice(rowIndex,c.row+c.rowspan).reduce((sum,height)=>sum+height,0),
+          }));
+          let consumed=0;
+          while (consumed < groupHeight || groupCells.some(item=>item.next<item.cell.lines.length)) {
+            if (ph-bottom-y < 42) nextPage();
+            const remaining=Math.max(groupHeight-consumed,...groupCells.map(item=>Math.max(0,item.start-consumed)+item.cell.lines.slice(item.next).reduce((sum,line)=>sum+line.height,0)+14));
+            const segment=Math.min(ph-bottom-y,remaining),origin=y;
+            if(rowIndex===0&&consumed===0)anchor(n);
+            for(const item of groupCells){
+              const c=item.cell,delay=Math.max(0,item.start-consumed);
+              if(delay>=segment)continue;
+              const unfinished=item.next<c.lines.length;
+              if(item.finish<=consumed&&!unfinished)continue;
+              const x=left+columnWidths.slice(0,c.column).reduce((sum,v)=>sum+v,0);
+              const height=Math.min(segment-delay,Math.max(item.finish-consumed-delay,unfinished?segment-delay:0));
+              page.drawRectangle({x,y:ph-origin-delay-height,width:c.width,height,color:color(flow.academicStyle!=='apa'&&c.node.type==='tableHeader'?'#eeedff':'#ffffff'),borderColor:color('#ccd0df'),borderWidth:flow.academicStyle==='apa'?0:.65});
+              let textY=origin+delay+7;
+              while(item.next<c.lines.length){const line=c.lines[item.next];if(textY+line.height>origin+segment-7)break;drawLine(page,line,x+8,textY,c.width-16,line.align??'left');textY+=line.height;item.next++;}
+              if(unfinished&&item.next<c.lines.length&&c.lines[item.next].height>ph-top-bottom-14)throw Error('Una línea de tabla supera la altura disponible. Reduce su tamaño de letra.');
+            }
+            y+=segment;consumed+=segment;
+            if(consumed<groupHeight||groupCells.some(item=>item.next<item.cell.lines.length))nextPage();
+          }
+          rowIndex=end;continue;
+        }
         room(groupHeight);
         if (rowIndex === 0) anchor(n);
         const tops = [y];
