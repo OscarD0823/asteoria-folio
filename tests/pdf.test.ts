@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { PDFDocument, StandardFonts, degrees } from 'pdf-lib';
-import { appendPdf, buildPdf, demoWorkspace, emptyWorkspace, type Mark, uid } from '../src/pdf';
+import { appendPdf, buildPdf, demoWorkspace, emptyWorkspace, type Mark, uid } from '@prisma/pdf/pdf';
 
 const mark=(patch:Partial<Mark>={}):Mark=>({id:uid(),type:'text',x:60,y:420,width:280,height:28,color:'#183e3b',size:18,text:'Revisión aprobada: acción, año, café.',viewRotation:0,...patch});
 test('preserves pages, applies marks, reorders, duplicates and extracts a page',async()=>{

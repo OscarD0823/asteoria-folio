@@ -11,7 +11,7 @@ import {
   pageSize,
   type PageLayout,
   type Watermark,
-} from "./flow";
+} from "@prisma/writer/flow";
 import type { NativeObject } from "./native";
 // Only an explicitly tagged Watermark artifact is copied automatically.
 // This avoids copying body text, headers or entire scanned pages as a watermark.

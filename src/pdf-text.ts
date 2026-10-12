@@ -1,5 +1,5 @@
 import type { Mark } from "./pdf";
-import type { RichNode } from "./flow";
+import type { RichNode } from "@prisma/writer/flow";
 
 export function markContent(m: Mark): RichNode {
   if (m.richText) return m.richText;

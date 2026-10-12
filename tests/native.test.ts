@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {PDFDocument,StandardFonts,degrees} from 'pdf-lib';
-import {nativeOperation,loadNativeEngine,type Inspection} from '../src/native-core';
-import {appendPdf,emptyWorkspace,buildPdf,demoWorkspace,pageRange,uid} from '../src/pdf';
+import {nativeOperation,loadNativeEngine,type Inspection} from '@prisma/pdf/native-core';
+import {appendPdf,emptyWorkspace,buildPdf,demoWorkspace,pageRange,uid} from '@prisma/pdf/pdf';
 const inspect=async(bytes:Uint8Array,index=0)=>(await nativeOperation({action:'inspect',bytes,index})) as Inspection;
 test('replace real source text, preserve adjacent lines and export selectable replacement',async()=>{
   const original=await demoWorkspace(),source=original.sources[0];

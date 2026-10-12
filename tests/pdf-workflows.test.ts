@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {PDFDocument} from 'pdf-lib';
-import {processPdfWorkflow,inspectPdfFields} from '../src/pdf-workflows';
-import {appendPdf,emptyWorkspace,buildPdf} from '../src/pdf';
+import {processPdfWorkflow,inspectPdfFields} from '@prisma/pdf/pdf-workflows';
+import {appendPdf,emptyWorkspace,buildPdf} from '@prisma/pdf/pdf';
 async function fixture(){const pdf=await PDFDocument.create();for(let i=1;i<=8;i++)pdf.addPage([300+i,400]);pdf.setTitle('Original');const form=pdf.getForm(),field=form.createTextField('Nombre');field.setText('Óscar');field.addToPage(pdf.getPage(0),{x:20,y:40,width:180,height:24});return pdf.save();}
 test('PDF workflows reverse, impose and divide pages with expected dimensions and counts',async()=>{
  const bytes=await fixture(),file=new File([bytes],'prueba.pdf',{type:'application/pdf'});

@@ -1,4 +1,4 @@
-import type { RichNode } from "./flow";
+import type { RichNode } from "@prisma/writer/flow";
 /** Insert a complete blank physical page at a known page boundary. */
 export function insertBlankPage(
   content: RichNode,

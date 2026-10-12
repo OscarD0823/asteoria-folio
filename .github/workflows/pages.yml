@@ -1,48 +1,19 @@
-name: Publicar Prisma y aplicaciones independientes
+name: Publicar Prisma PDF
 on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '12,27,42,57 * * * *'
 permissions:
   contents: read
   pages: write
   id-token: write
 concurrency:
   group: github-pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-      - uses: pnpm/action-setup@v4
-      - run: pnpm install --frozen-lockfile
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-      - run: pnpm test
-      - run: pnpm build:products
-      - name: Evitar duplicar el archivo fuente en GitHub Pages
-        run: |
-          node --input-type=module <<'JS'
-          import fs from 'node:fs';
-          for (const kind of ['writer','sheets','slides','data','publisher','prisma']) fs.unlinkSync(`dist-site/${kind}/prisma-pdf-source.tar.gz`);
-          const size=dir=>fs.readdirSync(dir,{withFileTypes:true}).reduce((total,entry)=>total+(entry.isDirectory()?size(`${dir}/${entry.name}`):fs.statSync(`${dir}/${entry.name}`).size),0);
-          const bytes=size('dist-site');if(bytes>950_000_000)throw Error('La publicación supera el presupuesto de tamaño de Pages.');
-          console.log(`Sitio publicado: ${Math.round(bytes/1_000_000)} MB. Fuente completa disponible en la raíz y en cada instalador.`);
-          JS
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: dist-site
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/deploy-pages@v4
-        id: deployment
+  product:
+    uses: OscarD0823/prisma/.github/workflows/product-pages.yml@main
+    with:
+      kind: pdf

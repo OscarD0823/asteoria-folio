@@ -1,4 +1,4 @@
-import {createWorker} from 'tesseract.js';import {PDFDocument,degrees} from 'pdf-lib';import {getPdf,releasePdf} from './renderer';import {createFontProvider,finalizeFontStreams} from './fonts';
+import {createWorker} from 'tesseract.js';import {PDFDocument,degrees} from 'pdf-lib';import {getPdf,releasePdf} from './renderer';import {createFontProvider,finalizeFontStreams} from '@prisma/core/fonts';
 export async function recognizePdf(bytes:Uint8Array,language:'spa'|'eng'|'spa+eng',signal:AbortSignal,onProgress:(progress:number)=>void){
  if(bytes.length>80*1024*1024)throw new Error('Usa un PDF de hasta 80 MB para OCR.');
  const id='ocr-'+crypto.randomUUID(),source=await getPdf({id,name:'OCR',bytes}),output=await PDFDocument.load(bytes),getFont=createFontProvider(output);let worker:Awaited<ReturnType<typeof createWorker>>|undefined;let pageIndex=0;const texts:string[]=[],scores:number[]=[];

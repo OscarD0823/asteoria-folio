@@ -1,5 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="package_name">com.oscard.prismapdf</string>
-    <string name="custom_url_scheme">com.oscard.prismapdf</string>
-</resources>

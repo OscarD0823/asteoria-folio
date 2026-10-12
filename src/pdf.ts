@@ -16,9 +16,9 @@ import {
   pageSize,
   mm,
   drawWatermark,
-} from "./flow";
-import { createFontProvider, finalizeFontStreams } from "./fonts";
-import type { LocalFont } from "./local-fonts";
+} from "@prisma/writer/flow";
+import { createFontProvider, finalizeFontStreams } from "@prisma/core/fonts";
+import type { LocalFont } from "@prisma/core/local-fonts";
 import { preparedTextChanged } from "./pdf-text";
 
 export type MarkType =
@@ -155,7 +155,7 @@ export async function buildPdf(
         : async (flow: FlowDocument, title: string) =>
             (
               await (
-                await import("./flow-renderer")
+                await import("@prisma/writer/flow-renderer")
               ).renderFlow(flow, title, "export")
             ).bytes
     )({ ...state.flow, fonts: state.fonts ?? state.flow.fonts }, state.name);

@@ -1,4 +1,4 @@
-import {useEffect,useRef,useState} from 'react';import {createPortal} from 'react-dom';import {recognizePdf} from './ocr';import {download} from './download';
+import {useEffect,useRef,useState} from 'react';import {createPortal} from 'react-dom';import {recognizePdf} from './ocr';import {download} from '@prisma/core/download';
 export function OcrDialog({getBytes,onApply,onText,onClose}:{getBytes:()=>Promise<Uint8Array>;onApply:(bytes:Uint8Array)=>Promise<void>;onText:(text:string)=>Promise<void>;onClose:()=>void}){
  const [language,setLanguage]=useState<'spa'|'eng'|'spa+eng'>('spa'),[busy,setBusy]=useState(false),[progress,setProgress]=useState(0),[result,setResult]=useState<{bytes:Uint8Array;text:string;confidence:number}>(),[error,setError]=useState('');const controller=useRef<AbortController|null>(null),live=useRef(true);
  useEffect(()=>{live.current=true;return()=>{live.current=false;controller.current?.abort();};},[]);
