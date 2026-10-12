@@ -2,7 +2,7 @@ import type {Editor} from '@tiptap/core';
 import {replacementMatches} from './find-replace';
 import type {MacroOperation,MacroSnapshot} from './prisma-macros';
 import type {SheetsBook} from './sheets-core';
-import {parseAddress} from './sheets-core';
+import {parseAddress} from './sheet-address';
 import {closeHistory} from '@tiptap/pm/history';
 
 export function macroString(operation:MacroOperation,key:string,max=100000){const value=operation.args[key];if(typeof value!=='string'||value.length>max)throw Error('La operación '+operation.op+' necesita '+key+' como texto.');return value;}
@@ -23,10 +23,12 @@ export function applyEditorMacro(editor:Editor,operations:MacroOperation[],revis
  // One dispatch gives one undo step; a failure above never touches the editor.
  if(tr.docChanged)editor.view.dispatch(closeHistory(tr).scrollIntoView());
 }
-export function sheetMacroSnapshot(book:SheetsBook):MacroSnapshot{
+export function sheetMacroSnapshot(book:SheetsBook,activeSheet=book.workbook.worksheets[0].name):MacroSnapshot{
  const values:NonNullable<MacroSnapshot['values']>={};
  for(const sheet of book.workbook.worksheets)sheet.eachRow((row,r)=>row.eachCell((cell,c)=>{const value=book.value(sheet.name,r-1,c-1);values[sheet.name+'!'+cell.address]=typeof value==='number'||typeof value==='boolean'?value:String(value??'');}));
- return {revision:JSON.stringify(book.workbook.model),values};
+ const formulas:Record<string,string>={};for(const sheet of book.workbook.worksheets)sheet.eachRow(row=>row.eachCell(cell=>{if(cell.formula)formulas[sheet.name+'!'+cell.address]='='+cell.formula;}));
+ const namedExpressions=book.namedExpressions.length?book.namedExpressions:book.workbook.definedNames.model.filter(name=>name.ranges.length===1).map(name=>({name:name.name,expression:'='+name.ranges[0]}));
+ return {revision:JSON.stringify(book.workbook.model),values,formulas,activeSheet,sheetNames:book.workbook.worksheets.map(sheet=>sheet.name),namedExpressions};
 }
 export function applySheetMacro(book:SheetsBook,operations:MacroOperation[],revision:string){
  assertMacroRevision(sheetMacroSnapshot(book).revision,revision);

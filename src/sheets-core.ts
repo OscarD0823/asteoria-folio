@@ -6,48 +6,25 @@ import {
   type RawCellContent,
 } from "hyperformula";
 import esES from "hyperformula/i18n/languages/esES";
+import './spreadsheet-functions';
+import {excelFunctionNames,expandExcelLet,workbookNames,type SheetNameExpression} from './spreadsheet-formulas';
 import { unzipSync, zipSync, strFromU8, strToU8 } from "fflate";
 
-export const sheetLimits = {
-  fileBytes: 40 * 1024 * 1024,
-  cells: 150000,
-  rows: 20000,
-  columns: 500,
-  area: 600000,
-};
-export const columnName = (column: number) => {
-  let n = column + 1,
-    s = "";
-  while (n > 0) {
-    s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
-    n = Math.floor((n - 1) / 26);
-  }
-  return s;
-};
-export const cellAddress = (row: number, column: number) =>
-  columnName(column) + (row + 1);
-export function parseAddress(address: string) {
-  const m = address.trim().match(/^\$?([A-Z]{1,3})\$?([1-9]\d*)$/i);
-  if (!m) return null;
-  let col = 0;
-  for (const c of m[1].toUpperCase()) col = col * 26 + c.charCodeAt(0) - 64;
-  const row = Number(m[2]) - 1;
-  return row < sheetLimits.rows && col <= sheetLimits.columns
-    ? { row, col: col - 1 }
-    : null;
-}
+import {sheetLimits,columnName,cellAddress,parseAddress} from './sheet-address';
+export {sheetLimits,columnName,cellAddress,parseAddress} from './sheet-address';
 const translated = new Map(
   Object.entries(esES.functions)
     .filter(([, v]) => v)
     .map(([k, v]) => [String(v).toUpperCase(), k]),
 );
 export function canonicalFormula(input: string) {
+  input=excelFunctionNames(input);
   // Translate only tokens outside strings and quoted worksheet names.
   const parts = input.split(/("(?:[^"]|"")*"|'(?:[^']|'')*')/g);
   const spanish = parts.some(
     (p, i) =>
       i % 2 === 0 &&
-      (/;/.test(p) ||
+      (/;/.test(p.replace(/\{[^}]*\}/g,'')) ||
         (/[A-ZÁÉÍÓÚÑ_.]+\s*\(/i.test(p) &&
           [...p.matchAll(/([A-ZÁÉÍÓÚÑ_.]+)\s*\(/gi)].some(
             (m) =>
@@ -55,11 +32,14 @@ export function canonicalFormula(input: string) {
               translated.get(m[1].toUpperCase()) !== m[1].toUpperCase(),
           ))),
   );
+  let arrayDepth=0;
   return parts
     .map((part, i) =>
       i % 2
         ? part
-        : part
+        : part.split(/([{}])/).map(segment=>{
+            if(segment==='{'){arrayDepth++;return segment;}if(segment==='}'){arrayDepth--;return segment;}
+            return segment
             .replace(
               /([A-ZÁÉÍÓÚÑ_.]+)(\s*\()/gi,
               (_, name, open) =>
@@ -67,10 +47,11 @@ export function canonicalFormula(input: string) {
                 open,
             )
             .replace(
-              spanish && part.includes(";") ? /(\d),(?=\d)/g : /$^/g,
+              spanish && arrayDepth===0 ? /(\d),(?=\d)/g : /$^/g,
               "$1.",
             )
-            .replace(/;/g, ","),
+            .replace(arrayDepth===0?/;/g:/$^/g, ",");
+          }).join(''),
     )
     .join("");
 }
@@ -102,7 +83,7 @@ export function normalizedSpreadsheetParts(zip: Record<string, Uint8Array>) {
         /xmlns:([A-Za-z_][\w.-]*)=["'](http:\/\/schemas\.openxmlformats\.org\/(?:spreadsheetml\/2006\/main|package\/2006\/relationships))["']/g,
       ),
     ];
-    if (!prefixes.length) continue;
+    const before=xml;
     for (const [, prefix, namespace] of prefixes) {
       const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       xml = xml
@@ -119,8 +100,13 @@ export function normalizedSpreadsheetParts(zip: Record<string, Uint8Array>) {
         )
         .join("");
     }
-    zip[path] = strToU8(xml);
-    changed = true;
+    if(/^xl\/worksheets\/sheet\d+\.xml$/.test(path)){
+      const base=/<(?:\w+:)?workbookPr\b[^>]*date1904=["'](?:1|true)["']/i.test(strFromU8(zip['xl/workbook.xml']))?Date.UTC(1904,0,1):Date.UTC(1899,11,30);
+      xml=xml.replace(/<c\b[^>]*\bt="d"[^>]*>[\s\S]*?<\/c>/g,cell=>cell.replace(/\bt="d"/,'t="n"').replace(/<v>([^<]+)<\/v>/,(_,date)=>{const timestamp=Date.parse(date);if(!Number.isFinite(timestamp))throw Error('Una fecha ISO del libro no es válida.');return '<v>'+((timestamp-base)/86400000)+'</v>';}));
+      // Match Excel's treatment of unpreserved whitespace in inline cached strings.
+      xml=xml.replace(/<c\b[^>]*\bt="str"[^>]*>[\s\S]*?<\/c>/g,cell=>cell.includes('xml:space="preserve"')?cell:cell.replace(/<v>([\s\S]*?)<\/v>/,(_,text)=>'<v>'+text.trim()+'</v>'));
+    }
+    if(before!==xml){zip[path] = strToU8(xml);changed = true;}
   }
   return changed ? zipSync(zip, { level: 0 }) : null;
 }
@@ -130,6 +116,7 @@ export class SheetsBook {
   warnings: string[] = [];
   original: Uint8Array | null = null;
   private batching = false;
+  namedExpressions:SheetNameExpression[]=[];
   constructor(workbook = new ExcelJS.Workbook()) {
     this.workbook = workbook;
     if (!workbook.worksheets.length) workbook.addWorksheet("Hoja1");
@@ -157,7 +144,7 @@ export class SheetsBook {
         data[r - 1] = [];
         row.eachCell((cell, c) => {
           total++;
-          data[r - 1][c - 1] = raw(cell);
+          const value=raw(cell);try{data[r - 1][c - 1]=typeof value==='string'&&value.startsWith('=')?expandExcelLet(canonicalFormula(value)):value;}catch(error){data[r - 1][c - 1]='=NA()';const warning='No se pudo calcular '+sheet.name+'!'+cell.address+': '+(error instanceof Error?error.message:String(error));if(!this.warnings.includes(warning))this.warnings.push(warning);}
         });
       });
       if (total > sheetLimits.cells)
@@ -170,6 +157,7 @@ export class SheetsBook {
       }
       sheets[sheet.name] = data;
     }
+    const named=this.namedExpressions.length?this.namedExpressions:this.workbook.definedNames.model.filter(item=>!/^_xlnm\./i.test(item.name)&&item.ranges.length===1).map(item=>({name:item.name,expression:'='+item.ranges[0]}));
     const next = HyperFormula.buildFromSheets(sheets, {
       licenseKey: "gpl-v3",
       language: "enGB",
@@ -178,7 +166,8 @@ export class SheetsBook {
       chooseAddressMappingPolicy: new AlwaysSparse(),
       dateFormats: ["DD/MM/YYYY", "YYYY-MM-DD"],
       nullYear: 30,
-    });
+      precisionRounding:15,
+    },named);
     this.engine?.destroy();
     this.engine = next;
   }
@@ -205,6 +194,7 @@ export class SheetsBook {
       (normalized ?? new Uint8Array(bytes)) as unknown as ExcelJS.Buffer,
     );
     const book = new SheetsBook(wb);
+    book.namedExpressions=workbookNames(strFromU8(zip['xl/workbook.xml']));if(book.namedExpressions.length)book.rebuild();
     book.original = new Uint8Array(bytes);
     if(zip["xl/vbaProject.bin"])book.warnings.push("Este XLSM contiene VBA inactivo. «Conservar formato original» guarda cambios de celdas y conserva las macros para Excel. Una copia XLSX elimina VBA.");
     const paths = Object.keys(zip);
@@ -250,7 +240,7 @@ export class SheetsBook {
   input(name: string, row: number, col: number) {
     const cell = this.sheet(name).findCell(row + 1, col + 1);
     if (!cell) return "";
-    if (cell.type === ExcelJS.ValueType.Formula) return "=" + cell.formula;
+    if (cell.type === ExcelJS.ValueType.Formula) return "=" + canonicalFormula(cell.formula);
     const value = cell.value;
     return value instanceof Date ? value.toISOString().slice(0, 10) : cell.text;
   }
@@ -267,6 +257,7 @@ export class SheetsBook {
     if (cell.isMerged && cell.master.address !== cell.address)
       throw new Error("Edita la primera celda de este bloque combinado.");
     const text = input.trim();
+    const formulaCalculation=!input.startsWith("'")&&text.startsWith('=')?expandExcelLet(canonicalFormula(text)):undefined;
     let v: ExcelJS.CellValue = null;
     if (input.startsWith("'")) v = input.slice(1);
     else if (text.startsWith("="))
@@ -282,7 +273,7 @@ export class SheetsBook {
     cell.value = v;
     this.engine.setCellContents(
       { sheet: this.engine.getSheetId(name)!, row, col },
-      [[raw(cell)]],
+      [[formulaCalculation??raw(cell)]],
     );
   }
   format(

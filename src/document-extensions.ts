@@ -1,7 +1,7 @@
 import { Node, Mark, Extension, mergeAttributes } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import { captionBlocks } from "./academic";
+import { captionBlocks, collectDocumentEntries } from "./academic";
 import { plainText } from "./flow";
 import { correctWord } from "./document-tools";
 import { sectionKinds, type SectionKind } from "./sections";
@@ -127,6 +127,7 @@ export const GeneratedIndex = Node.create({
       entries: [],
       title: "",
       levels: 3,
+      minLevel: 1,
       leader: "dots",
       pageNumbers: true,
       academicStyle: "free",
@@ -142,7 +143,7 @@ export const GeneratedIndex = Node.create({
     0,
   ],
   addNodeView() {
-    return ({ node }) => {
+    return ({ node,editor,getPos }) => {
       const dom = document.createElement("section");
       dom.className = "generated-index index-paper";
       dom.dataset.generatedIndex = "true";
@@ -168,6 +169,11 @@ export const GeneratedIndex = Node.create({
         dom.append(contentDOM);
         return { dom, contentDOM };
       }
+      const actions=document.createElement('div');actions.className='index-actions';
+      const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Actualizar tabla';refresh.setAttribute('aria-label','Actualizar '+(title.textContent??'tabla de contenido').toLocaleLowerCase());
+      refresh.addEventListener('mousedown',event=>event.preventDefault());
+      refresh.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();const position=getPos();if(typeof position!=='number')return;const groups=collectDocumentEntries(editor.getJSON());const kind=node.attrs.kind as keyof typeof groups;const entries=(groups[kind]??[]).filter(entry=>kind!=='contents'||((entry.level??1)>=(Number(node.attrs.minLevel)||1)&&(entry.level??1)<=(Number(node.attrs.levels)||3))).map(({path:_path,...entry})=>entry);editor.view.dispatch(editor.state.tr.setNodeMarkup(position,undefined,{...node.attrs,entries}));});
+      actions.append(refresh);dom.append(actions);
       const entries = node.attrs.entries as {
         label: string;
         targetId: string;
@@ -194,8 +200,7 @@ export const GeneratedIndex = Node.create({
         }
         row.addEventListener("click", (e) => {
           e.preventDefault();
-          document
-            .getElementById("block-" + entry.targetId)
+          Array.from(editor.view.dom.querySelectorAll<HTMLElement>('[data-block-id]')).find(element=>element.dataset.blockId===entry.targetId)
             ?.scrollIntoView({ behavior: "smooth", block: "center" });
         });
         dom.append(row);
@@ -207,7 +212,7 @@ export const GeneratedIndex = Node.create({
           "Aplica estilos de título al documento. El índice se actualizará automáticamente.";
         dom.append(empty);
       }
-      return { dom, ignoreMutation: () => true };
+      return { dom, ignoreMutation: () => true,stopEvent:event=>event.target instanceof HTMLElement&&!!event.target.closest('button,a') };
     };
   },
 });
@@ -499,6 +504,11 @@ export const DocumentAttributes = Extension.create({
     return [
       new Plugin({
         key: new PluginKey("stableDocumentIds"),
+        props:{handleDOMEvents:{click:(view,event)=>{
+          const anchor=(event.target as HTMLElement).closest?.('a');const href=anchor?.getAttribute('href');if(!href?.startsWith('#'))return false;
+          const id=href.replace(/^#(?:block-)?/,'');const target=Array.from(view.dom.querySelectorAll<HTMLElement>('[data-block-id]')).find(element=>element.dataset.blockId===id);
+          if(!target)return false;event.preventDefault();target.scrollIntoView({behavior:'smooth',block:'center'});return true;
+        }}},
         appendTransaction(transactions, _old, state) {
           if (!transactions.some((t) => t.docChanged)) return null;
           const tr = state.tr;

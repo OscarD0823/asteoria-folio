@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { fontFamilies } from "./fonts";
 import { localFontFamilies, type LocalFont } from "./local-fonts";
 import { readPreference, writePreference } from "./preferences";
+import './font-picker.css';
 const essentials = [
   ["Arial · 11 pt", "Arimo", "Arimo"],
   ["Calibri · 11 pt", "Carlito", "Carlito"],
@@ -30,6 +31,7 @@ export function FontPicker({
   displayLabel?: string;
 }) {
   const [open, setOpen] = useState(false),
+    [quick,setQuick]=useState(false),[active,setActive]=useState(0),
     [query, setQuery] = useState(""),
     [category, setCategory] = useState("all"),
     [loading, setLoading] = useState(false);
@@ -44,12 +46,14 @@ export function FontPicker({
   );
   const [previewSize, setPreviewSize] = useState(24);
   const [preview, setPreview] = useState(value);
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [view, setView] = useState<"grid" | "list">("list");
   const [bold, setBold] = useState(false),
     [italic, setItalic] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null),
     searchInput = useRef<HTMLInputElement>(null),
     button = useRef<HTMLButtonElement>(null);
+  const quickPanel=useRef<HTMLDivElement>(null),quickSearch=useRef<HTMLInputElement>(null),quickId=useId();
+  const [position,setPosition]=useState({left:16,top:80,width:320});
   const families = [
       ...fontFamilies.filter((f) => f.file || f.styles),
       ...localFontFamilies(fonts),
@@ -76,26 +80,41 @@ export function FontPicker({
         filter(f.label).includes(filter(query)),
     )
     .sort((a, b) => a.label.localeCompare(b.label, "es"));
+  const aliases:Record<string,string>={Arimo:'Arial',PrismaSans:'Arial',Carlito:'Calibri',PrismaSerif:'Times New Roman',Gelasio:'Georgia',PrismaMono:'Courier New'};
+  const popular=[value,...recent,...favorites,'Carlito','Arimo','PrismaSerif','Gelasio','NotoSans','NotoSerif','PrismaMono','LatinModernRoman'];
+  const suggestions=query.trim()?families.filter(f=>filter(f.label+' '+(aliases[f.value]??'')).includes(filter(query))).sort((a,b)=>a.label.localeCompare(b.label,'es')).slice(0,40):[...new Set(popular)].map(value=>families.find(f=>f.value===value)).filter((f):f is typeof families[number]=>!!f).slice(0,16);
+  useEffect(()=>setActive(0),[query,quick]);
+  useEffect(()=>{
+    if(!quick)return;
+    const place=()=>{const rect=button.current?.getBoundingClientRect();if(!rect)return;const width=Math.min(360,innerWidth-24);setPosition({width,left:Math.max(12,Math.min(rect.left,innerWidth-width-12)),top:Math.max(12,Math.min(rect.bottom+7,innerHeight-Math.min(480,innerHeight*.7)-12))});};
+    place();quickSearch.current?.focus();
+    const outside=(event:PointerEvent)=>{if(event.target instanceof Node&&!quickPanel.current?.contains(event.target)&&!button.current?.contains(event.target))setQuick(false);};
+    document.addEventListener('pointerdown',outside);window.addEventListener('resize',place);
+    return()=>{document.removeEventListener('pointerdown',outside);window.removeEventListener('resize',place);};
+  },[quick]);
+  useEffect(()=>{if(quick)document.getElementById(quickId+'-'+active)?.scrollIntoView({block:'nearest'});},[active,quick,quickId]);
   useEffect(() => {
-    if (!open) return;
-    searchInput.current?.focus();
+    if (!open&&!quick) return;
+    if(open)searchInput.current?.focus();
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
         setOpen(false);
+        setQuick(false);
         button.current?.focus();
       }
     };
     window.addEventListener("keydown", key, true);
     return () => window.removeEventListener("keydown", key, true);
-  }, [open]);
+  }, [open,quick]);
   const choose = (font: string) => {
     const next = [font, ...recent.filter((f) => f !== font)].slice(0, 12);
     setRecent(next);
     writePreference("recent-fonts", next);
     onChange(font);
     setOpen(false);
+    setQuick(false);
     button.current?.focus();
   };
   return (
@@ -104,12 +123,22 @@ export function FontPicker({
         className="font-picker-button"
         ref={button}
         aria-label={label}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
+        aria-haspopup="listbox"
+        aria-expanded={open||quick}
+        onClick={() => {setQuery('');setQuick(!quick);}}
       >
         {displayLabel ?? selected?.label ?? "Elegir fuente"} <span>▾</span>
       </button>
+      {quick&&createPortal(<div ref={quickPanel} className="font-quick-panel" style={position}>
+        <label className="font-quick-search">Tipo de letra<input ref={quickSearch} aria-label="Buscar fuente" placeholder="Escribe el nombre de la fuente…" value={query} role="combobox" aria-autocomplete="list" aria-controls={quickId} aria-expanded="true" aria-activedescendant={suggestions.length?quickId+'-'+active:undefined} onChange={event=>setQuery(event.target.value)} onKeyDown={event=>{
+          if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();setActive(index=>Math.max(0,Math.min(suggestions.length-1,index+(event.key==='ArrowDown'?1:-1))));}
+          if(event.key==='Enter'&&suggestions[active]){event.preventDefault();choose(suggestions[active].value);}
+        }}/></label>
+        <small className="font-quick-heading">{query?'Resultados':'Esenciales y usadas recientemente'}</small>
+        <div id={quickId} className="font-quick-list" role="listbox" aria-label="Fuentes sugeridas">{suggestions.map((font,index)=><button key={font.value} id={quickId+'-'+index} role="option" aria-selected={font.value===value} className={index===active?'font-quick-active':''} tabIndex={-1} onMouseDown={event=>event.preventDefault()} onClick={()=>choose(font.value)}><span><b>{font.label}</b>{aliases[font.value]&&<small>Alternativa a {aliases[font.value]}</small>}</span><span className="font-quick-sample" style={{fontFamily:font.css}}>Aa</span>{font.value===value&&<span aria-hidden="true">✓</span>}</button>)}</div>
+        {!suggestions.length&&<p>No hay fuentes con ese nombre.</p>}
+        <button className="font-quick-more" onClick={()=>{setQuick(false);setCategory('all');setOpen(true);}}>Biblioteca completa y vista previa <span>→</span></button>
+      </div>,document.body)}
       {open &&
         createPortal(
           <div

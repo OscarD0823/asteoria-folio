@@ -64,6 +64,12 @@ Los motores DOCX/PPTX y el taller PDF ya no usan código de GenOffice o PDFCraft
 
 ## Validación y continuación
 
+La actualización PDF 6.6 / Writer 1.6 / Sheets 0.6 añade importación de campos TOC complejos de Word, enlaces a marcadores, actualización de índices y un selector de fuentes con búsqueda rápida. Un documento de dos páginas editado en Prisma se volvió a abrir en Word con una tabla de contenido, cuatro enlaces y el título actualizado.
+
+Una prueba sintética nueva de 69 resultados encadenados se recalculó en Excel 16.0 y Prisma. Se comparó también el archivo exportado por Prisma y reabierto en Excel: no hubo diferencias fuera de una tolerancia relativa de 1e-8 o absoluta de 1e-7. Incluye LET, búsquedas, condiciones múltiples, texto, fechas, estadística y cálculos financieros. Se corrigieron fechas ISO, constantes lógicas, INT negativo y ROUNDUP en límites decimales. INDIRECT admite inicialmente referencias A1 literales; las referencias construidas dinámicamente y otras funciones no cubiertas siguen pendientes.
+
+Sheets incorpora un intérprete local inicial de VBA de celdas desde módulos BAS, con vista previa y deshacer. La misma macro se ejecutó desde el editor de VBA de Excel y en Prisma, con ocho resultados iguales. No se alteró la configuración de seguridad de Office. Los proyectos VBA binarios incrustados se conservan para Excel; formularios, eventos y funciones personalizadas aún no se ejecutan. Las pruebas no acreditan igualdad visual píxel a píxel ni compatibilidad completa con Office.
+
 Las pruebas automatizadas cubren conservación de partes, notas, tablas, imágenes, referencias, Unicode, idiomas, macros limitadas, lotes SQL con reversión, formatos abiertos y exportación inmediata. Se revisan además la interfaz y los archivos de prueba locales. Una prueba de carga no acredita compatibilidad total con Office.
 
 El orden siguiente debe ser: consolidar Writer y PDF; completar Sheets (gráficos, tablas y análisis); ampliar Slides (patrones y efectos); Data (formularios e intercambio Access); Publisher (texto vinculado y publicación). Primero se implementa la base equivalente a Office con funciones y motores propios. Los repositorios suministrados son referencias adicionales para la etapa de mejoras posterior a esa base; no sustituyen las aplicaciones independientes ni el programa general Prisma. Cada función necesita un ejemplo original, un resultado exportado y una comparación verificable antes de anunciar equivalencia. Consulta [Prisma y las aplicaciones independientes](README-prisma.md).

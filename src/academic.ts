@@ -1111,8 +1111,8 @@ export function normalizeAcademicDocument(
         : entries[kind].filter(
             (entry) =>
               kind !== "contents" ||
-              (entry.level ?? 1) <=
-                Math.max(1, Math.min(6, Number(node.attrs?.levels) || 3)),
+              ((entry.level ?? 1)>=Math.max(1,Number(node.attrs?.minLevel)||1)&&(entry.level ?? 1) <=
+                Math.max(1, Math.min(6, Number(node.attrs?.levels) || 3))),
           );
     node.attrs = {
       ...node.attrs,

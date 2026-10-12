@@ -1,6 +1,6 @@
 export type MacroValue=string|number|boolean|null;
 export type MacroOperation={op:string;args:Record<string,MacroValue>};
-export type MacroSnapshot={revision:string;values?:Record<string,MacroValue>;text?:string};
+export type MacroSnapshot={revision:string;values?:Record<string,MacroValue>;text?:string;activeSheet?:string;sheetNames?:string[];formulas?:Record<string,string>;namedExpressions?:{name:string;expression:string;scope?:number}[]};
 export type MacroBridge={operations:string[];snapshot:()=>Promise<MacroSnapshot>|MacroSnapshot;apply:(operations:MacroOperation[],revision:string)=>Promise<void|string>};
 export type MacroPlan={operations:MacroOperation[];logs:string[];revision:string;name:string};
 export const macroLimits={bytes:100000,steps:5000,nesting:12,repeats:1000,text:100000};

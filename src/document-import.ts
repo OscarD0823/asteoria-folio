@@ -1,4 +1,5 @@
 import {proofingLanguages} from './proofing-languages';
+import {wordIndexRanges,wordIndexAttributes,wordBookmarks,wordFieldLink} from './word-fields';
 import { unzipSync, strFromU8 } from "fflate";
 import {
   defaultLayout,
@@ -116,6 +117,7 @@ export function importDocx(bytes: Uint8Array): {
   const document = xml("word/document.xml")!,
     body = all(document, "body")[0];
   if (!body) throw new Error("No se encontró el contenido del DOCX.");
+  const indexRanges=wordIndexRanges(body),bookmarks=wordBookmarks(body);
   const warnings = new Set<string>(),
     substitutions = new Set<string>();
   const detected = new Map<
@@ -290,6 +292,7 @@ export function importDocx(bytes: Uint8Array): {
     const content: RichNode[] = [],
       images: RichNode[] = [];
     let pageBreak = false;
+    const fields:{code:string;result:boolean}[]=[];
     for (const child of children(parent)) {
       if (child.localName === "commentRangeStart") {
         activeComments.push(val(child, "id"));
@@ -302,8 +305,9 @@ export function importDocx(bytes: Uint8Array): {
       }
       if (child.localName === "hyperlink") {
         const rel = relationships.get(child.getAttributeNS(R, "id") || ""),
+          anchor=bookmarks.targets.get(val(child,"anchor")),
           link =
-            rel?.external && /^(https?:\/\/|mailto:)/i.test(rel.target)
+            anchor ? '#'+anchor : rel?.external && /^(https?:\/\/|mailto:)/i.test(rel.target)
               ? rel.target
               : "";
         const result = inline(
@@ -326,7 +330,8 @@ export function importDocx(bytes: Uint8Array): {
         continue;
       }
       if (child.localName === "fldSimple") {
-        const result = inline(child, inherited, activeComments);
+        const link=wordFieldLink(val(child,"instr"),bookmarks.targets);
+        const result = inline(child, [...inherited,...(link?[{type:'link',attrs:{href:link}}]:[])], activeComments);
         content.push(...result.content);
         images.push(...result.images);
         pageBreak ||= result.pageBreak;
@@ -372,17 +377,27 @@ export function importDocx(bytes: Uint8Array): {
         }
       }
       for (const item of children(child)) {
+        if(item.localName==='fldChar'){
+          const kind=val(item,'fldCharType');
+          if(kind==='begin')fields.push({code:'',result:false});
+          else if(kind==='separate'&&fields.length)fields.at(-1)!.result=true;
+          else if(kind==='end')fields.pop();
+          continue;
+        }
+        if(item.localName==='instrText'&&fields.length){fields.at(-1)!.code+=item.textContent??'';continue;}
+        const fieldLink=fields.filter(f=>f.result).map(f=>wordFieldLink(f.code,bookmarks.targets)).filter(Boolean).at(-1);
+        const visibleMarks=fieldLink?[...marks.filter(m=>m.type!=='link'),{type:'link',attrs:{href:fieldLink}}]:marks;
         if (item.localName === "t" && item.textContent)
           content.push({
             type: "text",
             text: item.textContent,
-            ...(marks.length ? { marks } : {}),
+            ...(visibleMarks.length ? { marks:visibleMarks } : {}),
           });
         if (item.localName === "tab")
           content.push({
             type: "text",
             text: "\t",
-            ...(marks.length ? { marks } : {}),
+            ...(visibleMarks.length ? { marks:visibleMarks } : {}),
           });
         if (item.localName === "br" || item.localName === "cr") {
           if (val(item, "type") === "page") pageBreak = true;
@@ -431,7 +446,7 @@ export function importDocx(bytes: Uint8Array): {
         ...(directProps ? [directProps] : []),
       ];
     const runs = [...defaultRuns, ...styleChain(styleId, "rPr")],
-      attrs: Record<string, unknown> = { id: crypto.randomUUID() };
+      attrs: Record<string, unknown> = { id: bookmarks.ids.get(el)??crypto.randomUUID() };
     let level = /(?:heading|t[íi]tulo)([1-6])/i.exec(styleId)?.[1],
       list:
         | {
@@ -585,14 +600,17 @@ export function importDocx(bytes: Uint8Array): {
     let lastList: RichNode | undefined,
       lastKey = "";
     for (const child of children(el)) {
+      if(indexRanges.skip.has(child))continue;
       let nodes: RichNode[] = [];
-      if (child.localName === "p") nodes = paragraph(child);
+      const fieldIndex=indexRanges.starts.get(child);
+      if(fieldIndex)nodes=[{type:'generatedIndex',attrs:fieldIndex,content:[]}];
+      else if (child.localName === "p") nodes = paragraph(child);
       else if (child.localName === "tbl") nodes = [table(child)];
       else if (child.localName === "sdt") {
         const instruction = all(child, "instrText")
           .map((n) => n.textContent)
           .join("");
-        if (/\bTOC\b/i.test(instruction)) {
+        if (wordIndexAttributes(instruction)) {
           const caption = instruction.match(/\\c\s+"([^"]+)"/i)?.[1] ?? "";
           const kind = /^(?:tabla|table)/i.test(caption)
             ? "tables"
@@ -603,11 +621,7 @@ export function importDocx(bytes: Uint8Array): {
             {
               type: "generatedIndex",
               attrs: {
-                id: crypto.randomUUID(),
-                kind,
-                levels: Number(instruction.match(/\\o\s+"1-(\d)"/)?.[1]) || 3,
-                leader: "dots",
-                pageNumbers: true,
+                ...wordIndexAttributes(instruction),kind,
               },
               content: [],
             },

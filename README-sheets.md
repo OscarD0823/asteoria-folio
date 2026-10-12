@@ -1,8 +1,8 @@
-# Prisma Sheets 0.3.0
+# Prisma Sheets 0.6.0
 
 La versión 0.2 incorpora la biblioteca compartida de 81 familias con búsqueda, favoritas, recientes y vista previa. Conserva los nombres de fuentes en XLSX y utiliza alternativas incluidas para nombres conocidos de Office. [Instalación y uso sin conexión](README-install.md).
 
-Primera aplicación de hojas de cálculo de la familia Prisma. Funciona localmente en la web, Android y Windows, con importación/exportación XLSX y CSV.
+Aplicación de hojas de cálculo de la familia Prisma. Funciona localmente en la web, Android y Windows, con importación/exportación XLSX y CSV. La versión 0.6 incorpora LET, nombres definidos, compatibilidad inicial con macros VBA de celdas desde módulos BAS y búsqueda rápida de fuentes.
 
 ## Funciones
 
@@ -16,7 +16,9 @@ Primera aplicación de hojas de cálculo de la familia Prisma. Funciona localmen
 
 ## Límites de esta versión
 
-No sustituye todavía todo Excel. No incluye edición de gráficos, tablas dinámicas, VBA, Power Query, edición visual de tablas estructuradas ni filtrado interactivo. Los filtros y paneles congelados que se configuran se guardan para Excel. No interpreta XLS ni XLSM.
+No sustituye todavía todo Excel. No incluye edición de gráficos nativos, tablas dinámicas, Power Query, edición visual de tablas estructuradas ni filtrado interactivo. Los filtros y paneles congelados que se configuran se guardan para Excel. Abre XLSM y conserva sus partes VBA para Excel mediante la exportación compatible; no interpreta XLS binario. El intérprete propio de módulos BAS cubre un subconjunto de VBA, sin formularios, eventos, COM ni funciones personalizadas. Consulta [Programar en Prisma](README-programming.md).
+
+Se compararon 69 resultados encadenados con Excel 16.0, incluyendo el archivo exportado y reabierto en Excel. Todos coincidieron con tolerancia relativa 1e-8 o absoluta 1e-7. La misma macro de ocho cambios también se ejecutó en ambos programas con resultados iguales. Esta prueba sintética no es el archivo original de un chat ni una garantía para todas las funciones de Excel. INDIRECT cubre inicialmente direcciones A1 literales, no expresiones que construyen referencias dinámicas.
 
 Límites: 40 MB por archivo, 150.000 celdas pobladas, 20.000 filas y 500 columnas por hoja, 600.000 posiciones en el área utilizada del libro. DOCX y PDF permiten hasta 12 columnas y 2.000 filas seleccionadas para mantener una salida legible. Las funciones especiales y las fórmulas matriciales necesitan comprobación en Excel.
 

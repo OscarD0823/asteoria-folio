@@ -3078,7 +3078,7 @@ export default function Studio() {
             aria-labelledby="dialog-title"
           >
             <div className="modal-heading">
-              <span className="eyebrow">PRISMA PDF</span>
+              <span className="eyebrow">{product.name.toLocaleUpperCase()}</span>
               <Button title="Cerrar ventana" onClick={() => setDialog(null)}>
                 <X size={20} />
               </Button>

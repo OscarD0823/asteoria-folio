@@ -2,43 +2,43 @@
   "pdf": {
     "name": "Prisma PDF",
     "siteSlug": "prisma-pdf",
-    "version": "6.5.0",
+    "version": "6.6.0",
     "description": "Editor PDF local y privado"
   },
   "writer": {
     "name": "Prisma Writer",
     "siteSlug": "prisma-writer",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "description": "Procesador de documentos local y privado"
   },
   "sheets": {
     "name": "Prisma Sheets",
     "siteSlug": "prisma-sheets",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "description": "Hojas de cálculo locales compatibles con XLSX"
   },
   "slides": {
     "name": "Prisma Slides",
     "siteSlug": "prisma-slides",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "Presentaciones locales compatibles con PPTX"
   },
   "data": {
     "name": "Prisma Data",
     "siteSlug": "prisma-data",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "Bases de datos, tablas y consultas locales"
   },
   "publisher": {
     "name": "Prisma Publisher",
     "siteSlug": "prisma-publisher",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "Diseño de publicaciones y páginas para imprimir"
   },
   "prisma": {
     "name": "Prisma",
     "siteSlug": "prisma",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Tu espacio de trabajo local: documentos, hojas, presentaciones, PDF, datos y publicaciones"
   }
 }
