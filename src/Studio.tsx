@@ -1696,7 +1696,7 @@ export default function Studio() {
               </span>
               <InstallApp />
               <Updates
-                beforeReload={() => saveSession(state.current)}
+                beforeReload={() => Promise.resolve()}
                 onError={fail}
               />
             </div>
