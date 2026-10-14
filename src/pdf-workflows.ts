@@ -45,7 +45,7 @@ export async function processPdfWorkflow(id:PdfWorkflow,files:File[],options:Rec
   const form=source.getForm();for(const change of (Array.isArray(options.fields)?options.fields:[]) as {fieldName:string;value:unknown}[]){const field=form.getFieldMaybe(change.fieldName);if(!field)throw Error('No se encontró el campo '+change.fieldName);if(field instanceof PDFTextField)field.setText(String(change.value??''));else if(field instanceof PDFCheckBox){if(change.value===true)field.check();else field.uncheck();}else if(field instanceof PDFDropdown||field instanceof PDFRadioGroup){if(change.value==='')field.clear();else field.select(String(change.value));}else throw Error('El tipo del campo '+change.fieldName+' todavía no se puede editar.');}
   if(options.flatten===true)form.flatten();progress(100);return source.save();
  }
- const result=await PDFDocument.create();result.setProducer('Prisma PDF · motor propio');result.setTitle(source.getTitle()??'Documento Prisma');
+ const result=await PDFDocument.create();result.setProducer("Asteoria Folio · motor propio");result.setTitle(source.getTitle()??"Documento ASTEORIA");
  if(id==='reverse'||id==='alternate'){
   if(id==='alternate'&&documents.length!==2)throw Error('Elige dos PDF para intercalarlos.');
   if(id==='reverse'){for(const page of await result.copyPages(source,source.getPageIndices().reverse()))result.addPage(page);}

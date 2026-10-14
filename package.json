@@ -1,13 +1,13 @@
 {
-  "name": "@prisma/pdf",
-  "version": "6.6.0",
+  "name": "@asteoria/folio",
+  "version": "7.0.0",
   "private": true,
   "type": "module",
   "license": "AGPL-3.0-or-later",
+  "author": "OscarD0823",
   "scripts": {
     "dev": "node tools/workspace.mjs dev",
-    "build": "node tools/workspace.mjs build",
     "test": "node tools/workspace.mjs test",
-    "publish:pages": "node tools/workspace.mjs publish"
+    "build": "node tools/workspace.mjs build"
   }
 }

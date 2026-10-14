@@ -367,8 +367,8 @@ export async function buildPdf(
     }
   }
   output.setTitle(state.name);
-  output.setCreator("Prisma PDF");
-  output.setProducer("Prisma PDF · pdf-lib");
+  output.setCreator("Asteoria Folio");
+  output.setProducer("Asteoria Folio · pdf-lib");
   if (state.layout) {
     const layout = state.layout;
     for (const [index, page] of output.getPages().entries()) {
@@ -547,7 +547,7 @@ export async function demoWorkspace(): Promise<Workspace> {
       color: hexColor("#207e75"),
     });
     text("P", 57, 759, 16, "#ffffff", true);
-    text("PRISMA STUDIO", 88, 768, 11, "#1c4341", true);
+    text("ASTEORIA STUDIO", 88, 768, 11, "#1c4341", true);
     text("DOCUMENTO DE EJEMPLO", 390, 768, 8, "#78908e");
     page.drawLine({
       start: { x: 48, y: 736 },
@@ -631,7 +631,7 @@ export async function demoWorkspace(): Promise<Workspace> {
           color: hexColor("#e0e8e5"),
         });
     }
-    text("PRISMA STUDIO  /  TU DOCUMENTO, A TU MANERA", 48, 45, 8, "#78908e");
+    text("ASTEORIA STUDIO  /  TU DOCUMENTO, A TU MANERA", 48, 45, 8, "#78908e");
     text(`${i + 1} / 3`, 518, 45, 8, "#78908e");
   }
   return appendPdf(

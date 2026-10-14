@@ -16,7 +16,7 @@ test('Form values survive the editor and can be filled, flattened, and metadata 
  assert.equal((await inspectPdfFields(bytes))[0].value,'Óscar');
  const file=new File([bytes],'formulario.pdf',{type:'application/pdf'});
  const filled=await processPdfWorkflow('forms',[file],{fields:[{fieldName:'Nombre',value:'Ana'}]});assert.equal((await inspectPdfFields(filled))[0].value,'Ana');
- const metadata=await PDFDocument.load(await processPdfWorkflow('metadata',[file],{metadata:{title:'Prisma',author:'Persona'}}));assert.equal(metadata.getTitle(),'Prisma');assert.equal(metadata.getAuthor(),'Persona');
+ const metadata=await PDFDocument.load(await processPdfWorkflow('metadata',[file],{metadata:{title:"ASTEORIA",author:'Persona'}}));assert.equal(metadata.getTitle(),"ASTEORIA");assert.equal(metadata.getAuthor(),'Persona');
  const flattened=await processPdfWorkflow('flatten',[file],{});assert.equal((await inspectPdfFields(flattened)).length,0);
  const choices=await PDFDocument.load(bytes),dropdown=choices.getForm().createDropdown('Categoría');dropdown.addOptions(['A','B']);dropdown.select('A');dropdown.addToPage(choices.getPage(0),{x:20,y:80,width:120,height:25});const clear=await processPdfWorkflow('forms',[new File([new Uint8Array(await choices.save())],'opciones.pdf')],{fields:[{fieldName:'Categoría',value:''}]});assert.equal((await PDFDocument.load(clear)).getForm().getDropdown('Categoría').getSelected().length,0);
 });
