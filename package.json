@@ -1,6 +1,6 @@
 {
-  "name": "@asteoria/folio",
-  "version": "7.0.2",
+  "name": "@auralis/folio",
+  "version": "8.0.0",
   "private": true,
   "type": "module",
   "license": "AGPL-3.0-or-later",

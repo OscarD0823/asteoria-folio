@@ -1,9 +1,9 @@
 {
   "product": "pdf",
-  "name": "Asteoria Folio",
+  "name": "Auralis Folio",
   "channel": "beta",
-  "website": "https://oscard0823.github.io/asteoria-folio/",
-  "sourceRepository": "OscarD0823/asteoria-folio",
+  "website": "https://oscard0823.github.io/auralis-folio/",
+  "sourceRepository": "OscarD0823/auralis-folio",
   "sharedRepository": "OscarD0823/asteoria",
   "sourceRef": "main"
 }

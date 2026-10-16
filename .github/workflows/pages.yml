@@ -1,4 +1,4 @@
-name: Publicar Asteoria Folio BETA
+name: Publicar Auralis Folio BETA
 on:
   push:
     branches: [main]
@@ -14,6 +14,6 @@ concurrency:
   cancel-in-progress: false
 jobs:
   product:
-    uses: OscarD0823/asteoria/.github/workflows/product-pages.yml@main
+    uses: OscarD0823/auralis/.github/workflows/product-pages.yml@main
     with:
       kind: pdf
